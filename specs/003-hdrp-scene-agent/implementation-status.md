@@ -145,3 +145,7 @@ Une copie `Assets/AgentWorkspace/Runs/finished-room-20261031-115732/Reconstructi
 La compilation native et les 18 tests Unity existants passent ; suite Python 258 tests passés avant commit. Ceci ne remplace pas les nouveaux critères de finition. `ReferenceRoomFinish` est raccordé au constructeur, avec reçu room_finish et règle de construction déclarée au modèle.
 
 Application Go : **conception uniquement**. Le périmètre validé est local, avec chat par projet, historique SQLite séparé, appels Muse sous ledger Python, actions Unity fermées et preuves/arrêt/reprise. Voir `chat-plan.md`, contrats et T151–T190. Aucun serveur applicatif Go ni frontend n’a été développé avant la mise à jour du plan demandée. Go 1.27.3 a été installé et le dépôt initialisé en SSH avec identité anonyme.
+
+## Finitions qualifiées — 2026-10-31
+
+T154–T156 exécutées : prévalidation des variantes et de la couverture rectangulaire avant remplacement, création temporaire avec nettoyage sur erreur, préservation du plafond explicite, plafond dérivé connecté et audit des surfaces vers le bas. Le panorama conserve deux vues hautes même avec gros plans Muse. 22 tests Unity et 258 Python passent. GP inchangée. Les captures de plafond montrent une fermeture sans ouverture visible dans les deux angles vérifiés ; éclairage sombre et bleuté, sans qualification de fidélité absolue. Preuves locales : `.hdrp-agent/reports/room-finish-qualification.json`.

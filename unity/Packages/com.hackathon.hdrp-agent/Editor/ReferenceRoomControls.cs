@@ -24,7 +24,8 @@ namespace HdrpAgent.Editor
             var root=Root();var floors=root.Cast<Transform>().Where(o=>Path.GetFileName(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(o.gameObject)).StartsWith("Floor_",StringComparison.Ordinal)).ToArray();
             var rs=floors.SelectMany(o=>o.GetComponentsInChildren<Renderer>()).ToArray();if(rs.Length==0)throw new InvalidOperationException("A mapped floor is required");
             var bounds=rs[0].bounds;foreach(var r in rs.Skip(1))bounds.Encapsulate(r.bounds);var center=bounds.center+Vector3.up*1.5f;
-            var views=new JArray();for(int i=0;i<8;i++)views.Add(View("room-"+i,floors[0].name,"room_sweep",center,new Vector3(0,i*45,0),75));Begin(root,views);
+            var views=new JArray();for(int i=0;i<8;i++)views.Add(View("room-"+i,floors[0].name,"room_sweep",center,new Vector3(0,i*45,0),75));
+            for(int i=0;i<2;i++)views.Add(View("ceiling-"+i,floors[0].name,"interior_detail",center,new Vector3(-55,i*180,0),90));Begin(root,views);
         }
         [MenuItem("Tools/HDRP Agent/Inspect current Scene camera")]
         public static void InspectSceneCamera(){

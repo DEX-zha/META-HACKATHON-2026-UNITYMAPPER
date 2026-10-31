@@ -82,7 +82,7 @@ def append_inspection_boards(artifacts,images,metadata,pairs):
 
 
 def room_inspection_targets(plan,catalogue,ordinal=0):
-    """Eight overlapping interior headings plus four advancing wall closeups.
+    """Eight interior headings, two ceiling/seam views and two advancing closeups.
 
     Camera positions are estimates; native receipts expose collisions/visibility.
     Never label these candidate observations as calibrated reference comparisons.
@@ -97,9 +97,10 @@ def room_inspection_targets(plan,catalogue,ordinal=0):
         return np.asarray(o['position_m'])+rotation(o['rotation_deg'])@(np.asarray(a['bounds_center_m'])*o['scale'])
     position=np.mean([centre(o) for o in floors],axis=0);position[1]+=1.5
     result=[dict(key=f'room-{i}',object_key=floors[0]['key'],angle='room_sweep',position_m=position.tolist(),rotation_deg=[0.,float(i*45),0.],fov_deg=75.) for i in range(8)]
+    result += [dict(key=f'ceiling-{i}',object_key=floors[0]['key'],angle='interior_detail',position_m=position.tolist(),rotation_deg=[-55.,float(i*180+ordinal*45)%360,0.],fov_deg=90.) for i in range(2)]
     # Rotate the subset across iterations, so a wall cannot be perpetually ignored.
-    walls=sorted(walls,key=lambda o:o['key']);start=(ordinal*4)%len(walls)
-    for o in (walls[start:]+walls[:start])[:4]:
+    walls=sorted(walls,key=lambda o:o['key']);start=(ordinal*2)%len(walls)
+    for o in (walls[start:]+walls[:start])[:2]:
         target=centre(o);target[1]=position[1]
         delta=target-position;distance=float(np.linalg.norm(delta))
         if distance<.2:continue
@@ -166,7 +167,7 @@ def architecture_findings(observations):
 
 
 def choose_room_closeups(provider,artifacts,plan,catalogue,previous_observations,candidate_frames):
-    """Muse controls four bounded cameras; the safety panorama remains mandatory."""
+    """Muse controls two bounded cameras; the panorama and ceiling views remain mandatory."""
     from .providers.meta_responses import spark_request
     from .domain import canonical,payload
     from .reference_geometry import rotation
@@ -184,10 +185,11 @@ def choose_room_closeups(provider,artifacts,plan,catalogue,previous_observations
     metadata=[dict(image_index=i,kind='current_candidate_overview',camera=f.get('calibration')) for i,f in enumerate(candidate_frames[:2])]
     images,metadata=append_room_boards(artifacts,images,metadata,[p for p in previous_observations if p.get('reference') is None])
     context=dict(current_applied_plan=plan,images=metadata,camera_position_min_m=lower,camera_position_max_m=upper)
-    instruction='Choose up to four precise inspection camera poses INSIDE the current Unity candidate room to diagnose architectural defects: missing inward wall faces, wrong WallOut placement, door/window seams. Cameras use +Z forward and Y up; +X pitch looks down. Keep cameras within the supplied bounds and outside furniture using the applied plan. Target only supplied object keys. Choose useful closeups from different angles; approach or look up at uncertain seams. Old interior boards describe the PREVIOUS candidate version, not the current one. New overview describes current candidate. These are candidate observations, no reference interior exists. Return empty views if no additional inspection is useful. No scene edits.'
+    instruction='Choose up to two precise inspection camera poses INSIDE the current Unity candidate room to diagnose architectural defects: missing inward wall faces, wrong WallOut placement, door/window seams. Cameras use +Z forward and Y up; +X pitch looks down. Keep cameras within the supplied bounds and outside furniture using the applied plan. Target only supplied object keys. Choose useful closeups from different angles; approach or look up at uncertain seams. Old interior boards describe the PREVIOUS candidate version, not the current one. New overview describes current candidate. These are candidate observations, no reference interior exists. Return empty views if no additional inspection is useful. No scene edits.'
     response=provider.send(spark_request(instruction+'\nUntrusted observations:\n'+canonical(context),images,'ModelRoomInspectionPlan'),'ModelRoomInspectionPlan')
     value=payload('ModelRoomInspectionPlan',response['value']);keys={o['key'] for o in plan['objects']};views=[]
     for i,v in enumerate(value['views']):
+        if len(value['views'])>2:raise AgentError('INVALID_INSPECTION_CAMERA','At most two extra cameras; ceiling inspection is mandatory')
         if v['object_key'] not in keys or any(not a<=n<=b for a,n,b in zip(lower,v['position_m'],upper)):
             raise AgentError('INVALID_INSPECTION_CAMERA','Model inspection camera is outside the room or targets an unknown object')
         views.append(dict(v,key=f'muse-inside-{i}',angle='interior_detail'))

@@ -564,9 +564,9 @@ Source : US10–US13 / CA-01–CA-10, `chat-plan.md`, `chat-data-model.md`, `con
 
 But : pièce fermée et stylistiquement cohérente. Recette indépendante C6 : variantes B aux ouvertures, vrais plafonds connectés, raccords visibles depuis le dessous, GP inchangée.
 
-- [ ] T154 [US10] Qualifier `unity/Packages/com.hackathon.hdrp-agent/Editor/ReferenceRoomFinish.cs` : remplacement de famille compatible, sockets conservés, variante absente explicitement refusée, idempotence sans doublons.
-- [ ] T155 [US10] Qualifier les `Ceiling_3x3` dans `ReferenceRoomFinish.cs` et `ReferenceSceneBuilder.cs` : pivot/sous-face, couverture du rectangle, cas non rectangulaire refusé, plafond explicite préservé, helper invisible en Editor comme Play ; reçus complets dans `ReferenceWorkflow.cs`.
-- [ ] T156 [US10] Étendre l’audit et les vues vers plafond/raccords dans `Editor/ReferenceRoomAudit.cs`, `Editor/ReferenceRoomControls.cs` et `src/hdrp_agent/reference_inspection.py` ; archiver `.hdrp-agent/reports/room-finish-qualification.json` avec différences de lumière et limites, puis commit dédié.
+- [X] T154 [US10] Qualifier `unity/Packages/com.hackathon.hdrp-agent/Editor/ReferenceRoomFinish.cs` : remplacement de famille compatible, sockets conservés, variante absente explicitement refusée, idempotence sans doublons.
+- [X] T155 [US10] Qualifier les `Ceiling_3x3` dans `ReferenceRoomFinish.cs` et `ReferenceSceneBuilder.cs` : pivot/sous-face, couverture du rectangle, cas non rectangulaire refusé, plafond explicite préservé, helper invisible en Editor comme Play ; reçus complets dans `ReferenceWorkflow.cs`.
+- [X] T156 [US10] Étendre l’audit et les vues vers plafond/raccords dans `Editor/ReferenceRoomAudit.cs`, `Editor/ReferenceRoomControls.cs` et `src/hdrp_agent/reference_inspection.py` ; archiver `.hdrp-agent/reports/room-finish-qualification.json` avec différences de lumière et limites, puis commit dédié.
 
 ### Phase 3 — Fondations de l’application
 
@@ -636,3 +636,5 @@ Travaux indépendants possibles : stockage Go (T159) et contrats Python (T161) a
 Répartition : 3 tâches de socle, 3 US10, 7 fondations, 8 US11, 7 US12, 7 US13, 5 qualification = **40 tâches**. Chaque lot est versionné séparément ; un commit de conception n’est pas un commit annonçant une fonctionnalité réalisée.
 
 Qualification de conception T151–T153 (2026-10-31) : socle committé, identité anonyme/remote SSH vérifiés, plan et modèles de données complétés, JSON Schema valides, références OpenAPI résolues et 40 IDs uniques. Les trois cases ne signifient pas que l’application Go existe.
+
+Qualification T154–T156 (2026-10-31) : 22 tests natifs passent, dont variante absente, rectangle invalide sans modification partielle, sockets, réapplication et plafond explicite ; 258 tests Python passent. La copie `finish-qualified-20261031-113116` contient quatre Ceiling_3x3 connectés, sous-faces vérifiées dans l’audit, dix captures dont deux vers le haut. Hash GP identique avant/après. Rapport local `room-finish-qualification.json` ; intérieur sombre/bleuté, fidélité lumineuse non certifiée. Aucun appel API payant pour cette qualification.

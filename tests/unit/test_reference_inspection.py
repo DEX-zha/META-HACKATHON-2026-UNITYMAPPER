@@ -77,7 +77,9 @@ def test_room_sweep_is_full_circle_with_advancing_closeups():
     views=room_inspection_targets(plan,catalogue)
     assert [v['rotation_deg'][1] for v in views[:8]]==list(range(0,360,45))
     assert all(v['position_m']==[0,1.5,0] for v in views[:8])
-    assert all(abs(v['position_m'][2])==1 for v in views[8:])
+    assert all(v['rotation_deg'][0]==-55 for v in views[8:10])
+    assert all(abs(v['position_m'][2])==1 for v in views[10:])
+    assert len(views)<=12
 
 
 def test_candidate_only_survey_keeps_provenance_and_never_invents_reference(tmp_path):

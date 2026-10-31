@@ -269,7 +269,7 @@ class ReferenceWorker:
                 try:
                     extra,response=choose_room_closeups(provider,self.artifacts,attempt['applied_plan'],catalogue,prior['inspection_pairs'],attempt['candidate_frames'])
                     attempt['inspection_camera_response']=response
-                    if extra:views=views[:8]+extra
+                    if extra:views=views[:10]+extra
                 except AgentError as error:
                     if error.code!='INVALID_INSPECTION_CAMERA':raise
                     attempt['inspection_camera_rejected']=dict(reason=error.code,fallback='bounded_default_closeups',retry_attempted=False)

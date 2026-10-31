@@ -15,6 +15,42 @@ namespace HdrpAgent.Tests
 {
     public sealed class ReferenceConstructionTests
     {
+        GameObject FinishFixture(){
+            var root=new GameObject("Reconstruction");
+            foreach(var suffix in new[]{"Floor_3x3","WallOut_3x","WallOut_3x","WallOut_3x","WallOut_3x"}){
+                var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/AtmosphericHouse/Prefabs/Building/"+suffix+".prefab");
+                var obj=ReferenceAssets.InstantiateAssembly(prefab);obj.transform.SetParent(root.transform,false);
+            }
+            return root;
+        }
+        [Test]public void FinishesPreserveSocketsAndAreIdempotent(){
+            var root=FinishFixture();var originals=root.GetComponentsInChildren<Transform>().Where(t=>t.name=="WallIn_A_3x").Select(t=>(t.localPosition,t.localRotation,t.localScale)).ToArray();
+            Assert.AreEqual(4,originals.Length);
+            var receipt=ReferenceRoomFinish.Apply(root);Assert.AreEqual(4,((JArray)receipt["wall_changes"]).Count);
+            var interiors=root.GetComponentsInChildren<Transform>().Where(t=>t.name=="WallIn_B_3x").ToArray();Assert.AreEqual(4,interiors.Length);
+            for(int i=0;i<4;i++){Assert.AreEqual(originals[i].Item1,interiors[i].localPosition);Assert.AreEqual(originals[i].Item2,interiors[i].localRotation);Assert.AreEqual(originals[i].Item3,interiors[i].localScale);Assert.AreEqual(PrefabInstanceStatus.Connected,PrefabUtility.GetPrefabInstanceStatus(interiors[i].gameObject));}
+            var again=ReferenceRoomFinish.Apply(root);Assert.AreEqual(0,((JArray)again["wall_changes"]).Count);Assert.AreEqual(receipt["tiles"].ToString(),again["tiles"].ToString());
+            var groups=root.scene.GetRootGameObjects().Where(g=>g.name==ReferenceRoomFinish.CeilingGroup).ToArray();Assert.AreEqual(1,groups.Length);Assert.AreEqual(1,groups[0].transform.childCount);
+            var renderer=groups[0].GetComponentInChildren<MeshRenderer>();Assert.That(renderer.bounds.min.y,Is.EqualTo((float)receipt["ceiling_underside_y_m"]).Within(.001));
+            var floor=root.transform.GetChild(0).GetComponent<MeshRenderer>().bounds;Assert.That(renderer.bounds.size.x,Is.EqualTo(floor.size.x).Within(.001));Assert.That(renderer.bounds.size.z,Is.EqualTo(floor.size.z).Within(.001));
+            Assert.True(groups[0].GetComponentsInChildren<MonoBehaviour>(true).Where(b=>b!=null&&b.GetType().FullName=="FS_Atmo.DisableAtStart").All(b=>!b.gameObject.activeSelf));
+        }
+        [Test]public void InvalidFloorLeavesWallFamilyAndExistingCeilingUnchanged(){
+            var root=FinishFixture();var floor=root.transform.GetChild(0);var extra=ReferenceAssets.InstantiateAssembly(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/AtmosphericHouse/Prefabs/Building/Floor_3x3.prefab"));extra.transform.SetParent(root.transform,false);extra.transform.position=floor.position+new Vector3(3,0,3);
+            var existing=new GameObject(ReferenceRoomFinish.CeilingGroup);var child=new GameObject("Preserved");child.transform.SetParent(existing.transform);
+            Assert.Throws<InvalidDataException>(()=>ReferenceRoomFinish.Apply(root));Assert.AreEqual(4,root.GetComponentsInChildren<Transform>().Count(t=>t.name=="WallIn_A_3x"));Assert.AreEqual(1,existing.transform.childCount);
+        }
+        [Test]public void MissingVariantRejectsBeforeReplacingAnyWall(){
+            var root=FinishFixture();var path="Assets/AgentWorkspace/WallIn_A_missing_"+Guid.NewGuid().ToString("N")+".prefab";
+            var obj=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try{var source=PrefabUtility.SaveAsPrefabAsset(obj,path);UnityEngine.Object.DestroyImmediate(obj);var instance=(GameObject)PrefabUtility.InstantiatePrefab(source);instance.transform.SetParent(root.transform.GetChild(1),false);
+                Assert.Throws<InvalidDataException>(()=>ReferenceRoomFinish.Apply(root));Assert.AreEqual(4,root.GetComponentsInChildren<Transform>().Count(t=>t.name=="WallIn_A_3x"));Assert.False(root.scene.GetRootGameObjects().Any(o=>o.name==ReferenceRoomFinish.CeilingGroup));
+            }finally{if(obj!=null)UnityEngine.Object.DestroyImmediate(obj);AssetDatabase.DeleteAsset(path);}
+        }
+        [Test]public void ExplicitCeilingIsPreserved(){
+            var root=FinishFixture();var ceiling=ReferenceAssets.InstantiateAssembly(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/AtmosphericHouse/Prefabs/Building/Ceiling_3x3.prefab"));ceiling.transform.SetParent(root.transform,false);ceiling.transform.position=new Vector3(0,3,0);int id=ceiling.GetInstanceID();
+            var result=ReferenceRoomFinish.Apply(root);Assert.AreEqual("explicit_plan_preserved",(string)result["ceiling"]);Assert.AreEqual(id,ceiling.GetInstanceID());Assert.AreEqual(new Vector3(0,3,0),ceiling.transform.position);Assert.False(root.scene.GetRootGameObjects().Any(o=>o.name==ReferenceRoomFinish.CeilingGroup));
+        }
         [Test]public void NormalizedMatrixPoseMatchesPythonHash(){
             var value=BridgeJson.Read<JObject>("{\"value\":[0.0,0.0,-14.0,0.02]}");
             Assert.AreEqual("6a4a6779e53758141c194cee346a2ed500187e4d07625589cdced3d00798b64d",BridgeJson.CanonicalHash(value));

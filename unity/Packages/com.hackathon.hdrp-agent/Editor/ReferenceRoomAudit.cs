@@ -10,6 +10,25 @@ namespace HdrpAgent.Editor
     public static class ReferenceRoomAudit
     {
         static JArray V(Vector3 v)=>new JArray(v.x,v.y,v.z);
+        static JArray Ceilings(Transform root){
+            var rows=new JArray();
+            var generated=root.gameObject.scene.GetRootGameObjects().FirstOrDefault(o=>o.name==ReferenceRoomFinish.CeilingGroup);
+            var transforms=root.GetComponentsInChildren<Transform>().AsEnumerable();if(generated!=null)transforms=transforms.Concat(generated.GetComponentsInChildren<Transform>());
+            foreach(var t in transforms.Where(t=>PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject)&&System.IO.Path.GetFileName(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject)).StartsWith("Ceiling_"))){
+                var path=PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject);var surfaces=new JArray();
+                foreach(var filter in t.GetComponentsInChildren<MeshFilter>()){
+                    var r=filter.GetComponent<MeshRenderer>();if(r==null||!r.enabled||filter.sharedMesh==null)continue;
+                    var row=new JObject{["renderer"]=r.name,["bounds_center_m"]=V(r.bounds.center),["bounds_size_m"]=V(r.bounds.size)};
+                    try{var vertices=filter.sharedMesh.vertices;var indices=filter.sharedMesh.triangles;double down=0,up=0;
+                        for(int i=0;i+2<indices.Length;i+=3){var a=filter.transform.TransformPoint(vertices[indices[i]]);var b=filter.transform.TransformPoint(vertices[indices[i+1]]);var c=filter.transform.TransformPoint(vertices[indices[i+2]]);var n=Vector3.Cross(b-a,c-a);if(n.normalized.y<-.5f)down+=n.magnitude*.5;else if(n.normalized.y>.5f)up+=n.magnitude*.5;}
+                        row["downward_area_m2"]=down;row["upward_area_m2"]=up;
+                    }catch(Exception e){row["geometry_unavailable"]=e.GetType().Name;}
+                    surfaces.Add(row);
+                }
+                rows.Add(new JObject{["prefab"]=path,["connected"]=PrefabUtility.GetPrefabInstanceStatus(t.gameObject)==PrefabInstanceStatus.Connected,["position_m"]=V(t.position),["rotation_deg"]=V(t.eulerAngles),["scale"]=V(t.localScale),["derived"]=generated!=null&&t.IsChildOf(generated.transform),["surfaces"]=surfaces});
+            }
+            return rows;
+        }
         public static JObject Inspect(Transform root,Vector3 observer)
         {
             var walls=new JArray();
@@ -46,7 +65,7 @@ namespace HdrpAgent.Editor
                 }
                 walls.Add(new JObject{["object_key"]=obj.name,["prefab"]=path,["position_m"]=V(obj.position),["rotation_deg"]=V(obj.eulerAngles),["local_plus_z_world"]=V(obj.forward),["outward_axis_points_to_observer"]=Vector3.Dot(obj.forward,observer-obj.position)>0,["surfaces"]=surfaces});
             }
-            return new JObject{["observer_m"]=V(observer),["walls"]=walls,["limitation"]="Triangle winding and materials describe candidate surfaces; openings, occlusion and visibility need image inspection. Local +Z is the AtmosphericHouse assembly convention, not measured visibility."};
+            return new JObject{["observer_m"]=V(observer),["walls"]=walls,["ceilings"]=Ceilings(root),["limitation"]="Triangle winding and materials describe candidate surfaces; openings, occlusion and visibility need image inspection. Local +Z is the AtmosphericHouse assembly convention, not measured visibility."};
         }
         public static JArray Project(Transform root,Camera camera)
         {
