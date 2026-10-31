@@ -212,3 +212,12 @@ Validation : suite complète 284 tests puis test de régression supplémentaire,
 - Défauts restants observés : ouvertures centrées dans des prefabs étirés, cloison et épaisseur apparente, styles d'assets, ombres HDRP. Assemblage modulaire des ouvertures, masques/silhouettes et isolation complète de scène restent nécessaires. T192–T199 ne sont pas cochés.
 
 - Qualification supplémentaire : 12 changements de pivot/rotation SceneView et de sélection pendant un troisième rendu hors écran ; capture complète, scène non modifiée et version conservée. Preuve locale `navigation-capture/interaction-proof.json`. Ceci ne qualifie pas encore le conflit/reprise après édition réelle.
+
+## 2026-10-31 — Corrections du constructeur T200–T203
+
+- Échelle uniforme XYZ des meubles et objets ; correction des centres sans redimensionnement, et position des objets posés contrainte par leur support. Une mauvaise forme de prefab reste un écart, jamais une raison de l'étirer.
+- Sept murs reconstruits en modules connectés avec deux faces, deux portes/cadres et deux fenêtres. Audit de 5 008 rayons orientés : aucun panneau manquant ni ouverture bouchée aux points testés ; matériaux des murs opaques. Contacts natifs tous passés.
+- Plafond étendu aux limites des murs, éclairage de contrôle réparti vers murs/sol/plafond. Ombres directionnelles désactivées uniquement pour cette construction diagnostique ; ce résultat n'est pas un éclairage final réaliste qualifié.
+- Scène : `Assets/AgentWorkspace/Runs/architecture-20261031-142046/Reconstruction.unity`. Huit vues intérieures et une capture du dessus archivées ; comparaison locale `.hdrp-agent/reports/architecture-correction.html` et preuves JSON. Les modifications utilisateur non enregistrées ont été conservées dans `Assets/AgentWorkspace/Preserved/BeforeArchitecture-20261031-141143.unity` avant l'essai.
+- Vérifications : 296 tests Python passés, 24 tests natifs de construction Unity passés, y compris rejet d'une face désactivée. Aucun nouvel appel payé pour ces corrections. Backend local mis à jour.
+- Limites visibles conservées : discontinuités de moulures aux panneaux d'ouvertures, texel density et identité de certains meubles, fidélité complète au dessin. T192–T199 restent ouverts ; T200–T203 décrivent des corrections ciblées, pas une qualification globale.

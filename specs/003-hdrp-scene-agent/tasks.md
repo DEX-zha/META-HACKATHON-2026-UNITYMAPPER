@@ -676,3 +676,10 @@ Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est r
 - T196 : deux captures natives HDRP hors écran réussies, plafonds conservés et masqués seulement pour la coupe. Aucun score de boîte ne qualifie l'esthétique ni les ouvertures.
 - T197–T198 : caméra indépendante, conflit versionné/pause/reprise de mesure implémentés, progression géométrique dans le chat, deltas et mesures en mémoire. Scène de travail encore ouverte dans l'éditeur principal ; reprise après redémarrage et comparaison interactive du chat non achevées.
 - T199 : les boîtes natives des meubles correspondent aux zones extraites ; cela ne prouve pas l'exactitude de ces zones. Portes/cloison, variante native indépendante et recette complète restent non qualifiées.
+
+### Corrections bloquantes du constructeur — 2026-10-31
+
+- [x] T200 Préserver les proportions XYZ des meubles et interdire leur déformation dans les corrections résiduelles ; recentrer les objets sur leur support et tester ces invariants.
+- [x] T201 Assembler les murs autour d'ouvertures explicites avec des prefabs connectés, deux faces de cloison, portes/cadres, jambages et fermetures ; conserver la provenance.
+- [x] T202 Ajouter un audit natif des surfaces orientées et ouvertures, rejeter un panneau absent/désactivé ou transparent ; vérifier les vrais prefabs dans les tests Unity.
+- [x] T203 Vérifier la scène complète après correction des supports, avec captures du dessus et de l'intérieur des deux pièces sous lumière neutre ; enregistrer les limites restantes sans certifier la fidélité globale.

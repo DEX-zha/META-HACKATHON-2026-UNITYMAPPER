@@ -36,7 +36,7 @@ namespace HdrpAgent.Editor
             foreach(Transform obj in root)
             {
                 string path=PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(obj.gameObject);
-                if(!System.IO.Path.GetFileName(path).StartsWith("WallOut_",StringComparison.Ordinal))continue;
+                if(!System.IO.Path.GetFileName(path).StartsWith("WallOut_",StringComparison.Ordinal)&&obj.Find("Connected structural modules")==null)continue;
                 var surfaces=new JArray();
                 foreach(var filter in obj.GetComponentsInChildren<MeshFilter>())
                 {

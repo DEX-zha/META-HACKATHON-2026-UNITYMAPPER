@@ -251,3 +251,13 @@ Muse reçoit les observations SAM déjà calculées et les identités validées 
 Une modification réelle pendant cette capture produit un conflit versionné et une pause ; le menu Unity `Window/HDRP Agent/Resume verified composition capture` exige une scène sauvegardée identique à la version attendue. Il ne restaure ni n'écrase les modifications de l'utilisateur. La durée de pause est exclue du délai d'exécution ; aucun appel modèle n'est rejoué. Cette reprise ne remplace pas la récupération après rechargement de domaine ou redémarrage du service, encore à qualifier.
 
 **Limite bloquante observée sur la recette :** étirer un prefab de mur conserve son ouverture au centre du module et ne reproduit pas l'intervalle d'ouverture extrait. Le prochain incrément doit assembler des modules compatibles et mesurer les ouvertures réelles, avant d'activer la qualification photométrique. Les variantes d'assets et les masques visibles restent des critères indépendants ; le résultat actuel n'est pas certifié fidèle.
+
+### Correction du constructeur après retour utilisateur — 2026-10-31
+
+Les rectangles seuls avaient permis des meubles déformés. Le compilateur conserve désormais une échelle uniforme XYZ des meubles, tapis et objets posés, bornée entre 0,8 et 1,25 ; les corrections résiduelles ne redimensionnent plus ces objets. Les objets posés sont recentrés dans l'emprise de leur support puis soumis au contrôle natif des contacts.
+
+L'architecture est transmise séparément des poses de meubles. Les raccords proches sont alignés, puis chaque mur est assemblé avec des prefabs connectés `WallOut_1x` / `WallIn_<style>_1x` autour des ouvertures explicites. Une cloison reçoit deux faces intérieures. Les portes incluent `Doorframe_in_single` et `Door_parent_A_L` avec échelle uniforme ; les fenêtres utilisent leur prefab dédié. Jambages, extrémités et dessus sont fermés. Les modules structurels peuvent être dimensionnés ; aucun meuble n'est étiré pour couvrir une zone.
+
+Un audit natif échantillonne les triangles orientés des deux côtés : absence de surface sur un panneau attendu et mur qui bouche une ouverture sont des erreurs de construction. Les matériaux des murs doivent être opaques ; les vitres sont exclues de ce contrôle. Les reçus conservent ouvertures, chemins des prefabs, nombre de pièces connectées et résultats des rayons. Cette preuve échantillonnée ne certifie pas encore tous les raccords entre murs ni la fidélité globale au dessin.
+
+Le rendu de construction utilise un éclairage HDRP neutre avec remplissage, sans ombres directionnelles. Il sert à vérifier les volumes et matériaux ; la qualification photométrique finale reste distincte.

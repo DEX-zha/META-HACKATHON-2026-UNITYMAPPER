@@ -278,13 +278,13 @@ namespace HdrpAgent.Editor
                 if(new FileInfo(planFile).Length>1000000)throw new InvalidDataException("Plan exceeds bound");
                 var command=BridgeJson.Read<JObject>(File.ReadAllText(planFile));
                 if((string)bundle["fidelity_mode"]=="1.0")ReferenceFidelity.ValidateCommand(command,BridgeJson.Read<JObject>(File.ReadAllText(Path.Combine(directory,"fidelity-policy.json"))),expectedVersion);
-                else BridgeJson.Closed(command,"ordinal","input_bundle_sha256","catalogue_sha256","plan","inspection","supports","composition_capture");
+                else BridgeJson.Closed(command,"ordinal","input_bundle_sha256","catalogue_sha256","plan","inspection","supports","composition_capture","architecture");
                 if((int)command["ordinal"]!=iteration||(string)command["input_bundle_sha256"]!=BridgeJson.Hash(File.ReadAllBytes(Path.Combine(directory,"bundle.json")))||(string)command["catalogue_sha256"]!=BridgeJson.Hash(File.ReadAllBytes(Path.Combine(directory,"catalogue.json"))))throw new InvalidDataException("Input evidence changed");
                 if(SceneManager.GetActiveScene().isDirty||SceneInspector.Version()!=expectedVersion)throw new InvalidOperationException("CONCURRENT_EDIT: source or candidate changed");
                 var receiptFile=Path.Combine(directory,"receipt-"+iteration+".json");if(File.Exists(receiptFile))throw new InvalidDataException("Construction already started; reconcile instead of replaying");
                 var plan=(JObject)command["plan"];ReferenceSceneBuilder.Validate(plan,catalogue);ReferenceContacts.Validate((JArray)command["supports"],plan);
                 Atomic(receiptFile,new JObject{["status"]="started",["ordinal"]=iteration,["command_sha256"]=BridgeJson.Hash(File.ReadAllBytes(planFile)),["before_version"]=expectedVersion});
-                var scene=ReferenceSceneBuilder.Build(plan,catalogue,"repro-"+id+"-"+iteration,(JObject)command["inspection"],(JArray)command["supports"],(JObject)command["capture_protocol"],(string)bundle["interior_style"]??"B");
+                var scene=ReferenceSceneBuilder.Build(plan,catalogue,"repro-"+id+"-"+iteration,(JObject)command["inspection"],(JArray)command["supports"],(JObject)command["capture_protocol"],(string)bundle["interior_style"]??"B",(JObject)command["architecture"]);
                 appliedPlan=(JObject)plan.DeepClone();contactReport=ReferenceSceneBuilder.LastContacts;
                 expectedVersion=SceneInspector.Version();Atomic(receiptFile,new JObject{["status"]="built",["ordinal"]=iteration,["scene_path"]=scene,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});
                 if(command["composition_capture"] is JObject composition){capture=Path.Combine(directory,"floorplan-"+iteration);FloorplanCapture.Begin(composition,capture,expectedVersion);stage="capturing-floorplan";Say("Mesure hors écran de la composition…");return;}

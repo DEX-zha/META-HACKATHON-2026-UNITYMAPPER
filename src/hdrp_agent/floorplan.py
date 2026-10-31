@@ -137,14 +137,16 @@ def build_plan(ir,fit,analysis,catalogue,frame):
     floors=[o for o in ir['objects'] if o['role']=='floor']
     estimates=[assets[identified[o['object_key']]['asset_id']]['bounds_size_m'][0]/max(.1,o['bounds'][2]-o['bounds'][0]) for o in floors]
     width=float(np.clip(np.median(estimates) if estimates else 10.,3.,24.));height=width/aspect
-    wall_heights=[assets[identified[k]['asset_id']]['bounds_size_m'][1] for k in walls]
-    wall_height=float(np.median(wall_heights)) if wall_heights else 3.
+    wall_height=2.8 # Coherent interior modules and ceiling underside.
     def world(u,v):return [(u-.5)*width,(.5-v)*height]
     objects=[]
     for source in analysis['objects']:
         key=source['key'];o=observed[key];asset=assets[source['asset_id']];size=np.asarray(asset['bounds_size_m'],float);offset=np.asarray(asset['bounds_center_m'],float)
         b=rect(fit['poses'][key]) if key in fit['poses'] else o['bounds']
         if o['role']=='floor' and o['room_key']:b=room_floor_bounds(ir,o['room_key'])
+        if o['role']=='ceiling' and walls:
+            endpoints=[p for wall in walls.values() for p in (wall['start'],wall['end'])]
+            b=[min(p[0] for p in endpoints),min(p[1] for p in endpoints),max(p[0] for p in endpoints),max(p[1] for p in endpoints)]
         u,v,w,h=pose(b);yaw=o['yaw_deg'];sx=sz=1.;y=0.
         if key in walls:
             wall=walls[key];start,end=np.array(wall['start']),np.array(wall['end']);u,v=(start+end)/2
@@ -156,19 +158,34 @@ def build_plan(ir,fit,analysis,catalogue,frame):
             if abs(np.linalg.det(r))>.00001:sx,sz=np.linalg.solve(r,target)
             if o['role']=='ceiling':y=wall_height
         scale=[float(np.clip(sx,.05,20)),1.,float(np.clip(sz,.05,20))]
+        if o['role'] in {'furniture','rug','supported','opening'}:
+            uniform=float(np.clip(min(sx,sz),.8,1.25));scale=[uniform]*3
         r=rotation([0,yaw,0]);shift=r@(offset*scale);x,z=world(u,v)
         # Resolve ground height from local bounds, then let native contacts establish actual support.
-        pos=[float(x-shift[0]),float(y-offset[1]+size[1]/2),float(z-shift[2])]
+        pos=[float(x-shift[0]),float(y+(size[1]/2-offset[1])*scale[1]),float(z-shift[2])]
         objects.append(dict(key=key,asset_id=source['asset_id'],primitive=None,position_m=pos,rotation_deg=[0.,float(yaw),0.],scale=scale,base_color_rgba=None))
     by_key={o['key']:o for o in objects}
     for source in analysis['objects']:
         key=source['key'];support=source['support_key']
         if observed[key]['role']=='supported' and support in by_key:
-            a=assets[by_key[support]['asset_id']];by_key[key]['position_m'][1]+=by_key[support]['position_m'][1]+a['bounds_center_m'][1]+a['bounds_size_m'][1]/2
+            a=assets[by_key[support]['asset_id']];by_key[key]['position_m'][1]+=by_key[support]['position_m'][1]+(a['bounds_center_m'][1]+a['bounds_size_m'][1]/2)*by_key[support]['scale'][1]
+            parent=by_key[support];child=by_key[key];own=assets[child['asset_id']]
+            pr=rotation(parent['rotation_deg']);cr=rotation(child['rotation_deg'])
+            pc=np.array(parent['position_m'])+pr@(np.array(a['bounds_center_m'])*parent['scale'])
+            cc=np.array(child['position_m'])+cr@(np.array(own['bounds_center_m'])*child['scale'])
+            ph=np.abs(pr)@(np.array(a['bounds_size_m'])*parent['scale'])/2
+            ch=np.abs(cr)@(np.array(own['bounds_size_m'])*child['scale'])/2
+            # Keep supported objects over the resized support; native feet decide contact.
+            for axis in (0,2):
+                margin=min(ch[axis],ph[axis]*.8)
+                corrected=float(np.clip(cc[axis],pc[axis]-ph[axis]+margin,pc[axis]+ph[axis]-margin))
+                child['position_m'][axis]+=corrected-cc[axis]
+
     camera_height=40.;fov=float(math.degrees(2*math.atan(height/(2*camera_height))))
-    plan=dict(objects=objects,lights=[dict(type='directional',position_m=[0.,8.,0.],rotation_deg=[65.,-25.,0.],intensity=5000.,color_rgb=[1.,.98,.95],spot_angle_deg=90.)],estimated_views=[dict(key=frame['key'],position_m=[0.,camera_height,0.],rotation_deg=[90.,0.,0.],fov_deg=max(5.,fov))],exposure_ev=9.,sky_color_rgb=[.5,.5,.5],fog_mean_free_path_m=None,notes=['Image-space constrained composition; metric scale estimated from catalogue floor dimensions, not observed depth.','Ceilings remain in the scene and are excluded only from the explicit cutaway capture.'])
+    plan=dict(objects=objects,lights=[dict(type='directional',position_m=[0.,8.,0.],rotation_deg=[45.,45.,0.],intensity=700.,color_rgb=[1.,.98,.95],spot_angle_deg=90.)],estimated_views=[dict(key=frame['key'],position_m=[0.,camera_height,0.],rotation_deg=[90.,0.,0.],fov_deg=max(5.,fov))],exposure_ev=8.,sky_color_rgb=[.5,.5,.5],fog_mean_free_path_m=None,notes=['Image-space constrained composition; metric scale estimated from catalogue floor dimensions, not observed depth.','Ceilings remain in the scene and are excluded only from the explicit cutaway capture.'])
+    plan['lights'] += [dict(type='directional',position_m=[0.,8.,0.],rotation_deg=[float(pitch),float(yaw),0.],intensity=float(lux),color_rgb=[1.,1.,1.],spot_angle_deg=90.) for pitch,yaw,lux in ((45,225,700),(-45,135,450),(-45,315,450))]
     camera=dict(width=frame['model_size'][0],height=frame['model_size'][1],orthographic_size=height/2,cutaway=True,object_keys=[o['key'] for o in objects],ceiling_keys=[o['object_key'] for o in ir['objects'] if o['role']=='ceiling'])
-    return plan,dict(schema_version='1.0',camera=camera,screen_width_m=width,screen_height_m=height,scale_estimated=True,roles={o['object_key']:o['role'] for o in ir['objects']},solver=fit)
+    return plan,dict(schema_version='1.0',camera=camera,screen_width_m=width,screen_height_m=height,scale_estimated=True,architecture=architecture(ir,width,height),roles={o['object_key']:o['role'] for o in ir['objects']},solver=fit)
 
 
 def room_floor_bounds(ir, room_key):
@@ -202,27 +219,39 @@ def measure_native(ir, proof):
 
 
 def correct_native(plan, composition, measurement, catalogue):
-    """Apply bounded residual corrections, preserving prefab pivots and identity."""
-    from .reference_geometry import rotation
+    """Translate measured residuals; never deform furniture to match a rectangle."""
     if not measurement['coverage_complete']:return None
-    result=deepcopy(plan);assets={a['asset_id']:a for a in catalogue};changed=False
+    result=deepcopy(plan);changed=False
     for obj in result['objects']:
+        if composition.get('roles',{}).get(obj['key'])=='supported':continue
         row=measurement['per_object'].get(obj['key'])
         if not row or row['max_edge_error']<=.002:continue
-        before=np.asarray(pose(row['actual_bounds']));target=np.asarray(pose(row['target_bounds']))
-        if min(before[2:])<=1e-6:continue
-        asset=assets[obj['asset_id']];r=rotation(obj['rotation_deg']);old=np.array(obj['scale'],float)
-        # Projected x/z extents can exchange axes at cardinal yaw.
-        ratios=np.clip(target[2:]/before[2:],.8,1.25)
-        local=np.abs(r)[np.ix_([0,2],[0,2])].T@ratios
-        new=old.copy();new[[0,2]]*=local
-        shift=r@(np.array(asset['bounds_center_m'])*(new-old))
-        obj['position_m'][0]+=float((target[0]-before[0])*composition['screen_width_m']-shift[0])
-        obj['position_m'][2]+=float(-(target[1]-before[1])*composition['screen_height_m']-shift[2])
-        obj['scale']=new.tolist();changed=True
+        before=pose(row['actual_bounds']);target=pose(row['target_bounds'])
+        delta=[target[i]-before[i] for i in (0,1)]
+        if max(abs(v) for v in delta)<1e-5:continue
+        obj['position_m'][0]+=delta[0]*composition['screen_width_m']
+        obj['position_m'][2]-=delta[1]*composition['screen_height_m']
+        changed=True
     return result if changed else None
 
 
 def composition_rank(metrics):
     m=metrics['composition'];obj=m['objective']
-    return (not m['coverage_complete'],not metrics['contacts']['passed'],not m['bounds_admissible'],obj['loss'] if obj else float('inf'))
+    return (not m['coverage_complete'],not metrics['contacts']['passed'],not m.get('structural_admissible',False),not m['bounds_admissible'],obj['loss'] if obj else float('inf'))
+
+
+def architecture(ir,width,height):
+    """Snap adjacent wall joints and describe apertures independently of wall prefabs."""
+    walls=deepcopy(ir['walls'])
+    for axis in (0,1):
+        lines=[w for w in walls if abs(w['start'][axis]-w['end'][axis])<.005]
+        for wall in walls:
+            for endpoint in ('start','end'):
+                near=[(w['start'][axis]+w['end'][axis])/2 for w in lines if abs(wall[endpoint][axis]-(w['start'][axis]+w['end'][axis])/2)<.015]
+                if near:wall[endpoint][axis]=float(np.mean(near))
+    result=[]
+    for w in walls:
+        start=[(w['start'][0]-.5)*width,0.,(.5-w['start'][1])*height]
+        end=[(w['end'][0]-.5)*width,0.,(.5-w['end'][1])*height]
+        result.append(dict(object_key=w['object_key'],start_m=start,end_m=end,partition=len(w['rooms'])==2,openings=[dict(key=o['key'],kind=o['kind'],start=o['start'],end=o['end']) for o in ir['openings'] if o['wall_key']==w['object_key']]))
+    return dict(walls=result,height_m=2.8,thickness_m=.2,lighting='neutral_construction')

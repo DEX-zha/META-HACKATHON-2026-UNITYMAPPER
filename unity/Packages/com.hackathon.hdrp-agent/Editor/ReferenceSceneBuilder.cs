@@ -48,7 +48,7 @@ namespace HdrpAgent.Editor
             }
         }
         public static JObject LastContacts { get; private set; }
-        public static string Build(JObject plan,JArray catalogue,string scope,JObject inspection,JArray supports=null,JObject captureProtocol=null,string interiorStyle="B"){
+        public static string Build(JObject plan,JArray catalogue,string scope,JObject inspection,JArray supports=null,JObject captureProtocol=null,string interiorStyle="B",JObject architecture=null){
             if(captureProtocol!=null)ReferenceFidelity.ValidateCaptureProtocol(captureProtocol);
             Validate(plan,catalogue);if(supports!=null)ReferenceContacts.Validate(supports,plan);LastContacts=null;var folder=SnapshotStore.Root(scope);
             if(Directory.Exists(folder))throw new InvalidOperationException("Construction scope already exists; no replay");
@@ -75,10 +75,11 @@ namespace HdrpAgent.Editor
             }
             if(supports!=null)LastContacts=ReferenceContacts.Resolve(root,plan,supports);
             LastRoomFinish=ReferenceRoomFinish.Apply(root,interiorStyle);
+            if(architecture!=null)LastRoomFinish["architecture"]=ReferenceArchitecture.Build(root,architecture,interiorStyle);
             foreach(JObject item in (JArray)plan["lights"]){
                 var go=new GameObject("Reference light");go.transform.position=Vector(item["position_m"],-100,100);go.transform.eulerAngles=Vector(item["rotation_deg"],-360,360);
                 var light=go.AddComponent<Light>();var type=(string)item["type"];light.type=type=="directional"?LightType.Directional:type=="spot"?LightType.Spot:LightType.Point;
-                go.AddComponent<HDAdditionalLightData>();light.lightUnit=type=="directional"?UnityEngine.Rendering.LightUnit.Lux:UnityEngine.Rendering.LightUnit.Lumen;light.intensity=Number(item["intensity"],0,type=="directional"?150000:100000);light.color=Color3(item["color_rgb"]);light.range=30;light.spotAngle=Number(item["spot_angle_deg"],1,179);light.shadows=LightShadows.Soft;light.lightmapBakeType=LightmapBakeType.Realtime;
+                go.AddComponent<HDAdditionalLightData>();light.lightUnit=type=="directional"?UnityEngine.Rendering.LightUnit.Lux:UnityEngine.Rendering.LightUnit.Lumen;light.intensity=Number(item["intensity"],0,type=="directional"?150000:100000);light.color=Color3(item["color_rgb"]);light.range=30;light.spotAngle=Number(item["spot_angle_deg"],1,179);light.shadows=architecture==null?LightShadows.Soft:LightShadows.None;light.lightmapBakeType=LightmapBakeType.Realtime;
             }
             var volume=new GameObject("Reconstructed atmosphere").AddComponent<Volume>();volume.isGlobal=true;volume.priority=10;
             var profile=ScriptableObject.CreateInstance<VolumeProfile>();AssetDatabase.CreateAsset(profile,folder+"/Resources/Atmosphere.asset");volume.sharedProfile=profile;

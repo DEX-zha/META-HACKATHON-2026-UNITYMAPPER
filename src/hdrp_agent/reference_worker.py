@@ -524,7 +524,7 @@ class ReferenceWorker:
             if composition_requested:
                 from .floorplan import extract,optimize,build_plan,checkpoint as save_composition
                 self.status(job,'composition','Extraction des pièces et optimisation des contraintes de placement…')
-                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='floorplan-1'))
+                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='floorplan-2'))
                 saved=prior.get('composition',{})
                 observation=saved['observation'] if saved.get('evidence_hash')==composition_evidence else extract(provider,self.artifacts,frames,effective,catalogue,segments,brief)
                 fit=optimize(observation['value'],guard=lambda:self.guard(sid))
@@ -626,7 +626,9 @@ class ReferenceWorker:
                     stopping='duplicate_experiment_without_new_evidence';job['decisions'].append(dict(action='stop',reason=stopping,experiment_hash=experiment_hash));self.save(job);break
                 inspection=inspection_for(frames,plan,bundle.get('inspection'));payload('InspectionPlan',inspection)
                 command=dict(ordinal=ordinal,input_bundle_sha256=job['input_bundle_sha256'],catalogue_sha256=job['catalogue_sha256'],plan=plan,inspection=inspection,supports=[dict(object_key=o['key'],support_key=o['support_key']) for o in effective['objects']])
-                if job.get('composition'):command['composition_capture']=job['composition']['camera']
+                if job.get('composition'):
+                    command['composition_capture']=job['composition']['camera']
+                    command['architecture']=job['composition']['architecture']
                 if policy:
                     proposal_id=f'{job["id"]}-{ordinal}'
                     origin='baseline' if phase=='baseline' else 'local' if phase in {'anchoring','arranging','scaling'} else 'muse'
@@ -653,6 +655,9 @@ class ReferenceWorker:
                 if job.get('composition'):
                     from .floorplan import measure_native
                     metrics['composition']=measure_native(job['composition']['observation']['value'],native['composition_proof'])
+                    structure=native.get('room_finish',{}).get('architecture',{})
+                    metrics['composition']['architecture']=structure
+                    metrics['composition']['structural_admissible']=bool(structure.get('walls')) and all(w.get('surface_audit',{}).get('passed') for w in structure.get('walls',[]))
                     atomic(directory/f'composition-metrics-{ordinal}.json',metrics['composition'])
                 if external_visual and '[building-prefabs-required]' in brief:
                     from .reference_plan_fit import luminance_stats

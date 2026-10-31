@@ -65,7 +65,7 @@ def test_native_correction_preserves_prefab_pivot_and_reduces_residual():
     assert new[0]-old[0]==pytest.approx(.6)
     assert new[2]-old[2]==pytest.approx(.24)
     assert result['asset_id']==obj['asset_id'] and result['rotation_deg']==obj['rotation_deg']
-    assert result['scale']==pytest.approx([1.1,1,1.1])
+    assert result['scale']==obj['scale'] # Residual correction cannot deform or resize furniture.
 
 
 def test_floor_covers_occluded_strips_to_wall_not_visible_floor_crop():
@@ -80,3 +80,32 @@ def test_shared_wall_must_separate_rooms_and_openings_cannot_overlap():
     with pytest.raises(AgentError):validate_observation(ir,{'bed','cabinet','partition'})
     ir=fixture();ir['openings'].append(dict(key='overlap',wall_key='partition',kind='window',start=.8,end=.95))
     with pytest.raises(AgentError):validate_observation(ir,{'bed','cabinet','partition'})
+
+
+def test_compilation_preserves_furniture_proportions_on_all_axes():
+    from hdrp_agent.floorplan import build_plan
+    ir=fixture();ir['objects'].append(dict(object_key='partition',room_key=None,role='wall',bounds=[.49,.1,.51,.9],yaw_deg=90,confidence=1))
+    analysis=dict(objects=[dict(key=o['object_key'],asset_id=o['object_key'],support_key=None) for o in ir['objects']])
+    catalogue=[dict(asset_id='bed',bounds_size_m=[2,1,1],bounds_center_m=[-1,.5,.5]),dict(asset_id='cabinet',bounds_size_m=[1,2,.5],bounds_center_m=[0,1,0]),dict(asset_id='partition',bounds_size_m=[3,2.8,.1],bounds_center_m=[-1.5,1.4,0])]
+    plan,composition=build_plan(ir,optimize(ir),analysis,catalogue,dict(key='plan',model_size=[1000,1000]))
+    for obj in plan['objects']:
+        if obj['key']=='partition':continue
+        assert obj['scale'][0]==obj['scale'][1]==obj['scale'][2]
+        assert .8<=obj['scale'][0]<=1.25
+    assert composition['architecture']['walls'][0]['partition']
+    assert composition['architecture']['walls'][0]['openings'][0]['kind']=='door'
+
+
+def test_architecture_snaps_joint_without_moving_aperture_to_module_centre():
+    from hdrp_agent.floorplan import architecture
+    ir=fixture();ir['walls'].append(dict(object_key='north',start=[.05,.1],end=[.505,.1],rooms=['left']))
+    result=architecture(ir,10,8)
+    assert result['walls'][0]['start_m']==result['walls'][1]['end_m']
+    assert result['walls'][0]['openings'][0]['start']==.7
+
+
+def test_shape_mismatch_is_not_repaired_by_stretching():
+    from hdrp_agent.floorplan import correct_native
+    plan=dict(objects=[dict(key='bed',scale=[1,1,1],position_m=[0,0,0])])
+    measured=dict(coverage_complete=True,per_object=dict(bed=dict(actual_bounds=[.3,.4,.7,.6],target_bounds=[.4,.3,.6,.7],max_edge_error=.1)))
+    assert correct_native(plan,dict(screen_width_m=10,screen_height_m=8),measured,[]) is None

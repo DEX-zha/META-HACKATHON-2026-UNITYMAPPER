@@ -15,6 +15,18 @@ namespace HdrpAgent.Tests
 {
     public sealed class ReferenceConstructionTests
     {
+        [Test] public void ArchitecturalPartitionHasDoorAndFrontFacesOnBothSides(){
+            var root=new GameObject("Reconstruction");var wall=ReferenceAssets.InstantiateAssembly(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/AtmosphericHouse/Prefabs/Building/WallIn_B_3x_door.prefab"));wall.name="partition";wall.transform.SetParent(root.transform,false);
+            var spec=JObject.Parse("{\"height_m\":2.8,\"thickness_m\":0.2,\"lighting\":\"neutral_construction\",\"walls\":[{\"object_key\":\"partition\",\"start_m\":[-1.5,0,0],\"end_m\":[1.5,0,0],\"partition\":true,\"openings\":[{\"key\":\"passage\",\"kind\":\"door\",\"start\":0.3,\"end\":0.7}]}]}");
+            var proof=ReferenceArchitecture.Build(root,spec,"B");Assert.True((bool)proof["walls"][0]["surface_audit"]["passed"]);Assert.True((bool)proof["walls"][0]["openings"][0]["insert_present"]);
+            var parts=root.GetComponentsInChildren<Transform>().Where(t=>PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject)).ToArray();
+            Assert.True(parts.Any(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject).EndsWith("Door_parent_A_L.prefab")));
+            Assert.True(parts.All(t=>PrefabUtility.GetPrefabInstanceStatus(t.gameObject)==PrefabInstanceStatus.Connected));
+            Assert.False(parts.Any(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject).Contains("WallOut_")));
+            var group=root.transform.Find("partition/Connected structural modules");group.GetComponentInChildren<MeshRenderer>().enabled=false;
+            Assert.False((bool)ReferenceArchitecture.Audit(group,3,2.8f,(JArray)proof["walls"][0]["openings"])["passed"]);
+
+        }
         GameObject FinishFixture(){
             var root=new GameObject("Reconstruction");
             foreach(var suffix in new[]{"Floor_3x3","WallOut_3x","WallOut_3x","WallOut_3x","WallOut_3x"}){
