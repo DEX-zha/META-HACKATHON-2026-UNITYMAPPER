@@ -80,7 +80,7 @@ def image_part(data):
 
 def spark_request(text,images,schema_name,bindings=None):
     if len(images)>12 or not isinstance(text,str) or not 1<=len(text)<=100000:raise AgentError('INVALID_INPUT','Bounded prompt and at most 12 images required',422)
-    return dict(model='muse-spark-1.3-contributor',max_output_tokens=8192 if schema_name=='ModelReconstructionPlan' else 4096,truncation='disabled',reasoning={'effort':'low'},input=[dict(role='user',content=[dict(type='input_text',text=text)]+[image_part(data) for data in images])],text={'format':dict(type='json_schema',name='hdrp_'+schema_name.lower(),strict=True,schema=strict_schema(schema_name,bindings))})
+    return dict(model='muse-spark-1.3-contributor',max_output_tokens=8192 if schema_name in {'ModelReconstructionPlan','ModelReferenceAnalysis'} else 4096,truncation='disabled',reasoning={'effort':'low'},input=[dict(role='user',content=[dict(type='input_text',text=text)]+[image_part(data) for data in images])],text={'format':dict(type='json_schema',name='hdrp_'+schema_name.lower(),strict=True,schema=strict_schema(schema_name,bindings))})
 
 
 def sam_request(concept,image):
@@ -89,6 +89,7 @@ def sam_request(concept,image):
 
 
 def terminal_text(response):
+    if response.get('status')=='incomplete' and (response.get('incomplete_details') or {}).get('reason')=='max_output_tokens':raise AgentError('MODEL_OUTPUT_TRUNCATED','Muse reached its output token limit before completing the response; partial geometry was not applied')
     if response.get('status')!='completed':raise AgentError('INVALID_MODEL_OUTPUT','Response is incomplete or refused')
     parts=[]
     if not isinstance(response.get('output'),list):raise AgentError('INVALID_MODEL_OUTPUT','Response output is not a terminal item list')
@@ -148,7 +149,7 @@ class MetaResponses:
         model=request.get('model')
         fields={'model','max_output_tokens','truncation','reasoning','input','text'} if model=='muse-spark-1.3-contributor' else {'model','input','stream','metadata'}
         if model not in {'muse-spark-1.3-contributor','sam-3.1'} or set(request)!=fields:raise AgentError('INVALID_PROVIDER_REQUEST','Only the reviewed fields and Meta models are allowed',422)
-        expected_output=8192 if schema_name=='ModelReconstructionPlan' else 4096
+        expected_output=8192 if schema_name in {'ModelReconstructionPlan','ModelReferenceAnalysis'} else 4096
         if model=='muse-spark-1.3-contributor' and (request['max_output_tokens']!=expected_output or request['truncation']!='disabled' or request['reasoning']!={'effort':'low'} or schema_name is None or not reviewed_format(schema_name,request['text'])):raise AgentError('INVALID_PROVIDER_REQUEST','Strict reviewed schema, low reasoning effort and output bound required',422)
         image_count=0
         for message in request['input']:

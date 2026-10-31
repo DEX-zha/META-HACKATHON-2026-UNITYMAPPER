@@ -73,7 +73,7 @@ class ReferenceCommands:
             return self._state(c,c.execute('SELECT * FROM app_actions WHERE id=?',(request['action_id'],)).fetchone())
 
     def _state(self,c,row):
-        request=json.loads(row['request']);session=c.execute('SELECT state,stop_requested FROM sessions WHERE id=?',(row['session_id'],)).fetchone()
+        request=json.loads(row['request']);session=c.execute('SELECT state,stop_requested,body FROM sessions WHERE id=?',(row['session_id'],)).fetchone()
         state=row['state']
         if session['state'] in {'recovery_required','interrupted','completed'}:state=session['state']
         elif session['state']=='limit_reached':state='inconclusive'
@@ -83,7 +83,9 @@ class ReferenceCommands:
                 try:receipt=json.loads((directory/'app-stop-receipt.json').read_text())
                 except (OSError,ValueError):receipt={}
                 if receipt.get('run_id')!=row['run_id'] or receipt.get('stopped') is not True or not isinstance(receipt.get('version'),str):state='verifying'
-        return payload('AppActionState',dict(action_id=row['id'],project_id=row['project_id'],conversation_id=request['conversation_id'],message_id=request['message_id'],operation_id=row['operation_id'],session_id=row['session_id'],run_id=row['run_id'],state=state,stop_requested=bool(session['stop_requested']),evidence_hashes=[],error_code=None))
+        reason=json.loads(session['body']).get('stop_reason') or ''
+        code=reason.split(':',1)[0] if ':' in reason and reason.split(':',1)[0].replace('_','').isupper() else None
+        return payload('AppActionState',dict(action_id=row['id'],project_id=row['project_id'],conversation_id=request['conversation_id'],message_id=request['message_id'],operation_id=row['operation_id'],session_id=row['session_id'],run_id=row['run_id'],state=state,stop_requested=bool(session['stop_requested']),evidence_hashes=[],error_code=code))
 
     def get(self,action_id):
         with self.store.tx() as c:

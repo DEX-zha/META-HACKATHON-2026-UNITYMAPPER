@@ -135,3 +135,12 @@ def test_disconnected_editor_refused_before_session_creation(tmp_path):
     with worker.store.tx() as c:c.execute("UPDATE project_presence SET last_seen='2000-01-01T00:00:00+00:00'")
     with pytest.raises(AgentError,match='Connect Unity'):service.admit(request)
     with closing(worker.store.connect()) as c:assert c.execute('SELECT count(*) FROM sessions').fetchone()[0]==0
+
+
+def test_action_exposes_terminal_failure_code(tmp_path):
+    worker,legacy,service,request=setup(tmp_path)
+    state=service.admit(request)
+    with worker.store.tx() as c:
+        worker.store.update_session(c,state['session_id'],state='interrupted',stop_reason='MODEL_OUTPUT_TRUNCATED: Output exceeded its token bound')
+    assert service.get('action')['error_code']=='MODEL_OUTPUT_TRUNCATED'
+    assert service.get('action')['state']=='interrupted'

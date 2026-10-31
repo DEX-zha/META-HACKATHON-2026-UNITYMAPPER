@@ -173,3 +173,9 @@ Le chat Go embarqué appelle désormais Muse via le service Python et son ledger
 Qualification réelle navigateur : réponse Muse à l’image du salon, conservation après redémarrage Go, puis reconstruction demandée via chat et préparation native acquittée (`45112e36f97d46fe81067b241e9b605f`), arrêt confirmé. Zéro erreur JavaScript. Tests : 277 Python, Go race et vet. La qualification s’arrête avant la reproduction complète ; elle ne valide pas la fidélité.
 
 Lancer `./scripts/run-chat.sh`. Restent ouverts : vidéo, mémoire résumée, corrections de run depuis la conversation, SSE, preuves et overlays intégrés, recette complète C1/C2/C7. Le suivi courant utilise un polling de deux secondes.
+
+## Correction de l’interruption initiale — 2026-10-31
+
+Les runs `e970f02b73e54e7bbad9932ce308fb7e` et `797281f3b74d4aa9b2d50fcd632da8ac` ont reçu des réponses Muse `incomplete / max_output_tokens` : limite de 4096, dont 3841 et 3785 tokens de raisonnement. Aucune demande d’arrêt utilisateur. L’analyse ModelReferenceAnalysis dispose désormais du plafond de 8192 déjà admis par le ledger, comme le plan de reconstruction. Le chat reste à 4096. Une sortie tronquée reste refusée et acquittée à son coût connu, sans retry automatique ; son code spécifique remonte dans le chat.
+
+Qualification sur les mêmes frames et catalogue du dernier échec : analyse live valide de 20 objets, coût 0,003858 USD, 3413 tokens de sortie. Ce succès ponctuel ne garantit pas que toutes les futures analyses tiennent dans la borne. Rapport local `analysis-token-limit.json`. 279 tests passent, incluant admission de la nouvelle borne, refus des sorties tronquées et propagation de la cause d’interruption. Aucun run interrompu n’a été rejoué et aucune géométrie modifiée pendant cette qualification.

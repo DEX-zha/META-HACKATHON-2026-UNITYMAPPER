@@ -158,5 +158,16 @@ def test_truncated_response_fixture_is_billed_and_never_accepted(tmp_path):
     data=json.loads((WORKSPACE/'fixtures/provider-replies/incomplete-response.json').read_text())
     p,b=provider(tmp_path,lambda request:httpx.Response(200,json=data))
     with pytest.raises(AgentError) as exc:p.send(spark_request('Inspect',[],'ModelDiagnosis'),'ModelDiagnosis')
-    assert exc.value.code=='INVALID_MODEL_OUTPUT'
+    assert exc.value.code=='MODEL_OUTPUT_TRUNCATED'
     assert b.state()['settled_usd_micro']==14 and b.state()['active_reserved_usd_micro']==0
+
+
+def test_reference_analysis_has_room_for_reasoning_and_geometry(tmp_path):
+    from hdrp_agent.providers.meta_responses import terminal_text
+    request=spark_request('Inspect room',[],'ModelReferenceAnalysis')
+    assert request['max_output_tokens']==8192
+    assert spark_request('Chat',[],'ModelChatResponse')['max_output_tokens']==4096
+    p,b=provider(tmp_path,lambda r:httpx.Response(200,json=response()))
+    # Request passes admission and is billed even when fixture JSON is invalid.
+    with pytest.raises(AgentError,match='valid reviewed JSON'):p.send(request,'ModelReferenceAnalysis')
+    assert b.state()['settled_usd_micro']>0
