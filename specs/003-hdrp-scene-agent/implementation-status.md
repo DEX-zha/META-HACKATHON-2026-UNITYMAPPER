@@ -201,3 +201,14 @@ Essai Muse réel de correction : réponse structurée valide, coût 0,0050044 US
 Run `7de90d6b45334c7da17fb20075684410` : les 20 identifiants de prefabs étaient conservés, mais le plan ajoutait aussi primitive=cube/plane à chaque objet. Le validateur signalait à tort une erreur de famille visuelle. Les schémas stricts transmis à Muse pour analyse et plan imposent maintenant deux branches exclusives : asset_id non nul + primitive nulle, ou asset_id nul + primitive réelle. La validation locale retourne INVALID_OBJECT_SOURCE avec la clé concernée si cette contradiction subsiste ; aucun remplacement arbitraire ni normalisation silencieuse.
 
 Validation : suite complète 284 tests puis test de régression supplémentaire, 43 tests ciblés passent. Essai Meta réel sur le même contexte et les assets déjà sélectionnés : plan valide, 20/20 objets préfab, zéro primitive contradictoire, coût 0,0014638 USD. Rapport `prefab-schema-qualified.json`. Plan non appliqué ; ce test qualifie le contrat fournisseur, pas la fidélité du rendu.
+
+## 2026-10-31 — Premier incrément de composition multi-pièces (T192–T199 ouverts)
+
+- Nouvelle représentation normalisée avec pièces, murs, ouvertures et objets ; extraction Muse réelle sur salon/chambre, 2 pièces / 7 murs / 4 ouvertures. Appel d'extraction : 0,0011138 USD ; analyses/identités/SAM antérieurs réutilisés pour cet essai local.
+- Solveur NumPy multidépart, contraintes de placement, compilation des pivots, couverture des sols jusqu'aux murs ; corrections depuis les mesures Unity et sélection indépendante de la photométrie.
+- Deux rendus HDRP hors écran natifs complets, sans Play Mode ; capture neutre, plafonds préservés, versions et hashes vérifiés. Le second rendu corrige les bandes de sol manquantes. Contacts natifs passés ; boîtes des meubles admissibles. Aucun pourcentage de fidélité dérivé de ces boîtes.
+- Pause sur modification concurrente et reprise de mesure versionnée ajoutées ; interface Go expose les mesures. Qualification complète chat→reprise non effectuée ; redémarrage reste sans rejeu automatique.
+- Validation : 293 tests Python passés, tests Go `./...` passés, syntaxe JS vérifiée, compilation Unity réussie. Les essais natifs sont dans `.hdrp-agent/floorplan-baseline/` (non versionnés).
+- Défauts restants observés : ouvertures centrées dans des prefabs étirés, cloison et épaisseur apparente, styles d'assets, ombres HDRP. Assemblage modulaire des ouvertures, masques/silhouettes et isolation complète de scène restent nécessaires. T192–T199 ne sont pas cochés.
+
+- Qualification supplémentaire : 12 changements de pivot/rotation SceneView et de sélection pendant un troisième rendu hors écran ; capture complète, scène non modifiée et version conservée. Preuve locale `navigation-capture/interaction-proof.json`. Ceci ne qualifie pas encore le conflit/reprise après édition réelle.

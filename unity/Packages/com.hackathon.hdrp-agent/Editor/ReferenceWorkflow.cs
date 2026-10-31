@@ -161,7 +161,7 @@ namespace HdrpAgent.Editor
             Say("Arrêt : "+reason);Release();
         }
         static void Release(){
-            ReferenceVision.Cancel("Reference workflow released");stage=null;
+            ReferenceVision.Cancel("Reference workflow released");FloorplanCapture.Cancel("Reference workflow released");stage=null;
             if(directory!=null&&File.Exists(Path.Combine(directory,"app-stop-request.json")))Atomic(Path.Combine(directory,"app-stop-receipt.json"),new JObject{["run_id"]=id,["stopped"]=true,["scene_path"]=SceneManager.GetActiveScene().path,["version"]=SceneInspector.Version()});
             if(File.Exists(Owner)){try{if((string)JObject.Parse(File.ReadAllText(Owner))["id"]==id)File.Delete(Owner);}catch(Newtonsoft.Json.JsonException){}}
             if(!EditorApplication.isPlayingOrWillChangePlaymode&&!SceneManager.GetActiveScene().isDirty)BridgeClient.Connect();
@@ -172,14 +172,39 @@ namespace HdrpAgent.Editor
             var manifest=JObject.Parse(File.ReadAllText(Path.Combine(capture,"manifest.json")));var proof=JObject.Parse(File.ReadAllText(Path.Combine(capture,"editor-proof.json")));
             if((string)manifest["status"]!="complete"||(string)proof["scene_version_after"]!=expectedVersion||SceneInspector.Version()!=expectedVersion)throw new InvalidDataException("Reference capture version changed");
         }
+        static double compositionPausedAt;
+        [MenuItem("Window/HDRP Agent/Resume verified composition capture")]
+        public static void ResumeComposition(){
+            if(stage!="paused-floorplan")throw new InvalidOperationException("No composition capture is paused");
+            if(SceneManager.GetActiveScene().isDirty||SceneInspector.Version()!=expectedVersion)throw new InvalidOperationException("The saved measured candidate must match its expected version; user edits are never discarded automatically");
+            var request=JObject.Parse(File.ReadAllText(Path.Combine(capture,"request.json")));
+            capture=Path.Combine(directory,"floorplan-"+iteration+"-resume-"+Guid.NewGuid().ToString("N"));
+            FloorplanCapture.Begin((JObject)request["camera"],capture,expectedVersion);
+            began+=EditorApplication.timeSinceStartup-compositionPausedAt;
+            File.Delete(Path.Combine(directory,"native-conflict.json"));stage="capturing-floorplan";Say("Reprise de la mesure seule ; aucun appel modèle rejoué.");
+        }
         static void Tick(){
             if(!Running||EditorApplication.isCompiling)return;
             try{
                 if(stage!="stopping"&&File.Exists(Path.Combine(directory,"app-stop-request.json")))Stop();
-                if(EditorApplication.timeSinceStartup-began>2450)throw new TimeoutException("Reference workflow time limit reached");
+                if(stage!="paused-floorplan"&&EditorApplication.timeSinceStartup-began>2450)throw new TimeoutException("Reference workflow time limit reached");
                 if(EditorApplication.isPlayingOrWillChangePlaymode||Lightmapping.isRunning)return;
-                if(capture!=null&&File.Exists(Path.Combine(capture,"interruption.json")))throw new InvalidOperationException("Native capture interrupted; no replay");
                 if(stage=="stopping"){Fail("Operator stopped the workflow; partial evidence retained");return;}
+                if(stage=="paused-floorplan")return;
+                if(stage=="capturing-floorplan"&&File.Exists(Path.Combine(capture,"interruption.json"))){
+                    var interruption=JObject.Parse(File.ReadAllText(Path.Combine(capture,"interruption.json")));
+                    if(((string)interruption["reason"]??"").StartsWith("CONCURRENT_EDIT",StringComparison.Ordinal)){
+                        compositionPausedAt=EditorApplication.timeSinceStartup;stage="paused-floorplan";
+                        Atomic(Path.Combine(directory,"native-conflict.json"),new JObject{["reason"]=interruption["reason"],["expected_version"]=expectedVersion,["scene_path"]=SceneManager.GetActiveScene().path,["ordinal"]=iteration});
+                        Say("Mesure en pause : modification de scène détectée ; modifications conservées.");return;
+                    }
+                }
+                if(capture!=null&&File.Exists(Path.Combine(capture,"interruption.json")))throw new InvalidOperationException("Native capture interrupted; no replay");
+                if(stage=="capturing-floorplan"){
+                    if(File.Exists(Path.Combine(capture,"interruption.json")))throw new InvalidOperationException("Offscreen capture interrupted: "+File.ReadAllText(Path.Combine(capture,"interruption.json")));
+                    if(!File.Exists(Path.Combine(capture,"result.json")))return;
+                    Atomic(Path.Combine(directory,"render-"+iteration+".json"),new JObject{["ordinal"]=iteration,["capture_directory"]=capture,["capture_mode"]="floorplan_offscreen",["scene_path"]=SceneManager.GetActiveScene().path,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});iteration++;stage="awaiting-plan";Say("Composition capturée hors écran ; comparaison géométrique…");return;
+                }
                 if(stage=="recording"&&CaptureReady()){CheckCapture();bundle["capture_directory"]=capture;Submit();return;}
                 if(stage=="recording-details"&&CaptureReady()){
                     CheckCapture();detailCaptures.Add(new JObject{["capture_directory"]=capture,["views"]=new JArray(detailViews.Skip(detailOffset).Take(detailCount).Select(v=>v.DeepClone()))});detailOffset+=detailCount;
@@ -253,7 +278,7 @@ namespace HdrpAgent.Editor
                 if(new FileInfo(planFile).Length>1000000)throw new InvalidDataException("Plan exceeds bound");
                 var command=BridgeJson.Read<JObject>(File.ReadAllText(planFile));
                 if((string)bundle["fidelity_mode"]=="1.0")ReferenceFidelity.ValidateCommand(command,BridgeJson.Read<JObject>(File.ReadAllText(Path.Combine(directory,"fidelity-policy.json"))),expectedVersion);
-                else BridgeJson.Closed(command,"ordinal","input_bundle_sha256","catalogue_sha256","plan","inspection","supports");
+                else BridgeJson.Closed(command,"ordinal","input_bundle_sha256","catalogue_sha256","plan","inspection","supports","composition_capture");
                 if((int)command["ordinal"]!=iteration||(string)command["input_bundle_sha256"]!=BridgeJson.Hash(File.ReadAllBytes(Path.Combine(directory,"bundle.json")))||(string)command["catalogue_sha256"]!=BridgeJson.Hash(File.ReadAllBytes(Path.Combine(directory,"catalogue.json"))))throw new InvalidDataException("Input evidence changed");
                 if(SceneManager.GetActiveScene().isDirty||SceneInspector.Version()!=expectedVersion)throw new InvalidOperationException("CONCURRENT_EDIT: source or candidate changed");
                 var receiptFile=Path.Combine(directory,"receipt-"+iteration+".json");if(File.Exists(receiptFile))throw new InvalidDataException("Construction already started; reconcile instead of replaying");
@@ -262,6 +287,7 @@ namespace HdrpAgent.Editor
                 var scene=ReferenceSceneBuilder.Build(plan,catalogue,"repro-"+id+"-"+iteration,(JObject)command["inspection"],(JArray)command["supports"],(JObject)command["capture_protocol"],(string)bundle["interior_style"]??"B");
                 appliedPlan=(JObject)plan.DeepClone();contactReport=ReferenceSceneBuilder.LastContacts;
                 expectedVersion=SceneInspector.Version();Atomic(receiptFile,new JObject{["status"]="built",["ordinal"]=iteration,["scene_path"]=scene,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});
+                if(command["composition_capture"] is JObject composition){capture=Path.Combine(directory,"floorplan-"+iteration);FloorplanCapture.Begin(composition,capture,expectedVersion);stage="capturing-floorplan";Say("Mesure hors écran de la composition…");return;}
                 capture=CaptureController.BeginReference((JObject)command["inspection"],true);stage="capturing";Say("Construction et capture du candidat "+(iteration+1)+"/"+(int)bundle["max_iterations"]+"…");
             }catch(Exception e){Fail(e.GetType().Name+": "+e.Message);}
         }

@@ -153,7 +153,7 @@ class ReferenceWorker:
         if self.runner.shutdown.is_set():raise AgentError('SERVICE_STOPPING','Reconstruction stopped; no automatic replay')
         if session['stop_requested'] or (directory/'native-stop.json').exists():raise AgentError('STOP_REQUESTED','Native reconstruction stopped; no automatic replay')
         if session['state'] in {'completed','interrupted','limit_reached','recovery_required'}:raise AgentError('SESSION_TERMINAL','Reference session has stopped')
-        if datetime.now(timezone.utc)>=datetime.fromisoformat(job['deadline_utc']):raise AgentError('SESSION_DEADLINE','Reconstruction time limit reached')
+        if not (directory/'native-conflict.json').exists() and datetime.now(timezone.utc)>=datetime.fromisoformat(job['deadline_utc']):raise AgentError('SESSION_DEADLINE','Reconstruction time limit reached')
 
     def status(self,job,state,message,**extra):
         job['state']=state;job['message']=message;job.update(extra);self.save(job)
@@ -254,17 +254,36 @@ class ReferenceWorker:
     def wait_render(self,job,ordinal):
         directory=self.root/job['id'];file=directory/f'render-{ordinal}.json'
         def wait(sid,cleanup=False):
-            while not file.exists():self.guard(sid);time.sleep(.25)
+            paused_at=None
+            while not file.exists():
+                conflict=(directory/'native-conflict.json').exists()
+                if conflict and paused_at is None:
+                    paused_at=time.monotonic();self.status(job,'paused','Modification de scène détectée : mesure en pause, modifications conservées. Reprise disponible dans Unity après vérification de la version.')
+                if not conflict and paused_at is not None:
+                    from datetime import timedelta
+                    job['deadline_utc']=(datetime.fromisoformat(job['deadline_utc'])+timedelta(seconds=time.monotonic()-paused_at)).isoformat()
+                    paused_at=None;self.status(job,'rendering','Reprise de la mesure hors écran ; aucun appel modèle rejoué.')
+                self.guard(sid);time.sleep(.25)
             result=json.loads(file.read_text());self.guard(sid)
             if result['ordinal']!=ordinal:raise AgentError('STALE_VERSION','Native reference receipt ordinal differs')
             expected_prefix=f"Assets/AgentWorkspace/Runs/repro-{job['id']}-{ordinal}/"
             if result['scene_path']!=expected_prefix+'Reconstruction.unity':raise AgentError('OUT_OF_SCOPE','Native reconstruction escaped its owned scope')
+            if result.get('capture_mode')=='floorplan_offscreen':
+                path=contained(directory,Path(result['capture_directory']))
+                proof=json.loads((path/'result.json').read_text())
+                if proof.get('camera')!=job.get('composition',{}).get('camera') or proof.get('scene_path')!=result['scene_path']:raise AgentError('STALE_EVIDENCE','Offscreen camera or scene differs from requested composition')
+                if proof['version']!=result['version'] or proof['status']!='complete':raise AgentError('STALE_VERSION','Offscreen capture version mismatch')
+                for name in ('beauty','geometry'):
+                    if hashlib.sha256((path/(name+'.png')).read_bytes()).hexdigest()!=proof[name+'_sha256']:raise AgentError('HASH_MISMATCH','Offscreen image changed')
+                result['composition_proof']=proof
+                return result,dict(directory=path,request=dict(version_id=result['version']),statics=[dict(camera_key=job['frames'][0]['key'],file='beauty.png')],result=dict(performance=None,composition=proof))
             capture_path=contained(self.settings.workspace/'unity/HDRPValidation/.hdrp-agent/captures',Path(result['capture_directory']))
             capture=read_capture(capture_path)
             if capture['request']['version_id']!=result['version']:raise AgentError('STALE_VERSION','Candidate frame version differs from construction')
             return result,capture
         # Same tested macOS focus owner as the inspection workflow. Its use is
         # labelled separately from comparative performance or bake qualification.
+        if job.get('composition'):return wait(job['session_id'])
         from copy import copy
         focus_runner=copy(self.runner);focus_runner._capture_once=wait
         return focus_runner._capture_with_focus(job['session_id'])
@@ -496,10 +515,23 @@ class ReferenceWorker:
                 # Only follow the existing same-reference checkpoint lineage;
                 # never use an unrelated source or an interrupted candidate.
                 seed_checkpoint=prior.get('bundle',{}).get('analysis_checkpoint_job_id')
-            geometry=self.acquire_pose_geometry(job,effective,catalogue)
+            composition_requested=bundle['kind']=='external' and not job.get('fidelity_policy') and len(frames)==1 and '[building-prefabs-required]' in brief
+            geometry=None if composition_requested else self.acquire_pose_geometry(job,effective,catalogue)
             policy=job.get('fidelity_policy')
             external_visual=bundle['kind']=='external' and not policy
             if external_visual:job['evaluation_mode']='uncalibrated_image_visual';self.save(job)
+            composition_plan=None
+            if composition_requested:
+                from .floorplan import extract,optimize,build_plan,checkpoint as save_composition
+                self.status(job,'composition','Extraction des pièces et optimisation des contraintes de placement…')
+                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='floorplan-1'))
+                saved=prior.get('composition',{})
+                observation=saved['observation'] if saved.get('evidence_hash')==composition_evidence else extract(provider,self.artifacts,frames,effective,catalogue,segments,brief)
+                fit=optimize(observation['value'],guard=lambda:self.guard(sid))
+                composition_plan,composition=build_plan(observation['value'],fit,effective,catalogue,frames[0])
+                job['composition']=dict(composition,observation=observation,evidence_hash=composition_evidence)
+                save_composition(directory/'composition-checkpoint.json',job['composition']);self.save(job)
+
             scale_origin=self.recorded_scale_origin(job,checkpoint) if policy and checkpoint else None
             if scale_origin:job['scale_origin']=scale_origin;self.save(job)
             evidence=evidence_key(frames,job['catalogue_sha256'])
@@ -530,7 +562,17 @@ class ReferenceWorker:
                     photometry=None if (best or {}).get('metrics',{}).get('architecture',{}).get('defect_count') else exposure_probe(job['attempts'])
                     if photometry is not None:phase='photometry_probe';decision['action']=phase;decision['reason']='measured_floor_luminance_bracket'
                 appearance_experiment=appearance_step(memory) if policy and phase=='appearance' else None
-                if photometry is not None:proposed=dict(value=photometry,local_photometry_probe=True)
+                if composition_plan is not None:
+                    if ordinal==0:proposed=dict(value=composition_plan,local_composition_solver=True)
+                    else:
+                        from .floorplan import correct_native
+                        corrected=correct_native(best['applied_plan'],job['composition'],best['metrics']['composition'],catalogue)
+                        if corrected is None:
+                            stopping='composition_requires_aperture_and_silhouette_validation';break
+                        if any(fingerprint(a.get('provider_response',{}).get('value',{}))==fingerprint(corrected) for a in job['attempts']):
+                            stopping='composition_no_new_delta';break
+                        proposed=dict(value=corrected,local_composition_solver=True)
+                elif photometry is not None:proposed=dict(value=photometry,local_photometry_probe=True)
                 elif ordinal==0 and seed is not None:proposed=dict(value=seed,reused_from=seed_checkpoint)
                 elif policy and phase in {'anchoring','arranging','scaling'}:
                     base=proposal_base(job['attempts'],best,phase)
@@ -561,7 +603,7 @@ class ReferenceWorker:
                     from .reference_scale import fit_evidenced_scale
                     origin=scale_origin['plan'] if scale_origin else job['attempts'][0]['provider_response']['value']
                     plan,fit=fit_evidenced_scale(plan,relative_search,origin,policy,guard=lambda:self.guard(sid));fits.append(fit)
-                if ordinal==0 and seed is None:plan,fits=fit_initial_positions(plan,effective,frames,catalogue,segments)
+                if composition_plan is None and ordinal==0 and seed is None:plan,fits=fit_initial_positions(plan,effective,frames,catalogue,segments)
                 if not policy and geometry and phase=='placement':
                     from .reference_pose import fit_mask_poses
                     self.status(job,'fitting','Ajustement des silhouettes sur les masques SAM de plusieurs vues…')
@@ -569,13 +611,13 @@ class ReferenceWorker:
                 if policy and phase!='appearance':
                     from .reference_geometry import native_pose_precision
                     plan=native_pose_precision(plan);fits.append(dict(method='native_pose_serialization',decimal_places=12,source_transforms_used=False))
-                if external_visual and '[building-prefabs-required]' in brief:
+                if composition_plan is None and external_visual and '[building-prefabs-required]' in brief:
                     if ordinal==0:
                         from .reference_plan_fit import fit_overhead_plan
                         plan,region_fits=fit_overhead_plan(plan,effective,frames,catalogue,segments);fits.extend(region_fits)
                     from .reference_assembly import fit_building_perimeter
                     plan,assembly_fits=fit_building_perimeter(plan,catalogue);fits.extend(assembly_fits)
-                if external_visual:
+                if external_visual and composition_plan is None:
                     from .reference_geometry import orient_empty_estimated_views
                     plan,camera_fixes=orient_empty_estimated_views(plan,catalogue);fits.extend(camera_fixes)
                 validate_plan(plan,effective,frames,catalogue)
@@ -584,6 +626,7 @@ class ReferenceWorker:
                     stopping='duplicate_experiment_without_new_evidence';job['decisions'].append(dict(action='stop',reason=stopping,experiment_hash=experiment_hash));self.save(job);break
                 inspection=inspection_for(frames,plan,bundle.get('inspection'));payload('InspectionPlan',inspection)
                 command=dict(ordinal=ordinal,input_bundle_sha256=job['input_bundle_sha256'],catalogue_sha256=job['catalogue_sha256'],plan=plan,inspection=inspection,supports=[dict(object_key=o['key'],support_key=o['support_key']) for o in effective['objects']])
+                if job.get('composition'):command['composition_capture']=job['composition']['camera']
                 if policy:
                     proposal_id=f'{job["id"]}-{ordinal}'
                     origin='baseline' if phase=='baseline' else 'local' if phase in {'anchoring','arranging','scaling'} else 'muse'
@@ -607,6 +650,10 @@ class ReferenceWorker:
                     candidates.append(dict(key=frame['key'],artifact_hash=self.artifacts.put(data,'image/png'),calibration=view,**transform))
                 metrics=score_pairs(self.artifacts,frames,candidates,effective,priority_view=memory['priority_view'],segments=segments)
                 metrics['contacts']=native['contacts']
+                if job.get('composition'):
+                    from .floorplan import measure_native
+                    metrics['composition']=measure_native(job['composition']['observation']['value'],native['composition_proof'])
+                    atomic(directory/f'composition-metrics-{ordinal}.json',metrics['composition'])
                 if external_visual and '[building-prefabs-required]' in brief:
                     from .reference_plan_fit import luminance_stats
                     floor_ids={a['asset_id'] for a in catalogue if a['name'].startswith('Floor_')}
@@ -656,10 +703,14 @@ class ReferenceWorker:
                         memory=new_memory(evidence,effective,priority_view=bundle.get('priority_view','work-top-front'),policy_hash=job['policy_hash'],solver_version=policy['solver_version']);job['memory']=memory
                     job['decisions'].append(dict(action='observing',reason='insufficient_reliable_geometry_coverage',ordinal=ordinal,new_evidence_requests=len(proof.get('attempts',[]))))
                     self.save(job)
-                attempt['inspection_pairs']=self.inspect_candidate(job,attempt,effective,details,catalogue,provider)
+                attempt['inspection_pairs']=self.inspect_candidate(job,attempt,effective,details,catalogue,None if job.get('composition') else provider)
                 from .reference_inspection import architecture_findings
                 metrics['architecture']=architecture_findings(attempt['inspection_pairs'])
                 if policy:accepted,attempt['regressions']=assess(attempt,best,policy)
+                elif job.get('composition'):
+                    from .floorplan import composition_rank
+                    accepted=best is None or composition_rank(metrics)<composition_rank(best['metrics'])
+                    attempt['regressions']=[] if accepted else [dict(kind='native_composition_did_not_improve')]
                 elif external_visual:
                     attempt['regressions']=regressions(attempt,best)
                     # Object crops are not geometrically aligned while an imported
@@ -714,6 +765,13 @@ class ReferenceWorker:
         best=next((a for a in rendered if a['ordinal']==job.get('retained_ordinal',job.get('best_ordinal'))),None) or (min(rendered,key=candidate_rank) if rendered else None)
         header='<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reproduction de la référence</title><style>body{background:#11151d;color:#edf2fa;font:16px system-ui;max-width:1400px;margin:30px auto;padding:20px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}img{width:100%}figure{margin:0}pre{white-space:pre-wrap}section{margin:28px 0}@media(max-width:700px){.pair{grid-template-columns:1fr}}</style><h1>Reproduction depuis la référence</h1>'
         html=header+'<p>'+escape(job.get('message','En cours'))+'</p><p>La comparaison montre des rendus Unity originaux. La fidélité reste à apprécier ; le score mesure des écarts de pixels.</p>'
+        if job.get('composition'):
+            html+='<p>Composition mesurée dans Unity avec une caméra orthographique fixe. Le classement utilise les contraintes géométriques ; les boîtes ne certifient pas les silhouettes ni les ouvertures.</p>'
+            html+='<table><tr><th>Candidat</th><th>Erreur de placement</th><th>Contraintes des boîtes</th><th>Décision</th></tr>'
+            for row in rendered:
+                measured=row['metrics'].get('composition',{});loss=(measured.get('objective') or {}).get('loss')
+                html+='<tr><td>'+str(row['ordinal']+1)+'</td><td>'+('non mesurée' if loss is None else f'{loss:.6g}')+'</td><td>'+('respectées' if measured.get('bounds_admissible') else 'écarts non résolus')+'</td><td>'+('retenu' if row.get('retained') else 'rejeté')+'</td></tr>'
+            html+='</table><p>Portes, silhouettes, identité des assets et surfaces cachées : non qualifiées.</p>'
         if job.get('fidelity_policy'):
             html+='<p>Classement géométrique indépendant de la couleur ; mesures après contacts Unity. Motif de fin : '+escape(job.get('stop_reason','essai en cours'))+'.</p>'
             html+='<table><tr><th>Candidat</th><th>Expérience</th><th>Erreur de silhouettes</th><th>Décision</th></tr>'

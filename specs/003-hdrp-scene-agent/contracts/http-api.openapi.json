@@ -3,7 +3,7 @@
   "info": {
     "title": "HDRP Agent loopback API",
     "version": "1.0.0",
-    "description": "Conception non impl\u00e9ment\u00e9e. Contraintes m\u00e9tier : editor-bridge.md et data-model.md."
+    "description": "Conception non implémentée. Contraintes métier : editor-bridge.md et data-model.md."
   },
   "servers": [
     {
@@ -19,7 +19,7 @@
     "/health": {
       "get": {
         "operationId": "health",
-        "summary": "\u00c9tat local, sans appel fournisseur",
+        "summary": "État local, sans appel fournisseur",
         "responses": {
           "200": {
             "description": "Success",
@@ -97,7 +97,7 @@
     "/v1/projects/register": {
       "post": {
         "operationId": "registerProject",
-        "summary": "Inscription locale et capacit\u00e9s",
+        "summary": "Inscription locale et capacités",
         "responses": {
           "200": {
             "description": "Success",
@@ -197,7 +197,7 @@
     "/v1/sessions": {
       "post": {
         "operationId": "createSession",
-        "summary": "Figer brief, crit\u00e8res et limites",
+        "summary": "Figer brief, critères et limites",
         "responses": {
           "202": {
             "description": "Success",
@@ -297,7 +297,7 @@
     "/v1/sessions/{session_id}": {
       "get": {
         "operationId": "getSession",
-        "summary": "\u00c9tat et meilleure version",
+        "summary": "État et meilleure version",
         "responses": {
           "200": {
             "description": "Success",
@@ -385,7 +385,7 @@
     "/v1/sessions/{session_id}/stop": {
       "post": {
         "operationId": "stopSession",
-        "summary": "Arr\u00eat et annulation s\u00fbrs",
+        "summary": "Arrêt et annulation sûrs",
         "responses": {
           "202": {
             "description": "Success",
@@ -601,7 +601,7 @@
     "/v1/sessions/{session_id}/report": {
       "get": {
         "operationId": "getReport",
-        "summary": "Rapport op\u00e9rateur, jamais contexte planificateur",
+        "summary": "Rapport opérateur, jamais contexte planificateur",
         "responses": {
           "200": {
             "description": "Success",
@@ -689,7 +689,7 @@
     "/v1/budget": {
       "get": {
         "operationId": "getBudget",
-        "summary": "Grand livre global ; inconnus inclus dans r\u00e9servations actives",
+        "summary": "Grand livre global ; inconnus inclus dans réservations actives",
         "responses": {
           "200": {
             "description": "Success",
@@ -955,7 +955,7 @@
     "/v1/bridge/commands/{command_id}/progress": {
       "post": {
         "operationId": "commandProgress",
-        "summary": "Battement et r\u00e9ception de demande d\u2019annulation",
+        "summary": "Battement et réception de demande d’annulation",
         "responses": {
           "200": {
             "description": "Success",
@@ -1053,7 +1053,7 @@
     "/v1/bridge/commands/{command_id}/result": {
       "post": {
         "operationId": "commandResult",
-        "summary": "Re\u00e7u durable idempotent, contr\u00f4l\u00e9 par hash",
+        "summary": "Reçu durable idempotent, contrôlé par hash",
         "responses": {
           "200": {
             "description": "Success",
@@ -1151,7 +1151,7 @@
     "/v1/artifacts/{sha256}": {
       "put": {
         "operationId": "putArtifact",
-        "summary": "D\u00e9p\u00f4t immuable, hash et taille contr\u00f4l\u00e9s",
+        "summary": "Dépôt immuable, hash et taille contrôlés",
         "responses": {
           "201": {
             "description": "Success",
@@ -1248,7 +1248,7 @@
       },
       "get": {
         "operationId": "getArtifact",
-        "summary": "Lire un artefact autoris\u00e9",
+        "summary": "Lire un artefact autorisé",
         "responses": {
           "200": {
             "description": "Artifact bytes",
@@ -5971,6 +5971,246 @@
           "payload",
           "deadline_utc",
           "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "ModelFloorplanObservation": {
+        "type": "object",
+        "properties": {
+          "projection": {
+            "type": "string",
+            "enum": [
+              "overhead_cutaway",
+              "unsupported"
+            ]
+          },
+          "envelope": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "bounds": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              },
+              "required": [
+                "key",
+                "bounds"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 12
+          },
+          "walls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "object_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "start": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "end": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "rooms": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "minItems": 1,
+                  "maxItems": 2
+                }
+              },
+              "required": [
+                "object_key",
+                "start",
+                "end",
+                "rooms"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "openings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "wall_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "door",
+                    "window"
+                  ]
+                },
+                "start": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "end": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "key",
+                "wall_key",
+                "kind",
+                "start",
+                "end"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "objects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "object_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "room_key": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "floor",
+                    "wall",
+                    "ceiling",
+                    "furniture",
+                    "rug",
+                    "supported",
+                    "opening"
+                  ]
+                },
+                "bounds": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                "yaw_deg": {
+                  "type": "number",
+                  "enum": [
+                    0,
+                    90,
+                    180,
+                    270
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "object_key",
+                "room_key",
+                "role",
+                "bounds",
+                "yaw_deg",
+                "confidence"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "limits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "minItems": 0,
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "projection",
+          "envelope",
+          "rooms",
+          "walls",
+          "openings",
+          "objects",
+          "limits"
         ],
         "additionalProperties": false
       }

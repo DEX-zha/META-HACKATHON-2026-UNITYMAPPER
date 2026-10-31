@@ -4506,6 +4506,246 @@
         "bridge_epoch"
       ],
       "additionalProperties": false
+    },
+    "ModelFloorplanObservation": {
+      "type": "object",
+      "properties": {
+        "projection": {
+          "type": "string",
+          "enum": [
+            "overhead_cutaway",
+            "unsupported"
+          ]
+        },
+        "envelope": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "rooms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "bounds": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 4,
+                "maxItems": 4
+              }
+            },
+            "required": [
+              "key",
+              "bounds"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "walls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "object_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "start": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "end": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "rooms": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "minItems": 1,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "object_key",
+              "start",
+              "end",
+              "rooms"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "openings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "wall_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "door",
+                  "window"
+                ]
+              },
+              "start": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "end": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "key",
+              "wall_key",
+              "kind",
+              "start",
+              "end"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 20
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "object_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "room_key": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "floor",
+                  "wall",
+                  "ceiling",
+                  "furniture",
+                  "rug",
+                  "supported",
+                  "opening"
+                ]
+              },
+              "bounds": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "yaw_deg": {
+                "type": "number",
+                "enum": [
+                  0,
+                  90,
+                  180,
+                  270
+                ]
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "object_key",
+              "room_key",
+              "role",
+              "bounds",
+              "yaw_deg",
+              "confidence"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "limits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "minItems": 0,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "projection",
+        "envelope",
+        "rooms",
+        "walls",
+        "openings",
+        "objects",
+        "limits"
+      ],
+      "additionalProperties": false
     }
   }
 }

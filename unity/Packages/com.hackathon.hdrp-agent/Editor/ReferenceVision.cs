@@ -22,7 +22,7 @@ namespace HdrpAgent.Editor
         static int index,warm;
         static double began;
         public static bool Running=>probe!=null;
-        public static bool Follow=true,Gizmos=true;
+        public static bool Follow=false,Gizmos=true;
         public static string Status {get;private set;}="Aucune inspection en cours.";
         public static Texture2D Image {get;private set;}
         public static JObject Current=>views!=null&&index<views.Count?(JObject)views[index]:null;

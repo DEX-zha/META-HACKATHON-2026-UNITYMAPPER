@@ -665,3 +665,14 @@ Ordre de dépendance : T192 → T193 → T194 → T195 → T196 ; T197 puis T198
 - [ ] T197 Séparer vue utilisateur et capture de mesure ; qualifier rendu hors écran HDRP/Metal et isolation de scène. Navigation/sélection sans annulation ; édition réelle signalée comme conflit versionné. Découpler perte de focus/performance et progression géométrique.
 - [ ] T198 Persister checkpoints et deltas acceptés/rejetés ; caméra conservée dans l'état typé ; pause/reprise sans refaire sélection d'assets ni rejouer un appel inconnu ; afficher comparaison, erreurs et raisons de décision dans le chat.
 - [ ] T199 Exécuter la recette salon/chambre et une variante non utilisée pour le réglage : métriques avant/après, conformité des portes/cloison/supports, manipulation utilisateur et reprise. Ne déclarer la composition qualifiée qu'avec preuves enregistrées ; rendu esthétique et surfaces cachées restent séparés.
+
+### État intermédiaire T192–T199 — 2026-10-31
+
+Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est revendiqué.
+
+- T192 : référence, candidat précédent, erreur caméra et nouveaux rendus natifs archivés localement dans `.hdrp-agent/floorplan-baseline/` ; reproduction des interactions encore partielle.
+- T193–T194 : contrat rectangulaire implémenté, extraction réelle Muse avec boîtes SAM existantes, bindings et topologie vérifiés, empreinte de cache. Polygones, alternatives et mesures des masques complets restent à intégrer.
+- T195 : recherche multidépart, pénalités et correction depuis projections natives implémentées ; tests de dispositions décalées et miroir. L'assemblage des ouvertures et les pertes de silhouettes ne sont pas achevés.
+- T196 : deux captures natives HDRP hors écran réussies, plafonds conservés et masqués seulement pour la coupe. Aucun score de boîte ne qualifie l'esthétique ni les ouvertures.
+- T197–T198 : caméra indépendante, conflit versionné/pause/reprise de mesure implémentés, progression géométrique dans le chat, deltas et mesures en mémoire. Scène de travail encore ouverte dans l'éditeur principal ; reprise après redémarrage et comparaison interactive du chat non achevées.
+- T199 : les boîtes natives des meubles correspondent aux zones extraites ; cela ne prouve pas l'exactitude de ces zones. Portes/cloison, variante native indépendante et recette complète restent non qualifiées.

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -48,6 +49,8 @@ func (s *Service) Progress(actions []store.ActionView) []store.ActionView {
 		}
 		latest := info.ModTime()
 		previews, renders := 0, 0
+		var composition map[string]any
+		latestOrdinal := -1
 		entries, _ := os.ReadDir(directory)
 		for _, entry := range entries {
 			if !entry.Type().IsRegular() {
@@ -60,11 +63,23 @@ func (s *Service) Progress(actions []store.ActionView) []store.ActionView {
 			if strings.HasPrefix(name, "render-") && strings.HasSuffix(name, ".json") {
 				renders++
 			}
+			if strings.HasPrefix(name, "composition-metrics-") && strings.HasSuffix(name, ".json") {
+				ordinal, e := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(name, "composition-metrics-"), ".json"))
+				stat, se := entry.Info()
+				if e == nil && se == nil && ordinal > latestOrdinal && stat.Size() <= 256000 {
+					raw, re := os.ReadFile(filepath.Join(directory, name))
+					var measurement map[string]any
+					if re == nil && json.Unmarshal(raw, &measurement) == nil {
+						composition = measurement
+						latestOrdinal = ordinal
+					}
+				}
+			}
 			if stat, e := entry.Info(); e == nil && stat.ModTime().After(latest) {
 				latest = stat.ModTime()
 			}
 		}
-		result["progress"] = map[string]any{"phase": status.State, "message": status.Message, "phase_started_at": info.ModTime().UTC().Format(time.RFC3339), "last_evidence_at": latest.UTC().Format(time.RFC3339), "preview_images": previews, "render_receipts": renders, "source": "worker_handoff"}
+		result["progress"] = map[string]any{"phase": status.State, "message": status.Message, "phase_started_at": info.ModTime().UTC().Format(time.RFC3339), "last_evidence_at": latest.UTC().Format(time.RFC3339), "preview_images": previews, "render_receipts": renders, "source": "worker_handoff", "composition": composition, "composition_ordinal": latestOrdinal}
 		if value, e := json.Marshal(result); e == nil {
 			actions[i].Result = value
 		}

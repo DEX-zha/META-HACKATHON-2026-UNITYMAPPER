@@ -1,0 +1,82 @@
+from copy import deepcopy
+import pytest
+from hdrp_agent.domain import AgentError
+from hdrp_agent.floorplan import validate_observation, optimize, objective, checkpoint
+
+
+def fixture():
+    rooms=[dict(key='left',bounds=[.05,.1,.5,.9]),dict(key='right',bounds=[.5,.1,.95,.9])]
+    objects=[dict(object_key='bed',room_key='right',role='furniture',bounds=[.57,.2,.79,.65],yaw_deg=0,confidence=.9),dict(object_key='cabinet',room_key='right',role='furniture',bounds=[.83,.3,.92,.7],yaw_deg=90,confidence=.9)]
+    return dict(projection='overhead_cutaway',envelope=[.05,.1,.95,.9],rooms=rooms,walls=[dict(object_key='partition',start=[.5,.1],end=[.5,.9],rooms=['left','right'])],openings=[dict(key='door',wall_key='partition',kind='door',start=.7,end=.9)],objects=objects,limits=[])
+
+
+def test_topology_rejects_overlapping_rooms_and_unbound_doors():
+    ir=fixture();assert validate_observation(ir,{'bed','cabinet','partition'})==ir
+    bad=deepcopy(ir);bad['rooms'][1]['bounds'][0]=.4
+    with pytest.raises(AgentError):validate_observation(bad,{'bed','cabinet','partition'})
+    bad=deepcopy(ir);bad['openings'][0]['wall_key']='missing'
+    with pytest.raises(AgentError):validate_observation(bad,{'bed','cabinet','partition'})
+
+
+@pytest.mark.parametrize('mirror',[False,True])
+def test_optimizer_reduces_errors_without_source_transforms(mirror):
+    ir=fixture()
+    if mirror:
+        for room in ir['rooms']:a,b,c,d=room['bounds'];room['bounds']=[1-c,b,1-a,d]
+        for item in ir['objects']:a,b,c,d=item['bounds'];item['bounds']=[1-c,b,1-a,d]
+    starts=[{'bed':[.1,.4,.2,.4],'cabinet':[.12,.43,.08,.3]}, {'bed':[.8,.4,.3,.5],'cabinet':[.8,.4,.2,.4]}]
+    for initial in starts:
+        result=optimize(ir,initial)
+        assert result['metrics']['loss']<objective(ir,initial)['loss']
+        assert result['metrics']['outside_room']<1e-8
+        assert result['metrics']['collisions']<1e-8
+        assert result['metrics']['door_clearance']<1e-8
+        assert result['history'][-1]['loss']<=result['history'][0]['loss']
+
+
+def test_checkpoint_refuses_other_evidence(tmp_path):
+    path=tmp_path/'checkpoint.json';state=dict(evidence_hash='a',phase='layout',poses={'bed':[.6,.4,.2,.4]})
+    checkpoint(path,state)
+    assert checkpoint(path,evidence_hash='a')==state
+    with pytest.raises(AgentError):checkpoint(path,evidence_hash='b')
+
+
+def test_native_measurement_does_not_certify_apertures_from_perfect_boxes():
+    from hdrp_agent.floorplan import measure_native
+    ir=fixture();proof=dict(version='v1',projected_objects=[dict(object_key=o['object_key'],bbox_xyxy=o['bounds']) for o in ir['objects']])
+    result=measure_native(ir,proof)
+    assert result['bounds_admissible']
+    assert not result['composition_qualified']
+    assert 'wall_aperture_geometry' in result['unverified']
+    proof['projected_objects'].pop()
+    result=measure_native(ir,proof)
+    assert not result['coverage_complete'] and not result['bounds_admissible']
+
+
+def test_native_correction_preserves_prefab_pivot_and_reduces_residual():
+    import numpy as np
+    from hdrp_agent.floorplan import correct_native, pose
+    from hdrp_agent.reference_geometry import rotation
+    asset=dict(asset_id='asset',bounds_center_m=[-1,0,.3])
+    obj=dict(key='bed',asset_id='asset',position_m=[1,0,2],rotation_deg=[0,90,0],scale=[1,1,1])
+    measured=dict(coverage_complete=True,per_object=dict(bed=dict(actual_bounds=[.4,.3,.6,.7],target_bounds=[.45,.25,.67,.69],max_edge_error=.05)))
+    result=correct_native(dict(objects=[obj]),dict(screen_width_m=10,screen_height_m=8),measured,[asset])['objects'][0]
+    rot=rotation(obj['rotation_deg']);old=np.array(obj['position_m'])+rot@np.array(asset['bounds_center_m']);new=np.array(result['position_m'])+rot@(np.array(asset['bounds_center_m'])*result['scale'])
+    assert new[0]-old[0]==pytest.approx(.6)
+    assert new[2]-old[2]==pytest.approx(.24)
+    assert result['asset_id']==obj['asset_id'] and result['rotation_deg']==obj['rotation_deg']
+    assert result['scale']==pytest.approx([1.1,1,1.1])
+
+
+def test_floor_covers_occluded_strips_to_wall_not_visible_floor_crop():
+    from hdrp_agent.floorplan import room_floor_bounds
+    ir=fixture();ir['rooms'][0]['bounds']=[.08,.12,.48,.88]
+    ir['walls']+= [dict(object_key='west',start=[.05,.1],end=[.05,.9],rooms=['left']),dict(object_key='north',start=[.05,.1],end=[.5,.1],rooms=['left']),dict(object_key='south',start=[.05,.9],end=[.5,.9],rooms=['left'])]
+    assert room_floor_bounds(ir,'left')==[.05,.1,.5,.9]
+
+
+def test_shared_wall_must_separate_rooms_and_openings_cannot_overlap():
+    ir=fixture();ir['walls'][0]['start'][0]=.1;ir['walls'][0]['end'][0]=.1
+    with pytest.raises(AgentError):validate_observation(ir,{'bed','cabinet','partition'})
+    ir=fixture();ir['openings'].append(dict(key='overlap',wall_key='partition',kind='window',start=.8,end=.95))
+    with pytest.raises(AgentError):validate_observation(ir,{'bed','cabinet','partition'})

@@ -69,6 +69,8 @@ def update_memory(memory,attempt,incumbent,accepted,run_id):
                   regressions=attempt.get('regressions',[]),changes=changes,
                   notes=attempt['applied_plan']['notes'],reason='retained_by_measured_comparison' if accepted else 'rejected_keep_previous_best')
     evidence['appearance_values']=deepcopy({k:attempt['applied_plan'].get(k) for k in ['lights','exposure_ev','sky_color_rgb','fog_mean_free_path_m','estimated_views']})
+    if metrics.get('composition'):
+        evidence['composition']=deepcopy(metrics['composition'])
     if metrics.get('geometry'):
         evidence.update(geometry_score=metrics['geometry']['score'],previous_geometry_score=prior.get('geometry',{}).get('score') if prior else None,applied_plan_hash=metrics['geometry']['applied_plan_hash'],version=metrics['geometry']['version'],coverage_complete=metrics['geometry']['coverage_complete'],policy_hash=memory.get('policy_hash'),solver_version=memory.get('solver_version'))
     if attempt.get('appearance_experiment'):evidence['appearance_experiment']=attempt['appearance_experiment']
