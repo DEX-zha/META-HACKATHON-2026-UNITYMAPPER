@@ -149,3 +149,9 @@ Application Go : **conception uniquement**. Le périmètre validé est local, av
 ## Finitions qualifiées — 2026-10-31
 
 T154–T156 exécutées : prévalidation des variantes et de la couverture rectangulaire avant remplacement, création temporaire avec nettoyage sur erreur, préservation du plafond explicite, plafond dérivé connecté et audit des surfaces vers le bas. Le panorama conserve deux vues hautes même avec gros plans Muse. 22 tests Unity et 258 Python passent. GP inchangée. Les captures de plafond montrent une fermeture sans ouverture visible dans les deux angles vérifiés ; éclairage sombre et bleuté, sans qualification de fidélité absolue. Preuves locales : `.hdrp-agent/reports/room-finish-qualification.json`.
+
+## Socle Go et contrats — 2026-10-31
+
+T157–T161 implémentées. `apps/unitymapper` contient le serveur loopback, contrôle d’instance, client Python authentifié sans retry de mutation, migrations SQLite séparées et transactions messages/actions/outbox/événements. Tests race + vet passent ; démarrage avec Python live et arrêt propre vérifiés. Le journal de budget Python n’est pas lu directement par Go. Le serveur expose pour l’instant uniquement `/health`, avec `chat=not_implemented` ; aucune conversation Muse ni action Unity depuis le chat n’est revendiquée. Contrats des tours et six outils ajoutés et synchronisés, tests de champs arbitraires/identités/limites. T162–T190 restent ouverts. Rapport local : `.hdrp-agent/reports/chat-foundation.json`.
+
+Vérification finale de ce lot : **262 tests Python**, **22 tests Unity**, **6 tests Go avec race detector** passent ; `go vet ./...` sans diagnostic. Aucun appel payant ajouté. Le processus Go de vérification a été arrêté proprement ; le service Python reste indépendant.

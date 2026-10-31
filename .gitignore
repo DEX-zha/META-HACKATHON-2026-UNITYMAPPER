@@ -38,3 +38,8 @@ unity/HDRPValidation/Assets/AtmosphericHouse.meta
 unity/HDRPValidation/.hdrp-agent/
 # Temporary native launchers used for local verification
 unity/HDRPValidation/Assets/Editor/*Launch.cs*
+
+# Go build and test outputs
+*.test
+*.out
+apps/unitymapper/unitymapper

@@ -552,7 +552,7 @@ Qualification T108–T143 (2026-10-29) : 239 tests Python et 16 tests Unity pass
 
 ## Livraison suivante — app Go, chat projet et pièce cohérente (2026-10-31)
 
-Source : US10–US13 / CA-01–CA-10, `chat-plan.md`, `chat-data-model.md`, `contracts/chat-actions.md`, `contracts/chat-api.openapi.json`, `chat-quickstart.md`. Les cases ci-dessous restent ouvertes jusqu’à preuve d’exécution. Les sources de finitions déjà commencées doivent être vérifiées, pas recréées à l’aveugle. Aucun écran de chat ni serveur Go applicatif n’existe encore.
+Source : US10–US13 / CA-01–CA-10, `chat-plan.md`, `chat-data-model.md`, `contracts/chat-actions.md`, `contracts/chat-api.openapi.json`, `chat-quickstart.md`. Les cases ci-dessous restent ouvertes jusqu’à preuve d’exécution. Les sources de finitions déjà commencées doivent être vérifiées, pas recréées à l’aveugle. Le socle Go est désormais compilable ; aucun écran de chat ni action native depuis le chat ne sont encore livrés.
 
 ### Phase 1 — Socle et décisions
 
@@ -572,11 +572,11 @@ But : pièce fermée et stylistiquement cohérente. Recette indépendante C6 : v
 
 Précondition : contrats T153 validés. Les étapes d’intégration sont nécessaires avant d’annoncer un chat capable d’agir.
 
-- [ ] T157 Créer `apps/unitymapper/go.mod` et `go.sum`, figer Go et le pilote SQLite pure Go, vérifier compilation sur Apple Silicon ; aucune réécriture du service Python.
-- [ ] T158 Implémenter configuration et cycle de vie dans `apps/unitymapper/cmd/unitymapper/main.go` et `internal/config/config.go` : loopback, workspace explicite, backend vérifié, timeouts, arrêt propre, instance unique.
-- [ ] T159 Implémenter migrations et transactions de `chat-data-model.md` dans `apps/unitymapper/internal/store/store.go` et `migrations/` ; base Go distincte, idempotence/outbox/événements durables, tests de redémarrage et conflit.
-- [ ] T160 Créer le client interne dans `apps/unitymapper/internal/agentclient/client.go` : token côté serveur, erreurs typées, jamais de retry de mutation à issue inconnue, récupération des états par identité.
-- [ ] T161 Ajouter les schémas backend et contrats de tours/actions dans `specs/003-hdrp-scene-agent/contracts/domain.schema.json` et `http-api.openapi.json`, avec tests dans `tests/contract/test_chat_contracts.py` ; préserver l’égalité des définitions partagées.
+- [X] T157 Créer `apps/unitymapper/go.mod` et `go.sum`, figer Go et le pilote SQLite pure Go, vérifier compilation sur Apple Silicon ; aucune réécriture du service Python.
+- [X] T158 Implémenter configuration et cycle de vie dans `apps/unitymapper/cmd/unitymapper/main.go` et `internal/config/config.go` : loopback, workspace explicite, backend vérifié, timeouts, arrêt propre, instance unique.
+- [X] T159 Implémenter migrations et transactions de `chat-data-model.md` dans `apps/unitymapper/internal/store/store.go` et `migrations/` ; base Go distincte, idempotence/outbox/événements durables, tests de redémarrage et conflit.
+- [X] T160 Créer le client interne dans `apps/unitymapper/internal/agentclient/client.go` : token côté serveur, erreurs typées, jamais de retry de mutation à issue inconnue, récupération des états par identité.
+- [X] T161 Ajouter les schémas backend et contrats de tours/actions dans `specs/003-hdrp-scene-agent/contracts/domain.schema.json` et `http-api.openapi.json`, avec tests dans `tests/contract/test_chat_contracts.py` ; préserver l’égalité des définitions partagées.
 - [ ] T162 Créer l’admission native unique dans `src/hdrp_agent/reference_commands.py` et adapter `reference_worker.py` à l’adoption d’une session réservée ; conserver l’exclusion globale, tester réponse perdue et aucun deuxième run.
 - [ ] T163 Ajouter `Editor/AppCommandBridge.cs`, étendre `EditorJobs.cs` et `ReferenceWorkflow.cs` : préparation native typée, brief libre borné, operation/session/run IDs, reçus ; workspace configuré explicitement ; version/epoch/ownership vérifiés avant mutation.
 
@@ -638,3 +638,5 @@ Répartition : 3 tâches de socle, 3 US10, 7 fondations, 8 US11, 7 US12, 7 US13,
 Qualification de conception T151–T153 (2026-10-31) : socle committé, identité anonyme/remote SSH vérifiés, plan et modèles de données complétés, JSON Schema valides, références OpenAPI résolues et 40 IDs uniques. Les trois cases ne signifient pas que l’application Go existe.
 
 Qualification T154–T156 (2026-10-31) : 22 tests natifs passent, dont variante absente, rectangle invalide sans modification partielle, sockets, réapplication et plafond explicite ; 258 tests Python passent. La copie `finish-qualified-20261031-113116` contient quatre Ceiling_3x3 connectés, sous-faces vérifiées dans l’audit, dix captures dont deux vers le haut. Hash GP identique avant/après. Rapport local `room-finish-qualification.json` ; intérieur sombre/bleuté, fidélité lumineuse non certifiée. Aucun appel API payant pour cette qualification.
+
+Qualification T157–T161 (2026-10-31) : module Go 1.27.3 et SQLite v1.61.1 verrouillés, compilation darwin/arm64, tests Go avec race detector et vet réussis. Serveur testé avec Python live : santé réelle, deuxième instance refusée, Origin tiers refusé, SIGTERM propre. Transactions testées pour conflit de clé, rollback interprojet et reprise sans réémission après coupure. Contrats chat/actions fermés ajoutés au domaine et à OpenAPI ; 11 tests contractuels ciblés passent. Les routes de chat décrites restent à implémenter ; le serveur Go expose seulement `/health`. Prochaine dépendance : T162 admission unique, puis T163 pont natif.

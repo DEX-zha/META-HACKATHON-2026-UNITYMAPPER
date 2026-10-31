@@ -1,6 +1,6 @@
 # UnityMapper
 
-Agent local de construction et d’inspection visuelle de scènes Unity HDRP, avec Muse Spark et SAM 3.1. Le socle fonctionne avec un adaptateur Unity et un service Python ; l’application de chat par projet en Go est **planifiée, pas encore implémentée**.
+Agent local de construction et d’inspection visuelle de scènes Unity HDRP, avec Muse Spark et SAM 3.1. Le socle fonctionne avec un adaptateur Unity et un service Python ; le serveur Go et son stockage sont implémentés. **Le chat Muse et ses actions Unity restent à raccorder.**
 
 ## État et plan
 
@@ -36,3 +36,17 @@ Consulter le [guide du socle](specs/003-hdrp-scene-agent/quickstart.md) pour con
 Les tests Unity utilisent le Test Runner et le pont de recette du package. Les preuves locales vont dans `.hdrp-agent/reports/`, ignoré par Git. Les scènes expérimentales sous `Assets/AgentWorkspace` et les caches Unity sont également exclus.
 
 Le futur parcours Go se trouve dans [chat-quickstart.md](specs/003-hdrp-scene-agent/chat-quickstart.md) ; ses commandes sont des objectifs de livraison tant que les tâches correspondantes restent ouvertes.
+
+## Socle Go disponible
+
+Le serveur applicatif possède maintenant sa configuration, son stockage transactionnel et son client Python. Le chat et les commandes Unity depuis ce serveur restent en cours (T162–T190).
+
+Depuis la racine, avec Python déjà lancé :
+
+```sh
+(cd apps/unitymapper && go test -race ./... && go vet ./...)
+(cd apps/unitymapper && go run ./cmd/unitymapper --workspace ../..)
+curl http://127.0.0.1:8787/health
+```
+
+La santé affiche explicitement `foundation_ready` et `chat: not_implemented`. L’historique applicatif est stocké dans `.hdrp-agent/chat/chat.sqlite3`, séparément du budget Python. Une livraison inconnue ne déclenche aucun renvoi automatique. Ctrl+C arrête uniquement ce serveur Go.

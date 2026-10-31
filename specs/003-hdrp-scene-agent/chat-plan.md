@@ -1,6 +1,6 @@
 # Plan — application UnityMapper en Go et finitions de pièce
 
-Date : 2026-10-31. Source : US10–US13 et CA-01–CA-10 de [spec.md](spec.md). Git : `main`, dépôt SSH fourni par l’utilisateur. État : conception ; Go installé, application non implémentée. Les corrections Unity en cours ne valent pas validation du futur chat.
+Date : 2026-10-31. Source : US10–US13 et CA-01–CA-10 de [spec.md](spec.md). Git : `main`, dépôt SSH fourni par l’utilisateur. État : finitions qualifiées et fondations Go implémentées (T154–T161) ; interface de chat et actions natives encore à réaliser. Les corrections Unity en cours ne valent pas validation du futur chat.
 
 ## Architecture et responsabilités
 

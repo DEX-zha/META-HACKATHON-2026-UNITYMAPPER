@@ -3068,6 +3068,1331 @@
           "maxLength": 1000
         }
       }
+    },
+    "AppActionRequest": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "inspect_scene"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "brief",
+                "inspection_policy_id"
+              ],
+              "properties": {
+                "brief": {
+                  "type": "string",
+                  "maxLength": 16000
+                },
+                "inspection_policy_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                }
+              }
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "reconstruct_reference"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "brief",
+                "reference_hashes",
+                "building_policy",
+                "interior_style",
+                "ceiling_prefab"
+              ],
+              "properties": {
+                "brief": {
+                  "type": "string",
+                  "maxLength": 16000
+                },
+                "reference_hashes": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "building_policy": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                },
+                "interior_style": {
+                  "type": "string",
+                  "enum": [
+                    "A",
+                    "B",
+                    "C"
+                  ]
+                },
+                "ceiling_prefab": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                }
+              }
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "refine_reference"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "brief",
+                "parent_run_id"
+              ],
+              "properties": {
+                "brief": {
+                  "type": "string",
+                  "maxLength": 16000
+                },
+                "parent_run_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                }
+              }
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "learn_assembly_example"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "registered_scene_id"
+              ],
+              "properties": {
+                "registered_scene_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                }
+              }
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "inspect_room"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mode",
+                "poses"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "panorama",
+                    "detail"
+                  ]
+                },
+                "poses": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "object_key",
+                      "position_m",
+                      "rotation_deg",
+                      "fov_deg"
+                    ],
+                    "properties": {
+                      "object_key": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "position_m": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -100,
+                          "maximum": 100
+                        }
+                      },
+                      "rotation_deg": {
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                          "type": "number",
+                          "minimum": -360,
+                          "maximum": 360
+                        }
+                      },
+                      "fov_deg": {
+                        "type": "number",
+                        "minimum": 15,
+                        "maximum": 100
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "stop_run"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "run_id"
+              ],
+              "properties": {
+                "run_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                }
+              }
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      ]
+    },
+    "ChatContextMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "user",
+            "assistant",
+            "tool"
+          ],
+          "type": "string"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 16000
+        }
+      },
+      "required": [
+        "role",
+        "text"
+      ]
+    },
+    "ChatProjectMemory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 8000
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "maxItems": 32,
+          "minItems": 0
+        },
+        "scene_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_run_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "revision",
+        "summary",
+        "constraints",
+        "scene_version",
+        "parent_run_id"
+      ]
+    },
+    "ChatTurnRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "turn_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChatContextMessage"
+          },
+          "maxItems": 24,
+          "minItems": 1
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "maxItems": 12,
+          "minItems": 0
+        },
+        "memory": {
+          "$ref": "#/$defs/ChatProjectMemory"
+        }
+      },
+      "required": [
+        "schema_version",
+        "turn_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "idempotency_key",
+        "messages",
+        "artifact_hashes",
+        "memory"
+      ]
+    },
+    "ChatToolInspectScene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "inspect_scene"
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brief",
+            "inspection_policy_id"
+          ],
+          "properties": {
+            "brief": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "inspection_policy_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ChatToolReconstructReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "reconstruct_reference"
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brief",
+            "reference_hashes",
+            "building_policy",
+            "interior_style",
+            "ceiling_prefab"
+          ],
+          "properties": {
+            "brief": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "reference_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "building_policy": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "interior_style": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B",
+                "C"
+              ]
+            },
+            "ceiling_prefab": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ChatToolRefineReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "refine_reference"
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brief",
+            "parent_run_id"
+          ],
+          "properties": {
+            "brief": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "parent_run_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ChatToolLearnAssemblyExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "learn_assembly_example"
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "registered_scene_id"
+          ],
+          "properties": {
+            "registered_scene_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ChatToolInspectRoom": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "inspect_room"
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "poses"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "panorama",
+                "detail"
+              ]
+            },
+            "poses": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "object_key",
+                  "position_m",
+                  "rotation_deg",
+                  "fov_deg"
+                ],
+                "properties": {
+                  "object_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9_.:-]+$"
+                  },
+                  "position_m": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100
+                    }
+                  },
+                  "rotation_deg": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "number",
+                      "minimum": -360,
+                      "maximum": 360
+                    }
+                  },
+                  "fov_deg": {
+                    "type": "number",
+                    "minimum": 15,
+                    "maximum": 100
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ChatToolStopRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "stop_run"
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_id"
+          ],
+          "properties": {
+            "run_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ChatToolProposal": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ChatToolInspectScene"
+        },
+        {
+          "$ref": "#/$defs/ChatToolReconstructReference"
+        },
+        {
+          "$ref": "#/$defs/ChatToolRefineReference"
+        },
+        {
+          "$ref": "#/$defs/ChatToolLearnAssemblyExample"
+        },
+        {
+          "$ref": "#/$defs/ChatToolInspectRoom"
+        },
+        {
+          "$ref": "#/$defs/ChatToolStopRun"
+        }
+      ]
+    },
+    "ModelChatResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 16000
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChatToolProposal"
+          },
+          "maxItems": 4,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "text",
+        "tools"
+      ]
+    },
+    "ChatTurnResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "turn_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "generating",
+            "complete",
+            "failed",
+            "unknown"
+          ]
+        },
+        "response": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelChatResponse"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "call_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "turn_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "state",
+        "response",
+        "call_id",
+        "error_code"
+      ]
+    },
+    "AppActionState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "operation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "preparing",
+            "running",
+            "verifying",
+            "completed",
+            "inconclusive",
+            "failed",
+            "interrupted",
+            "recovery_required"
+          ]
+        },
+        "stop_requested": {
+          "type": "boolean"
+        },
+        "evidence_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "maxItems": 100,
+          "minItems": 0
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "operation_id",
+        "session_id",
+        "run_id",
+        "state",
+        "stop_requested",
+        "evidence_hashes",
+        "error_code"
+      ]
+    },
+    "ChatBackendEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "entity_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "maxItems": 100,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "sequence",
+        "project_id",
+        "conversation_id",
+        "entity_id",
+        "kind",
+        "created_at",
+        "state",
+        "evidence_hashes"
+      ]
     }
   }
 }
