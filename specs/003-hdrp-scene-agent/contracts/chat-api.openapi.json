@@ -1,0 +1,1166 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "UnityMapper chat application \u2014 planned contract",
+    "version": "0.1.0",
+    "description": "Design only. Local Go server; Python provider token and financial ledger remain server-side."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8787"
+    }
+  ],
+  "security": [
+    {
+      "localSession": []
+    }
+  ],
+  "paths": {
+    "/api/auth/bootstrap": {
+      "post": {
+        "operationId": "bootstrap",
+        "responses": {
+          "204": {
+            "description": "Single-use token exchanged for HttpOnly SameSite=Strict session cookie"
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Bootstrap"
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      },
+      "post": {
+        "operationId": "registerProject",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}": {
+      "get": {
+        "operationId": "getProject",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{project_id}/conversations": {
+      "get": {
+        "operationId": "listConversations",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Conversation"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createConversation",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/messages": {
+      "get": {
+        "operationId": "listMessages",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "sendMessage",
+        "responses": {
+          "202": {
+            "description": "Accepted for processing, not completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/attachments": {
+      "post": {
+        "operationId": "uploadAttachment",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{project_id}/attachments/{attachment_id}": {
+      "get": {
+        "operationId": "readAttachment",
+        "responses": {
+          "200": {
+            "description": "Owned attachment bytes, MIME verified at upload",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/quicktime": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/webm": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/conversations/{conversation_id}/actions": {
+      "get": {
+        "operationId": "listActions",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "$ref": "#/components/schemas/Action"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/actions/{action_id}": {
+      "get": {
+        "operationId": "getAction",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Action"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/actions/{action_id}/stop": {
+      "post": {
+        "operationId": "stopAction",
+        "responses": {
+          "202": {
+            "description": "Accepted for processing, not completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Action"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/budget": {
+      "get": {
+        "operationId": "readBudget",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/api/conversations/{conversation_id}/events": {
+      "get": {
+        "operationId": "conversationEvents",
+        "responses": {
+          "200": {
+            "description": "Durable ordered events; id is conversation sequence, reconnect replays after Last-Event-ID. Bounded replay pagination, no execution on subscribe.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Typed error; unknown execution is not retryable automatically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "localSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "unitymapper_session"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "backend_project_id",
+          "connection",
+          "scene_id",
+          "scene_version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "backend_project_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connection": {
+            "type": "string",
+            "enum": [
+              "connected",
+              "disconnected",
+              "unverified"
+            ]
+          },
+          "scene_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scene_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ProjectCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "project_root"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        }
+      },
+      "Conversation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "project_id",
+          "title",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConversationCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "MessageCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_message_id",
+          "text",
+          "attachment_ids"
+        ],
+        "properties": {
+          "client_message_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "attachment_ids": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "conversation_id",
+          "role",
+          "text",
+          "status",
+          "attachment_ids"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "conversation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant",
+              "tool"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "status": {
+            "enum": [
+              "persisted",
+              "generating",
+              "complete",
+              "failed",
+              "unknown"
+            ]
+          },
+          "attachment_ids": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        }
+      },
+      "Accepted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "turn_id",
+          "status"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "turn_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "status": {
+            "const": "persisted"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "project_id",
+          "sha256",
+          "mime",
+          "byte_length"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "project_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "mime": {
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "video/mp4",
+              "video/quicktime",
+              "video/webm"
+            ]
+          },
+          "byte_length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20971520
+          }
+        }
+      },
+      "Action": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "conversation_id",
+          "kind",
+          "state",
+          "stop_requested",
+          "backend_run_id",
+          "scene_version",
+          "evidence_hashes",
+          "limits"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "conversation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "kind": {
+            "enum": [
+              "inspect_scene",
+              "reconstruct_reference",
+              "refine_reference",
+              "learn_assembly_example",
+              "inspect_room",
+              "stop_run"
+            ]
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "preparing",
+              "running",
+              "verifying",
+              "completed",
+              "inconclusive",
+              "failed",
+              "interrupted",
+              "recovery_required"
+            ]
+          },
+          "stop_requested": {
+            "type": "boolean"
+          },
+          "backend_run_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scene_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence_hashes": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "limits": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 16000
+            }
+          }
+        }
+      },
+      "Budget": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "currency",
+          "available_usd_micro",
+          "settled_usd_micro",
+          "active_reserved_usd_micro",
+          "unknown_reserved_usd_micro",
+          "live_enabled"
+        ],
+        "properties": {
+          "currency": {
+            "const": "USD"
+          },
+          "available_usd_micro": {
+            "type": "integer"
+          },
+          "settled_usd_micro": {
+            "type": "integer"
+          },
+          "active_reserved_usd_micro": {
+            "type": "integer"
+          },
+          "unknown_reserved_usd_micro": {
+            "type": "integer"
+          },
+          "live_enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Bootstrap": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 32,
+            "maxLength": 256
+          }
+        }
+      }
+    }
+  }
+}

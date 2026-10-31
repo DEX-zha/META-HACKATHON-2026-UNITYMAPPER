@@ -1,0 +1,600 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:unitymapper:chat-action:1.0",
+  "title": "Planned typed chat action envelope",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "kind",
+        "expected_scene_version",
+        "artifact_hashes",
+        "parameters",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "const": "inspect_scene"
+        },
+        "expected_scene_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brief",
+            "inspection_policy_id"
+          ],
+          "properties": {
+            "brief": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "inspection_policy_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "kind",
+        "expected_scene_version",
+        "artifact_hashes",
+        "parameters",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "const": "reconstruct_reference"
+        },
+        "expected_scene_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brief",
+            "reference_hashes",
+            "building_policy",
+            "interior_style",
+            "ceiling_prefab"
+          ],
+          "properties": {
+            "brief": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "reference_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "building_policy": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "interior_style": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B",
+                "C"
+              ]
+            },
+            "ceiling_prefab": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "kind",
+        "expected_scene_version",
+        "artifact_hashes",
+        "parameters",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "const": "refine_reference"
+        },
+        "expected_scene_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brief",
+            "parent_run_id"
+          ],
+          "properties": {
+            "brief": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "parent_run_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "kind",
+        "expected_scene_version",
+        "artifact_hashes",
+        "parameters",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "const": "learn_assembly_example"
+        },
+        "expected_scene_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "registered_scene_id"
+          ],
+          "properties": {
+            "registered_scene_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "kind",
+        "expected_scene_version",
+        "artifact_hashes",
+        "parameters",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "const": "inspect_room"
+        },
+        "expected_scene_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "poses"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "panorama",
+                "detail"
+              ]
+            },
+            "poses": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "object_key",
+                  "position_m",
+                  "rotation_deg",
+                  "fov_deg"
+                ],
+                "properties": {
+                  "object_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9_.:-]+$"
+                  },
+                  "position_m": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "number",
+                      "minimum": -100,
+                      "maximum": 100
+                    }
+                  },
+                  "rotation_deg": {
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "number",
+                      "minimum": -360,
+                      "maximum": 360
+                    }
+                  },
+                  "fov_deg": {
+                    "type": "number",
+                    "minimum": 15,
+                    "maximum": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "action_id",
+        "project_id",
+        "conversation_id",
+        "message_id",
+        "kind",
+        "expected_scene_version",
+        "artifact_hashes",
+        "parameters",
+        "idempotency_key"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "action_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "conversation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "message_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "kind": {
+          "const": "stop_run"
+        },
+        "expected_scene_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_id"
+          ],
+          "properties": {
+            "run_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    }
+  ]
+}

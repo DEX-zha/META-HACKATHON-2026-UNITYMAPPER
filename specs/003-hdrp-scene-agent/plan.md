@@ -1,0 +1,216 @@
+# Implementation Plan: Agent de création et de contrôle visuel HDRP
+
+> **Mise à jour utilisateur du 2026-10-28** : plafond de consommation API de **150 USD encore disponibles**, suivi directement en micro-USD ; modèle `muse-spark-1.3-contributor` autorisé explicitement. La confirmation du solde restant est enregistrée une seule fois, sans recharge lors d’une nouvelle session. Cette instruction remplace les anciennes règles Standard/EUR et le blocage faute d’antériorité/changement/frais ; la clé reste dans `.env`, côté Python.
+
+**Branch**: Git `main` ; identifiant Spec Kit `003-hdrp-scene-agent`. Dépôt SSH : `git@github.com:DEX-zha/META-HACKATHON-2026-UNITYMAPPER.git`.
+
+**Date**: 2026-10-28 ; mise à jour 2026-10-31 | **Spec**: [spec.md](spec.md)
+
+**Input**: `specs/003-hdrp-scene-agent/spec.md` — 21 exigences, quatre parcours, huit critères de réussite.
+
+## Summary
+
+Construire un outil Unity qui inspecte le rendu réel d’une scène HDRP, diagnostique un défaut à partir de vues et de données du moteur, applique une correction limitée puis conserve uniquement les versions admissibles. Première preuve : une petite pièce existante, avant la création de pièces et l’extension forêt.
+
+Architecture retenue : fenêtre d’éditeur C# et adaptateur de commandes typées, reliés à un orchestrateur Python local. Muse Spark analyse les images et les courtes séquences ; SAM 3.1 intervient sur les surfaces ciblées, en complément des identités du moteur. L’orchestrateur conserve versions, preuves et budget dans SQLite et des fichiers locaux. Le modèle propose des données validées ; l’adaptateur applique une liste fermée d’opérations.
+
+Le socle est désormais implémenté ; les sections initiales conservent la conception historique du pilote. L’amendement actif du 2026-10-31 et `chat-plan.md` gouvernent la prochaine livraison. Les résultats réellement vérifiés sont dans `implementation-status.md` ; le chat Go reste à réaliser.
+
+## Technical Context
+
+**Language/Version**: C# pris en charge par Unity 6000.3 ; Python 3.12 pour le service, à installer avec `uv`. Le Python système 3.14.6 reste indépendant.
+
+**Primary Dependencies**: Unity Editor **6000.3.23f1**, HDRP **17.3.0**, interface Editor existante, Unity Test Framework ; Python FastAPI, Uvicorn, Pydantic 2, HTTPX, Pillow, NumPy, pytest, jsonschema, parseur officiel `meta-sam-parser` ; `ffmpeg` pour assembler les captures. Versions Python exactes figées dans `uv.lock` à l’initialisation, sans inventer de verrouillage absent. API Meta Responses : `muse-spark-1.3-contributor`, `sam-3.1`.
+
+**Storage**: SQLite local transactionnel ; métadonnées et journal d’événements ; médias et instantanés adressés par SHA-256. Grand livre API global indépendant des sessions et scènes. Manifeste de dépendances Unity incluant `.meta`, profils, matériaux et ressources de bake.
+
+**Testing**: pytest pour transitions, admission budgétaire, contrats et reprise ; Unity EditMode pour commandes et restauration ; PlayMode avec GPU pour captures HDRP ; recette réelle selon [workflow.md](contracts/workflow.md). Fournisseurs simulés explicitement pour les tests hors ligne, puis sondes réelles bornées.
+
+**Target Platform**: macOS Apple Silicon, Unity sous Metal. Éditeur 6000.3.23f1, package HDRP 17.3.0, `uv` et `ffmpeg` présents localement. Le projet HDRP de recette existe dans `unity/HDRPValidation`. Bake **Progressive GPU**, soumis à test matériel ; le lightmapper CPU natif Apple Silicon et le ray tracing HDRP Windows/DX12 ne sont pas des solutions de repli sur cette machine.
+
+**Project Type**: Extension d’éditeur Unity et service local monoprocessus ; fenêtre intégrée, CLI de diagnostic/recette ; application locale Go et chat par projet désormais requis par l’amendement du 2026-10-31 ci-dessous.
+
+**Performance Goals**: À 1280 × 720, trois vues fixes de travail, deux vues de contrôle, clip de six secondes à 24 images/s. Cibles à mesurer : capture/assemblage en moins de 90 s hors compilation/bake ; inspection initiale en moins de trois minutes hors bake. Rendu comparé sans readback pour mesurer la performance ; régression de temps de frame médian supérieure à 20 % rejetée sauf contrainte plus stricte du brief. Ces valeurs sont des choix de recette, pas des résultats.
+
+**Constraints**: Plafond API global **150 USD restants**, dépenses précédentes incluses ; trois essais correctifs par défaut ; arrêt de session à 20 minutes et bake à dix minutes par défaut, configurables avant lancement. Critères immuables ; modèles Meta uniquement ; pas de C# arbitraire généré/exécuté par le modèle. Une session et une opération Unity mutante à la fois. Publication et achat d’assets hors parcours.
+
+**Scale/Scope**: Une pièce, trois défauts de référence, un projet de recette ; création d’une petite pièce ensuite. Forêt conditionnelle après preuve de valeur. Animation procédurale, shaders arbitraires et support universel de projets hors MVP.
+
+## Constitution Check
+
+La [constitution](../../.specify/memory/constitution.md) est un gabarit non renseigné. Elle n’introduit aucun principe applicable ni étape d’approbation. Les contrôles ci-dessous proviennent de la spécification et de l’environnement.
+
+| Contrôle | Avant recherche | Après conception |
+|---|---|---|
+| Scène réelle, preuves comparables, retour arrière | Exigé | Commandes conditionnelles, instantanés et comparaison multivue |
+| Budget 150 USD restants partagé sans remise à zéro | Exigé | Grand livre global, réservation atomique, inconnus conservés |
+| Modèles Meta et provenance | Exigé | Adaptateurs explicites, ressources autorisées, manifeste |
+| Diagnostic borné et incertitude visible | Exigé | Familles limitées, états non concluants, arrêt sur limites |
+| Compatibilité matérielle | À établir | Metal documenté ; bake GPU et capture à qualifier à l’exécution |
+| Première preuve avant extension | Exigé | Jalons J0 à J5 ci-dessous |
+
+**Verdict de conception : PASS.** Aucune violation constitutionnelle à justifier. Ce verdict permet la décomposition en tâches ; il ne valide pas l’accès effectif aux API, le bake GPU ni les performances.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/003-hdrp-scene-agent/
+├── spec.md
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── checklists/requirements.md
+└── contracts/
+    ├── http-api.openapi.json
+    ├── domain.schema.json
+    ├── editor-bridge.md
+    ├── provider.md
+    └── workflow.md
+```
+
+`tasks.md` contient les tâches historiques et les nouveaux lots T151–T190 ; ne pas réinitialiser les travaux déjà qualifiés.
+
+### Source Code (repository root)
+
+Arborescence de conception du socle (consulter les sources pour l’état effectif) :
+
+```text
+pyproject.toml
+uv.lock
+src/hdrp_agent/
+├── cli.py
+├── api.py
+├── domain.py
+├── orchestrator.py
+├── store.py
+├── budget.py
+├── evaluation.py
+└── providers/
+    ├── meta_responses.py
+    ├── sam_decoder.py
+    └── fake.py
+unity/
+├── Packages/com.hackathon.hdrp-agent/
+│   ├── package.json
+│   ├── Editor/
+│   │   ├── AgentWindow.cs
+│   │   ├── BridgeClient.cs
+│   │   ├── CommandExecutor.cs
+│   │   ├── SnapshotStore.cs
+│   │   └── CaptureController.cs
+│   ├── Runtime/CaptureRig.cs
+│   └── Tests/{Editor,Runtime}/
+└── HDRPValidation/
+    ├── Assets/AgentWorkspace/
+    ├── Packages/
+    └── ProjectSettings/
+fixtures/{briefs,inspection-plans,provider-replies}/
+evaluation-private/          # Causes/oracles jamais transmis au modèle
+tests/{unit,contract,integration}/
+.hdrp-agent/                 # Données locales ignorées par Git
+├── global.sqlite3
+├── artifacts/
+└── reports/
+```
+
+**Structure Decision**: Une interface dans Unity, un service et aucune infrastructure distribuée. Le protocole de l’adaptateur est indépendant d’un MCP Unity particulier ; une façade MCP pourra le réutiliser. Le prototype ne dépend pas d’un autre agent pour exécuter des commandes opaques.
+
+## Architecture et flux
+
+1. La fenêtre enregistre projet, scène sauvegardée, capacités, brief, limites et ressources autorisées. Le service gèle critères et plan d’inspection.
+2. L’adaptateur exécute une commande à la fois sur le thread principal. Les tâches longues exposent identifiant, battements et résultat durable ; un accusé HTTP n’est jamais la preuve d’un bake terminé.
+3. L’éditeur sauvegarde un état restaurable. Le rig lance une capture PlayMode contrôlée puis revient en EditMode. Des scripts utilisateurs non maîtrisés rendent le cas incompatible plutôt que comparable par défaut.
+4. Le service contrôle les empreintes et transmet seulement les vues de travail, le clip, les objets candidats et les diagnostics autorisés. SAM est sollicité sur une région utile, avec cache.
+5. Muse produit observations, hypothèses et patch structurés. Schéma, références, unités, bornes et préconditions sont vérifiés avant mutation. La cause privée d’un défaut de recette n’est jamais révélée à l’agent.
+6. Le patch est appliqué en EditMode. Un bake nécessaire doit se terminer réellement, puis les mêmes captures sont rejouées. Les données de contrôle sont réservées à l’évaluateur.
+7. L’évaluateur compare critères objectifs, contraintes du brief et jugement artistique séparé. Il retient ou restaure. Le planificateur ne reçoit pas les images de contrôle ni leurs scores détaillés pour préparer l’essai suivant.
+8. La fenêtre montre meilleure version vérifiée, preuves et défauts restants. Une mutation d’issue inconnue impose une réconciliation avant nouvelle commande.
+
+Le service écoute sur `127.0.0.1:8765`, avec jeton local et un seul worker Uvicorn. SQLite contient une file durable qu’une coroutine d’orchestration traite après démarrage. Aucun handler HTTP ne réalise de longue inférence dans sa transaction. Les contrats détaillent rejouabilité et reprise.
+
+## Capture et diagnostic
+
+Capturer le Game View final en PlayMode à fin de frame avec `ScreenCapture`, avec post-traitement HDRP. Préférer le readback asynchrone qualifié ; chemin synchrone borné acceptable pour le premier prototype. Résolution, pipeline, exposition, caméra, graine, temps simulé et état du bake figurent dans le manifeste.
+
+Exposition fixe, remise à zéro des historiques temporels entre prises, échauffement initial de 32 frames, porté jusqu’à 120 si le test de stabilité l’exige. Rejouer aussi les frames d’approche ; avancer la caméra par numéro de frame, pas par horloge murale. Mesurer deux captures sans modification avant d’autoriser un verdict. Un rendu instable est non concluant. GameView doit rester active ; `WaitForEndOfFrame` ne fonctionne pas en Editor batch mode. La recette graphique ne s’exécute pas avec `-nographics`.
+
+Objets sauvegardés identifiés par `GlobalObjectId` en EditMode ; table de clés logiques sérialisée avant PlayMode. Ne pas résoudre `GlobalObjectId` au runtime ni persister `InstanceID` comme identité. Projection/profondeur/raycast pour surfaces opaques simples ; `ObjectIdRequest`, AOV ou Custom Pass deviennent des améliorations si qualifiés. Masques SAM, volumes et transparences gardent une incertitude explicite.
+
+Diagnostics MVP : transforms/bounds, propriétés autorisées des lights et matériaux, profils de volumes, contribution GI, paramètres et état du bake. Ne pas supposer toutes les sorties AOV opérationnelles dès J0.
+
+## Modifications et retour arrière
+
+Liste fermée : primitives/prefabs autorisés dans un root dédié, transforms bornées, paramètres HDRP exposés, copie locale de matériau/profil, contribution GI et paramètres de bake pris en charge. Ni menu arbitraire ni propriété sérialisée libre. Champs, unités et bornes : [editor-bridge.md](contracts/editor-bridge.md).
+
+Les instantanés couvrent scène, `.meta`, ressources modifiables, lightmaps, LightingDataAsset et probes concernés, plus tout nouveau fichier créé dans l’espace de travail. Manifeste avant/après avec hash et journal de restauration. `Undo` ne remplace pas le retour sur disque après bake/redémarrage. Un fichier hors périmètre ou modifié par l’utilisateur provoque un conflit explicite.
+
+Les scènes importées sont travaillées dans une copie isolée avec dépendances modifiables clonées. Pas de modification automatique des réglages globaux du projet. Une dépendance impossible à isoler/restaurer interdit l’opération. Les créations possèdent un root et un dossier dédiés ; leur suppression au retour est enregistrée.
+
+## Budget et modèles
+
+Invariant : `dépensé + réservations actives (inconnues incluses) + nouvel engagement <= 150 USD restants`. Entiers micro-dollars USD arrondis vers le haut ; tarifs, conversion et frais provisionnés sourcés datés. Réservation SQLite `BEGIN IMMEDIATE` avant envoi ; aucune transaction tenue pendant le réseau. Coût inconnu : blocage. Timeout après envoi : réservation conservée, sans retry automatique ni remboursement présumé.
+
+Le décompte de tokens Meta n’est pas une garantie comptable ; voir [provider.md](contracts/provider.md). Pour Spark sans outils hébergés, réserver conservativement la fenêtre entière de 1 048 576 tokens d’entrée et 4 096 tokens de sortie, même si le payload est bien plus petit. Les dimensions et tarifs sont sourcés ; mode refusé si son majorant n’est plus établi. Les tarifs documentés et leurs limites figurent dans la recherche, pas un prix moyen inventé par image Spark.
+
+Répartition indicative **du solde après dépenses antérieures** : 5/150 sondes, 70/150 développement, 35/150 recette, 20/150 démonstration, 20/150 réserve. Ce sont des parts du solde, pas 150 USD restants supplémentaires. Réconciliation du déjà consommé obligatoire avant premier appel ; un montant inconnu ne vaut pas zéro. Les appels externes utilisant la même clé doivent aussi être réconciliés.
+
+Muse reçoit d’abord trois images et un résumé d’état. Vidéo native si accès/coût/valeur validés ; sinon frames horodatées du même clip. Les défauts temporels exigent une observation suffisante, pas une conclusion sur trois images isolées. SAM sur une image ciblée d’abord ; suivi vidéo seulement si utile et borné. Le mode simulé ne produit jamais un verdict de réparation réelle.
+
+## Ordre de livraison et portes d’exécution
+
+| Jalon | Livrable | Condition de passage |
+|---|---|---|
+| J0 — Faisabilité locale | HDRP verrouillé, fenêtre, capture, bake GPU et restauration sans modèles | Captures comparables, vrai bake terminé puis restauration, aucun fichier partagé écrasé |
+| J1 — Contrat Meta | Adaptateurs Muse/SAM, parseurs, cache, grand livre | Schémas invalides refusés, sondes réelles dans enveloppe, majorants établis |
+| J2 — Première correction | Une pièce et un défaut non révélé à l’agent | Hypothèse étayée, patch réel, verdict travail + contrôle |
+| J3 — Recette de valeur | Trois cas, quatre négatifs, comparaison workflow habituel et ablation SAM | SC-001/002/004/005/006/007 mesurés ; limitations rapportées |
+| J4 — Création de pièce | Brief → scène → même contrôle | SC-003, reprise, rapport et provenance |
+| J5 — Livraison/extension | Démo trois minutes ; forêt conditionnelle | SC-008 ; extension après preuve et sans dépasser le budget |
+
+Échec de bake GPU : une démonstration temps réel reste possible mais partielle ; elle ne valide pas l’éclairage indirect. Accès fournisseur absent : tests hors ligne utilisables, sans présenter une simulation comme preuve Meta. Ce sont des critères d’arrêt explicites, sans remplacement silencieux d’exigences.
+
+## Couverture et validation de la conception
+
+| Exigences | Conception | Validation prévue |
+|---|---|---|
+| FR-001–003 | Brief, capacités, constructeur borné | Ouverture, éléments requis, dépendance absente |
+| FR-004–008 | Manifeste, rig, identités, diagnostics, SAM | SC-002/007, instabilité, masque erroné |
+| FR-009–014 | Critères gelés, patch conditionnel, snapshot/bake, évaluateur | SC-001/005, conflit et retour après redémarrage |
+| FR-015–019 | Automate durable, limites et ledger | SC-006, interruption et issue réseau inconnue |
+| FR-020 | Meta, manifeste de provenance, recette | Audit, reproduction et SC-008 |
+| FR-021 | Même constructeur et contrôles, assets forêt | Recette extension après validation pièce |
+
+La planification se termine avec recherche, modèle de données, contrats et guide de recette. Étape suivante : `$speckit-tasks`. Les tests d’implémentation seront exécutés pendant la réalisation.
+
+Vérifications de cette phase : JSON lisibles, références internes résolues, schémas partagés identiques entre JSON Schema et OpenAPI, paramètres de routes et identifiants d’opérations cohérents, liens locaux valides et gabarits remplacés. Revue documentaire Unity et Meta terminée sans blocage ; limites de fog, commandes d’annulation et identités de la copie précisées. Les validateurs complets JSON Schema/OpenAPI ne sont pas installés dans cet environnement ; leur validation formelle fait partie des contrôles de contrat à l’implémentation. Aucun test de produit ni appel Meta effectué. Aucun fichier de hooks avant/après plan présent.
+
+## Complexity Tracking
+
+Aucune violation à justifier. Les deux runtimes du socle isolent Unity de l’inférence et du budget. L’amendement Go ajoute le troisième runtime demandé pour l’application ; sa responsabilité se limite à l’interface et à son état, sans dupliquer le cœur financier. SQLite suffit ; aucune infrastructure distribuée ni dépendance obligatoire à un MCP tiers.
+
+## Précisions intégrées à l’implémentation
+
+Les états locaux capture_verified et gpu_bake_verified sont distincts : une validation de capture permet une sonde image ou une démonstration temps réel partielle ; un cas indirect exige aussi un bake GPU vérifié. La collecte des temps de frame est implémentée dans le rig avant le premier verdict, T079 consolidant/optimisant les mesures. Le registre des méthodes d’évaluation et la grille SC-004 sont précisés dans le contrat de validation. Les commandes probe/evaluate sont raccordées avant leur utilisation.
+
+## Amendement : contrôle global en une demande
+
+Le diagnostic doit couvrir explicitement toutes les vues de travail et être répété sur la nouvelle version après chaque correction. Des versions techniques provisoires peuvent être chaînées à l’intérieur de la session quand tous les contrôles techniques passent et que seul l’avis artistique indépendant manque. Elles ne remplacent pas la meilleure version admise. Un diagnostic résiduel pilote la correction suivante dans la même enveloppe de trois essais ; un rapport final unique contient la branche candidate et ses limites. Une opération UV2 déterministe et bornée clone un mesh statique possédé avant de recalculer ses UV ; aucun script modèle ni écriture sur le mesh partagé.
+
+
+## Priorité active — correction de fidélité, 2026-10-29
+
+Le [plan de correction de fidélité](fidelity-plan.md) gouverne désormais la reproduction enregistrée, US5–US9 et tâches T108–T143. Il complète les éléments historiques de ce document, sans relancer le pilote d’éclairage. Limites du parcours de reproduction : six candidats/quarante minutes, grand livre global existant. Les tâches T090–T106 déjà présentes sont à réconcilier selon leurs preuves ; elles ne doivent pas être réimplémentées aveuglément. T107 (croquis) reste différée. Les nouveaux livrables sont de la conception, pas des corrections déjà exécutées.
+
+
+## Priorité active — pièce cohérente et application Go, 2026-10-31
+
+Cet amendement remplace la limitation historique à une fenêtre Unity. Le produit demandé est une application locale de chat par projet, avec serveur Go, reliée à l’agent Muse/SAM et à Unity. Le MCP reste un accès facultatif. Le plan détaillé, ses décisions et contrats sont dans [chat-plan.md](chat-plan.md), [chat-research.md](chat-research.md), [chat-data-model.md](chat-data-model.md), [chat-api](contracts/chat-api.openapi.json), [actions](contracts/chat-actions.md) et [recette](chat-quickstart.md). Les tâches sont dans le même [tasks.md](tasks.md), T151–T190.
+
+Ordre : (1) versionner le socle et achever les vérifications de murs/plafond ; (2) contrats et stockage du chat ; (3) conversations persistantes avec Muse ; (4) démarrage natif des actions depuis le chat ; (5) preuves, arrêt et reprise ; (6) recette complète sans MCP. Aucune interface Go n’est encore implémentée à cette date. Go 1.27.3 a été installé ; ce n’est pas une preuve de produit.
+
+L’application doit pouvoir suivre « reconstruis cette image avec les prefabs Building, des murs intérieurs cohérents et Ceiling_3x3 », puis « inspecte ce raccord et corrige-le » dans la même conversation. Un message de succès sans run natif, version et captures ne satisfait pas le besoin. Les tests contractuels précèdent les nouveaux appels payants.
+
+La cohérence des murs et le plafond sont des contraintes d’assemblage : famille B par défaut pour cet exemple GP, variantes compatibles avec les ouvertures, vrais prefabs connectés, plafond raccordé aux faces intérieures à 2,8 m (pivot auteur à 3 m), aucun mélange silencieux A/B. Les variantes et plafonds dérivés doivent être déclarés au modèle et dans les reçus ; pas de géométrie cachée au contrôle. Le masque SAM n’établit ni profondeur ni conformité d’un assemblage.
