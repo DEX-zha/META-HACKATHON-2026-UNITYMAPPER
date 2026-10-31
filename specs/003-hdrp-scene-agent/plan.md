@@ -261,3 +261,13 @@ L'architecture est transmise séparément des poses de meubles. Les raccords pro
 Un audit natif échantillonne les triangles orientés des deux côtés : absence de surface sur un panneau attendu et mur qui bouche une ouverture sont des erreurs de construction. Les matériaux des murs doivent être opaques ; les vitres sont exclues de ce contrôle. Les reçus conservent ouvertures, chemins des prefabs, nombre de pièces connectées et résultats des rayons. Cette preuve échantillonnée ne certifie pas encore tous les raccords entre murs ni la fidélité globale au dessin.
 
 Le rendu de construction utilise un éclairage HDRP neutre avec remplissage, sans ombres directionnelles. Il sert à vérifier les volumes et matériaux ; la qualification photométrique finale reste distincte.
+
+### Révision : assemblage natif uniquement — 2026-10-31
+
+La demande utilisateur remplace l'approche de panneaux redimensionnés : aucun étirement, découpage ou clone de mesh. Le plan image fournit les relations et orientations ; un quadrillage métrique adapte les pièces aux modules entiers du catalogue. Les ouvertures utilisent les modules porte/fenêtre complets et leurs accessoires natifs. Sols et plafonds sont pavés de prefabs entiers. Les meubles restent à échelle 1, placés dans les pièces avec marges et contacts. Les corrections image ne doivent pas annuler cet agencement pour retrouver artificiellement les boîtes pixel. Validation séparée : provenance/échelle, surfaces et ouvertures, contacts, puis captures natives ; aucune promesse de fidélité parfaite.
+
+### Correction fonctionnelle : circulation — 2026-10-31
+
+La recette visuelle utilisateur invalide l'agencement natif compact : télé devant la porte, accès au lit et circulation insuffisants. Les contacts et l'absence de chevauchement ne qualifient pas un appartement utilisable. Réserver les dégagements de portes et les zones d'utilisation des meubles ; vérifier par recherche de chemin une largeur de passage explicite, les liaisons entre portes et l'accès aux meubles. Agrandir les pièces par modules entiers si nécessaire, sans réduire les meubles. Cette validation par empreintes doit rester distincte d'une certification de collision des meshes ou d'accessibilité réglementaire.
+
+La sélection compare également les orientations de pavage (dalles natives tournées). Le salon conserve une relation explicite canapé/table basse/télé et les objets posés suivent leur support. La mesure du résultat natif est distincte de la comparaison avec l’image originale : une bonne circulation ne constitue pas un score de fidélité visuelle.

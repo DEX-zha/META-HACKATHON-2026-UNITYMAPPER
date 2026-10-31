@@ -524,7 +524,7 @@ class ReferenceWorker:
             if composition_requested:
                 from .floorplan import extract,optimize,build_plan,checkpoint as save_composition
                 self.status(job,'composition','Extraction des pièces et optimisation des contraintes de placement…')
-                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='floorplan-2'))
+                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='native-circulation-4'))
                 saved=prior.get('composition',{})
                 observation=saved['observation'] if saved.get('evidence_hash')==composition_evidence else extract(provider,self.artifacts,frames,effective,catalogue,segments,brief)
                 fit=optimize(observation['value'],guard=lambda:self.guard(sid))
@@ -654,7 +654,17 @@ class ReferenceWorker:
                 metrics['contacts']=native['contacts']
                 if job.get('composition'):
                     from .floorplan import measure_native
-                    metrics['composition']=measure_native(job['composition']['observation']['value'],native['composition_proof'])
+                    metrics['composition']=measure_native(job['composition'].get('layout_observation',job['composition']['observation']['value']),native['composition_proof'])
+                    metrics['composition']['target_kind']=job['composition'].get('layout_policy','reference_image')
+                    metrics['composition']['reference_comparison']=measure_native(job['composition']['observation']['value'],native['composition_proof'])
+                    if job['composition'].get('layout_policy')=='native_prefab_assembly':
+                        from .circulation import check as check_circulation
+                        from .floorplan import pose
+                        native_poses={o['object_key']:pose(o['bbox_xyxy']) for o in native['composition_proof']['projected_objects']}
+                        asset_names={a['asset_id']:a.get('name','') for a in catalogue}
+                        names={o['key']:asset_names.get(o['asset_id'],'') for o in effective['objects']}
+                        self.status(job,'validating','Vérification des passages entre les portes et des accès aux meubles…')
+                        metrics['composition']['circulation']=check_circulation(job['composition']['layout_observation'],native_poses,job['composition']['screen_width_m'],job['composition']['screen_height_m'],names)
                     structure=native.get('room_finish',{}).get('architecture',{})
                     metrics['composition']['architecture']=structure
                     metrics['composition']['structural_admissible']=bool(structure.get('walls')) and all(w.get('surface_audit',{}).get('passed') for w in structure.get('walls',[]))

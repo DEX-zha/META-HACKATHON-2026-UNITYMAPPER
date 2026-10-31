@@ -683,3 +683,13 @@ Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est r
 - [x] T201 Assembler les murs autour d'ouvertures explicites avec des prefabs connectés, deux faces de cloison, portes/cadres, jambages et fermetures ; conserver la provenance.
 - [x] T202 Ajouter un audit natif des surfaces orientées et ouvertures, rejeter un panneau absent/désactivé ou transparent ; vérifier les vrais prefabs dans les tests Unity.
 - [x] T203 Vérifier la scène complète après correction des supports, avec captures du dessus et de l'intérieur des deux pièces sous lumière neutre ; enregistrer les limites restantes sans certifier la fidélité globale.
+
+### Assemblage de modules entiers (remplace la stratégie T201)
+
+- [x] T204 Compiler le plan sur une grille compatible avec les modules entiers ; préserver la topologie et les tailles natives des meubles.
+- [x] T205 Remplacer les panneaux étirés par murs/portes/fenêtres complets et sols/plafonds pavés ; conserver les connexions prefab et le style intérieur.
+- [x] T206 Vérifier échelles, ouvertures, faces et contacts ; empêcher les corrections pixel de défaire l'agencement natif.
+- [x] T207 Exécuter les tests et la reconstruction salon/chambre, inspecter les captures et consigner les limites.
+- [x] T208 Ajouter une vérification de circulation reliant les portes et les zones d'utilisation des meubles ; tests des couloirs trop étroits et accès bloqués.
+- [x] T209 Réserver les dégagements et agrandir automatiquement les pièces par modules natifs lorsque le mobilier ne permet pas une circulation correcte.
+- [x] T210 Reconstruire et inspecter le salon/chambre ; publier les dimensions, chemins et limites de la validation fonctionnelle.

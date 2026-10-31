@@ -1,0 +1,787 @@
+{
+  "observation": {
+    "envelope": [
+      0.03,
+      0.085,
+      0.97,
+      0.915
+    ],
+    "limits": [
+      "wall centrelines approximated from thick exterior rendering",
+      "ceiling hidden in cutaway - bounds inferred from interior envelope"
+    ],
+    "objects": [
+      {
+        "bounds": [
+          0.083,
+          0.162,
+          0.476,
+          0.79
+        ],
+        "confidence": 0.95,
+        "object_key": "floor_salon",
+        "role": "floor",
+        "room_key": "salon",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.507,
+          0.162,
+          0.919,
+          0.79
+        ],
+        "confidence": 0.95,
+        "object_key": "floor_bedroom",
+        "role": "floor",
+        "room_key": "bedroom",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.032,
+          0.082,
+          0.498,
+          0.16
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_north_salon",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.505,
+          0.082,
+          0.952,
+          0.16
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_north_bedroom",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.032,
+          0.79,
+          0.497,
+          0.875
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_south_entrance",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 180
+      },
+      {
+        "bounds": [
+          0.505,
+          0.79,
+          0.952,
+          0.875
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_south_bedroom",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 180
+      },
+      {
+        "bounds": [
+          0.032,
+          0.082,
+          0.075,
+          0.875
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_west",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 270
+      },
+      {
+        "bounds": [
+          0.918,
+          0.082,
+          0.96,
+          0.875
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_east",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 90
+      },
+      {
+        "bounds": [
+          0.49,
+          0.135,
+          0.525,
+          0.79
+        ],
+        "confidence": 0.9,
+        "object_key": "wall_interior_door",
+        "role": "wall",
+        "room_key": null,
+        "yaw_deg": 90
+      },
+      {
+        "bounds": [
+          0.068,
+          0.15,
+          0.918,
+          0.83
+        ],
+        "confidence": 0.6,
+        "object_key": "ceiling_main",
+        "role": "ceiling",
+        "room_key": null,
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.076,
+          0.229,
+          0.191,
+          0.629
+        ],
+        "confidence": 0.95,
+        "object_key": "sofa",
+        "role": "furniture",
+        "room_key": "salon",
+        "yaw_deg": 90
+      },
+      {
+        "bounds": [
+          0.199,
+          0.292,
+          0.371,
+          0.612
+        ],
+        "confidence": 0.95,
+        "object_key": "rug_salon",
+        "role": "rug",
+        "room_key": "salon",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.246,
+          0.353,
+          0.325,
+          0.537
+        ],
+        "confidence": 0.95,
+        "object_key": "coffee_table",
+        "role": "furniture",
+        "room_key": "salon",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.253,
+          0.404,
+          0.315,
+          0.497
+        ],
+        "confidence": 0.9,
+        "object_key": "pasta_plate",
+        "role": "supported",
+        "room_key": "salon",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.417,
+          0.228,
+          0.475,
+          0.576
+        ],
+        "confidence": 0.95,
+        "object_key": "tv_cabinet",
+        "role": "furniture",
+        "room_key": "salon",
+        "yaw_deg": 270
+      },
+      {
+        "bounds": [
+          0.436,
+          0.287,
+          0.467,
+          0.533
+        ],
+        "confidence": 0.9,
+        "object_key": "tv",
+        "role": "supported",
+        "room_key": "salon",
+        "yaw_deg": 270
+      },
+      {
+        "bounds": [
+          0.43,
+          0.232,
+          0.466,
+          0.282
+        ],
+        "confidence": 0.9,
+        "object_key": "small_plant",
+        "role": "supported",
+        "room_key": "salon",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.601,
+          0.197,
+          0.82,
+          0.611
+        ],
+        "confidence": 0.95,
+        "object_key": "double_bed",
+        "role": "furniture",
+        "room_key": "bedroom",
+        "yaw_deg": 180
+      },
+      {
+        "bounds": [
+          0.565,
+          0.258,
+          0.85,
+          0.648
+        ],
+        "confidence": 0.9,
+        "object_key": "rug_bedroom",
+        "role": "rug",
+        "room_key": "bedroom",
+        "yaw_deg": 0
+      },
+      {
+        "bounds": [
+          0.855,
+          0.24,
+          0.898,
+          0.6
+        ],
+        "confidence": 0.9,
+        "object_key": "wardrobe",
+        "role": "furniture",
+        "room_key": "bedroom",
+        "yaw_deg": 270
+      }
+    ],
+    "openings": [
+      {
+        "end": 0.6,
+        "key": "win_north_salon",
+        "kind": "window",
+        "start": 0.25,
+        "wall_key": "wall_north_salon"
+      },
+      {
+        "end": 0.6,
+        "key": "win_north_bedroom",
+        "kind": "window",
+        "start": 0.28,
+        "wall_key": "wall_north_bedroom"
+      },
+      {
+        "end": 0.33,
+        "key": "door_entrance",
+        "kind": "door",
+        "start": 0.12,
+        "wall_key": "wall_south_entrance"
+      },
+      {
+        "end": 0.89,
+        "key": "door_interior",
+        "kind": "door",
+        "start": 0.68,
+        "wall_key": "wall_interior_door"
+      }
+    ],
+    "projection": "overhead_cutaway",
+    "rooms": [
+      {
+        "bounds": [
+          0.072,
+          0.155,
+          0.482,
+          0.83
+        ],
+        "key": "salon"
+      },
+      {
+        "bounds": [
+          0.508,
+          0.155,
+          0.918,
+          0.83
+        ],
+        "key": "bedroom"
+      }
+    ],
+    "walls": [
+      {
+        "end": [
+          0.5,
+          0.12
+        ],
+        "object_key": "wall_north_salon",
+        "rooms": [
+          "salon"
+        ],
+        "start": [
+          0.055,
+          0.12
+        ]
+      },
+      {
+        "end": [
+          0.94,
+          0.12
+        ],
+        "object_key": "wall_north_bedroom",
+        "rooms": [
+          "bedroom"
+        ],
+        "start": [
+          0.505,
+          0.12
+        ]
+      },
+      {
+        "end": [
+          0.5,
+          0.853
+        ],
+        "object_key": "wall_south_entrance",
+        "rooms": [
+          "salon"
+        ],
+        "start": [
+          0.055,
+          0.853
+        ]
+      },
+      {
+        "end": [
+          0.94,
+          0.853
+        ],
+        "object_key": "wall_south_bedroom",
+        "rooms": [
+          "bedroom"
+        ],
+        "start": [
+          0.505,
+          0.853
+        ]
+      },
+      {
+        "end": [
+          0.05,
+          0.853
+        ],
+        "object_key": "wall_west",
+        "rooms": [
+          "salon"
+        ],
+        "start": [
+          0.05,
+          0.12
+        ]
+      },
+      {
+        "end": [
+          0.94,
+          0.853
+        ],
+        "object_key": "wall_east",
+        "rooms": [
+          "bedroom"
+        ],
+        "start": [
+          0.94,
+          0.12
+        ]
+      },
+      {
+        "end": [
+          0.5,
+          0.853
+        ],
+        "object_key": "wall_interior_door",
+        "rooms": [
+          "salon",
+          "bedroom"
+        ],
+        "start": [
+          0.5,
+          0.12
+        ]
+      }
+    ]
+  },
+  "analysis": {
+    "objects": [
+      {
+        "key": "floor_salon",
+        "asset_id": "asset-0261",
+        "support_key": null
+      },
+      {
+        "key": "floor_bedroom",
+        "asset_id": "asset-0041",
+        "support_key": null
+      },
+      {
+        "key": "wall_north_salon",
+        "asset_id": "asset-0011",
+        "support_key": null
+      },
+      {
+        "key": "wall_north_bedroom",
+        "asset_id": "asset-0256",
+        "support_key": null
+      },
+      {
+        "key": "wall_south_entrance",
+        "asset_id": "asset-0348",
+        "support_key": null
+      },
+      {
+        "key": "wall_south_bedroom",
+        "asset_id": "asset-0085",
+        "support_key": null
+      },
+      {
+        "key": "wall_west",
+        "asset_id": "asset-0085",
+        "support_key": null
+      },
+      {
+        "key": "wall_east",
+        "asset_id": "asset-0085",
+        "support_key": null
+      },
+      {
+        "key": "wall_interior_door",
+        "asset_id": "asset-0198",
+        "support_key": null
+      },
+      {
+        "key": "ceiling_main",
+        "asset_id": "asset-0620",
+        "support_key": null
+      },
+      {
+        "key": "sofa",
+        "asset_id": "asset-0037",
+        "support_key": "floor_salon"
+      },
+      {
+        "key": "rug_salon",
+        "asset_id": "asset-0342",
+        "support_key": "floor_salon"
+      },
+      {
+        "key": "coffee_table",
+        "asset_id": "asset-0104",
+        "support_key": "floor_salon"
+      },
+      {
+        "key": "pasta_plate",
+        "asset_id": "asset-0404",
+        "support_key": "coffee_table"
+      },
+      {
+        "key": "tv_cabinet",
+        "asset_id": "asset-0397",
+        "support_key": "floor_salon"
+      },
+      {
+        "key": "tv",
+        "asset_id": "asset-0235",
+        "support_key": "tv_cabinet"
+      },
+      {
+        "key": "small_plant",
+        "asset_id": "asset-0086",
+        "support_key": "tv_cabinet"
+      },
+      {
+        "key": "double_bed",
+        "asset_id": "asset-0322",
+        "support_key": "floor_bedroom"
+      },
+      {
+        "key": "rug_bedroom",
+        "asset_id": "asset-0139",
+        "support_key": "floor_bedroom"
+      },
+      {
+        "key": "wardrobe",
+        "asset_id": "asset-0092",
+        "support_key": "floor_bedroom"
+      }
+    ]
+  },
+  "catalogue": [
+    {
+      "asset_id": "asset-0011",
+      "name": "WallOut_3x_window_vinyl",
+      "bounds_center_m": [
+        -1.5,
+        1.5,
+        -0.0162445
+      ],
+      "bounds_size_m": [
+        3.0,
+        3.0,
+        0.274587452
+      ]
+    },
+    {
+      "asset_id": "asset-0037",
+      "name": "Sofa_2seat",
+      "bounds_center_m": [
+        0.0,
+        0.513096452,
+        0.00153523684
+      ],
+      "bounds_size_m": [
+        1.54554653,
+        1.02910066,
+        0.903464437
+      ]
+    },
+    {
+      "asset_id": "asset-0041",
+      "name": "Floor_6x6",
+      "bounds_center_m": [
+        -3.0,
+        5.60303377e-08,
+        3.0
+      ],
+      "bounds_size_m": [
+        6.0,
+        1.5020764e-07,
+        6.0
+      ]
+    },
+    {
+      "asset_id": "asset-0085",
+      "name": "WallOut_3x",
+      "bounds_center_m": [
+        -1.5,
+        1.5,
+        0.09999984
+      ],
+      "bounds_size_m": [
+        3.0,
+        3.0,
+        0.0
+      ]
+    },
+    {
+      "asset_id": "asset-0086",
+      "name": "Interior_plant_C",
+      "bounds_center_m": [
+        0.008467406,
+        0.136522666,
+        0.00571081042
+      ],
+      "bounds_size_m": [
+        0.318808436,
+        0.272948235,
+        0.327960134
+      ]
+    },
+    {
+      "asset_id": "asset-0092",
+      "name": "Cabinet_B",
+      "bounds_center_m": [
+        0.0,
+        1.06855619,
+        0.00511211157
+      ],
+      "bounds_size_m": [
+        1.3888545,
+        2.136326,
+        0.618592739
+      ]
+    },
+    {
+      "asset_id": "asset-0104",
+      "name": "Table_coffee",
+      "bounds_center_m": [
+        0.0,
+        0.206009477,
+        5.96046448e-08
+      ],
+      "bounds_size_m": [
+        1.07449174,
+        0.421483755,
+        0.58826673
+      ]
+    },
+    {
+      "asset_id": "asset-0139",
+      "name": "Carpet_E",
+      "bounds_center_m": [
+        0.0,
+        0.00494898437,
+        0.0
+      ],
+      "bounds_size_m": [
+        0.799999952,
+        0.009897969,
+        0.599999964
+      ]
+    },
+    {
+      "asset_id": "asset-0198",
+      "name": "WallIn_B_3x_door",
+      "bounds_center_m": [
+        -1.5,
+        1.4,
+        0.149641871
+      ],
+      "bounds_size_m": [
+        3.0,
+        2.8,
+        0.09936279
+      ]
+    },
+    {
+      "asset_id": "asset-0235",
+      "name": "TV_off",
+      "bounds_center_m": [
+        -0.00016617775,
+        0.443427384,
+        0.00391374528
+      ],
+      "bounds_size_m": [
+        1.36582744,
+        0.898678541,
+        0.315395683
+      ]
+    },
+    {
+      "asset_id": "asset-0256",
+      "name": "WallOut_3x_window_static",
+      "bounds_center_m": [
+        -1.5,
+        1.5,
+        -0.0162445
+      ],
+      "bounds_size_m": [
+        3.0,
+        3.0,
+        0.274587452
+      ]
+    },
+    {
+      "asset_id": "asset-0261",
+      "name": "Floor_4x3",
+      "bounds_center_m": [
+        -2.0,
+        -9.536743e-09,
+        1.5
+      ],
+      "bounds_size_m": [
+        4.0,
+        1.90734859e-08,
+        3.0
+      ]
+    },
+    {
+      "asset_id": "asset-0322",
+      "name": "Bed_king",
+      "bounds_center_m": [
+        0.0,
+        0.706625164,
+        0.0
+      ],
+      "bounds_size_m": [
+        2.25995135,
+        1.41343641,
+        2.138948
+      ]
+    },
+    {
+      "asset_id": "asset-0342",
+      "name": "Carpet_D",
+      "bounds_center_m": [
+        0.0,
+        0.003785638,
+        0.0
+      ],
+      "bounds_size_m": [
+        2.39999986,
+        0.007571276,
+        1.0
+      ]
+    },
+    {
+      "asset_id": "asset-0348",
+      "name": "WallOut_3x_door",
+      "bounds_center_m": [
+        -1.5,
+        1.49895477,
+        -0.04714696
+      ],
+      "bounds_size_m": [
+        3.0,
+        3.00209045,
+        0.338338435
+      ]
+    },
+    {
+      "asset_id": "asset-0397",
+      "name": "Cabinet_A",
+      "bounds_center_m": [
+        0.0,
+        0.0,
+        0.149636582
+      ],
+      "bounds_size_m": [
+        0.954645336,
+        0.604051948,
+        0.291563481
+      ]
+    },
+    {
+      "asset_id": "asset-0404",
+      "name": "Plate_spaghetti",
+      "bounds_center_m": [
+        2.98023224e-08,
+        0.0250681285,
+        0.0
+      ],
+      "bounds_size_m": [
+        0.309793,
+        0.0499164276,
+        0.309792966
+      ]
+    },
+    {
+      "asset_id": "asset-0620",
+      "name": "Ceiling_3x3",
+      "bounds_center_m": [
+        -1.5,
+        -0.199999988,
+        1.5
+      ],
+      "bounds_size_m": [
+        3.0,
+        0.0,
+        3.0
+      ]
+    }
+  ],
+  "aspect": 1.5
+}

@@ -221,3 +221,16 @@ Validation : suite complète 284 tests puis test de régression supplémentaire,
 - Scène : `Assets/AgentWorkspace/Runs/architecture-20261031-142046/Reconstruction.unity`. Huit vues intérieures et une capture du dessus archivées ; comparaison locale `.hdrp-agent/reports/architecture-correction.html` et preuves JSON. Les modifications utilisateur non enregistrées ont été conservées dans `Assets/AgentWorkspace/Preserved/BeforeArchitecture-20261031-141143.unity` avant l'essai.
 - Vérifications : 296 tests Python passés, 24 tests natifs de construction Unity passés, y compris rejet d'une face désactivée. Aucun nouvel appel payé pour ces corrections. Backend local mis à jour.
 - Limites visibles conservées : discontinuités de moulures aux panneaux d'ouvertures, texel density et identité de certains meubles, fidélité complète au dessin. T192–T199 restent ouverts ; T200–T203 décrivent des corrections ciblées, pas une qualification globale.
+
+
+### Assemblage natif et circulation — 2026-10-31
+
+L'agencement compact précédent a été rejeté par l'utilisateur : télé devant la porte et lit entravant la circulation. Les contrôles de contact et de surface ne suffisaient pas. Le constructeur utilise désormais exclusivement des modules entiers à échelle 1, y compris les dalles tournées et les accessoires des ouvertures. Le solveur recherche une disposition compatible avec les passages, les zones d'utilisation et les relations canapé/table/télé ; il agrandit les pièces par modules sans réduire les meubles. Les objets supportés suivent leur meuble.
+
+- Recette native : `Assets/AgentWorkspace/Runs/native-20261031-151256/Reconstruction.unity`, version `version-7c38e6ece3576dcd0716ab9fa48fe1763003f08cb0917b4f2c96497cef3ab396`.
+- Deux pièces de 6 × 4 m, portes dégagées sur 1,30 m et chemins de 80 cm entre les portes et les points d'accès ; le lit possède des accès latéraux et au pied. Vérification renouvelée à partir des empreintes projetées réelles de Unity, pas seulement des poses proposées.
+- Sept murs audités, contacts natifs passés, une vue du dessus et huit vues intérieures enregistrées. Rapport local : `.hdrp-agent/reports/native-circulation-comparison.html`, preuves JSON adjacentes et `.hdrp-agent/floorplan-baseline/native-circulation.json`.
+- Validation : 303 tests Python et 30 tests Unity passés ; tests ciblés de circulation repassés après ajout du dégagement des portes. Les régressions couvrent les passages trop étroits, les pièces sans entrée, les accès latéraux au lit, la recette appartement, les dalles tournées et les ouvertures sur plusieurs longueurs de mur.
+- Aucun appel fournisseur payant pour cette correction : extraction et catalogue existants réutilisés.
+
+Limites : circulation conservatrice par empreintes 2D, pas certification de toutes les collisions 3D ni de l'animation des portes. Dimensions adaptées au pack ; harmonie artistique, fidélité photométrique et identité parfaite des meubles non certifiées. T192–T199 restent ouverts selon leur périmètre global.

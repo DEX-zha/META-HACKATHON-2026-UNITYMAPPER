@@ -109,3 +109,27 @@ def test_shape_mismatch_is_not_repaired_by_stretching():
     plan=dict(objects=[dict(key='bed',scale=[1,1,1],position_m=[0,0,0])])
     measured=dict(coverage_complete=True,per_object=dict(bed=dict(actual_bounds=[.3,.4,.7,.6],target_bounds=[.4,.3,.6,.7],max_edge_error=.1)))
     assert correct_native(plan,dict(screen_width_m=10,screen_height_m=8),measured,[]) is None
+
+
+def test_native_grid_uses_full_modules_and_does_not_follow_pixel_corrections():
+    from hdrp_agent.native_layout import compile_grid, arrange
+    from hdrp_agent.floorplan import correct_native
+    ir=fixture()
+    analysis=dict(objects=[dict(key=o['object_key'],asset_id=o['object_key']) for o in ir['objects']])
+    catalogue=[dict(asset_id='bed',bounds_size_m=[2,1,1]),dict(asset_id='cabinet',bounds_size_m=[1,2,.5])]
+    grid,width,height=compile_grid(ir,analysis,catalogue,1)
+    for room in grid['rooms']:
+        b=room['bounds']
+        assert (b[2]-b[0])*width==pytest.approx(round((b[2]-b[0])*width))
+        assert (b[3]-b[1])*height/3==pytest.approx(round((b[3]-b[1])*height/3))
+    fit=arrange(grid,width,height)
+    assert fit['metrics']['collisions']==0
+    assert fit['metrics']['outside_room']==0
+    assert correct_native({},dict(layout_policy='native_prefab_assembly'),{},[]) is None
+
+
+def test_native_assembly_rejects_impossible_fit_without_shrinking():
+    from hdrp_agent.native_layout import arrange
+    ir=fixture();ir['objects'][0]['bounds']=[.01,.01,.99,.99]
+    with pytest.raises(AgentError,match='native placement'):
+        arrange(ir,8,6)

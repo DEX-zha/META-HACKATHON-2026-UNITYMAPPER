@@ -18,14 +18,41 @@ namespace HdrpAgent.Tests
         [Test] public void ArchitecturalPartitionHasDoorAndFrontFacesOnBothSides(){
             var root=new GameObject("Reconstruction");var wall=ReferenceAssets.InstantiateAssembly(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/AtmosphericHouse/Prefabs/Building/WallIn_B_3x_door.prefab"));wall.name="partition";wall.transform.SetParent(root.transform,false);
             var spec=JObject.Parse("{\"height_m\":2.8,\"thickness_m\":0.2,\"lighting\":\"neutral_construction\",\"walls\":[{\"object_key\":\"partition\",\"start_m\":[-1.5,0,0],\"end_m\":[1.5,0,0],\"partition\":true,\"openings\":[{\"key\":\"passage\",\"kind\":\"door\",\"start\":0.3,\"end\":0.7}]}]}");
+            spec["surfaces"]=new JArray();
             var proof=ReferenceArchitecture.Build(root,spec,"B");Assert.True((bool)proof["walls"][0]["surface_audit"]["passed"]);Assert.True((bool)proof["walls"][0]["openings"][0]["insert_present"]);
             var parts=root.GetComponentsInChildren<Transform>().Where(t=>PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject)).ToArray();
             Assert.True(parts.Any(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject).EndsWith("Door_parent_A_L.prefab")));
             Assert.True(parts.All(t=>PrefabUtility.GetPrefabInstanceStatus(t.gameObject)==PrefabInstanceStatus.Connected));
             Assert.False(parts.Any(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject).Contains("WallOut_")));
+            Assert.True(parts.All(t=>(t.lossyScale-Vector3.one).magnitude<.001f));
+            Assert.AreEqual("whole_native_prefab_modules",(string)proof["method"]);
             var group=root.transform.Find("partition/Connected structural modules");group.GetComponentInChildren<MeshRenderer>().enabled=false;
             Assert.False((bool)ReferenceArchitecture.Audit(group,3,2.8f,(JArray)proof["walls"][0]["openings"])["passed"]);
 
+        }
+        [TestCase(false)] [TestCase(true)] public void NativeFloorAndCeilingTileWithoutRescaling(bool rotated){
+            var root=new GameObject("Reconstruction");
+            foreach(var key in new[]{"floor","ceiling"})new GameObject(key).transform.SetParent(root.transform,false);
+            var spec=new JObject{["height_m"]=2.8,["thickness_m"]=.2,["lighting"]="neutral_construction",["walls"]=new JArray(),["surfaces"]=new JArray(
+                new JObject{["object_key"]="floor",["kind"]="floor",["min_m"]=new JArray(0,0),["size_m"]=new JArray(rotated?6:4,rotated?4:6)},
+                new JObject{["object_key"]="ceiling",["kind"]="ceiling",["min_m"]=new JArray(0,0),["size_m"]=new JArray(rotated?6:4,rotated?4:6)})};
+            var receipt=ReferenceArchitecture.Build(root,spec,"B");Assert.AreEqual(4,((JArray)receipt["tiles"]).Count);
+            foreach(var t in root.GetComponentsInChildren<Transform>().Where(t=>PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject))){
+                Assert.True((t.lossyScale-Vector3.one).magnitude<.001f);
+                Assert.AreEqual(PrefabInstanceStatus.Connected,PrefabUtility.GetPrefabInstanceStatus(t.gameObject));
+            }
+            var floors=root.transform.Find("floor").GetComponentsInChildren<MeshRenderer>();
+            Assert.AreEqual(2,floors.Length);Assert.That(floors.Min(r=>r.bounds.min.y),Is.EqualTo(0).Within(.001));
+            Assert.That(floors.Max(r=>r.bounds.max.x)-floors.Min(r=>r.bounds.min.x),Is.EqualTo(rotated?6:4).Within(.001));
+            Assert.That(floors.Max(r=>r.bounds.max.z)-floors.Min(r=>r.bounds.min.z),Is.EqualTo(rotated?4:6).Within(.001));
+            Assert.That(root.transform.Find("ceiling").GetComponentsInChildren<MeshRenderer>().Where(r=>r.gameObject.activeInHierarchy).Min(r=>r.bounds.min.y),Is.EqualTo(2.8).Within(.001));
+        }
+        [TestCase(3)] [TestCase(4)] [TestCase(6)] [TestCase(7)] public void NativeWindowModuleKeepsJambsAcrossWallLengths(int length){
+            var root=new GameObject("Reconstruction");new GameObject("wall").transform.SetParent(root.transform,false);
+            var spec=new JObject{["height_m"]=2.8,["thickness_m"]=.2,["lighting"]="neutral_construction",["surfaces"]=new JArray(),["walls"]=new JArray(new JObject{
+                ["object_key"]="wall",["start_m"]=new JArray(-length/2f,0,0),["end_m"]=new JArray(length/2f,0,0),["partition"]=false,
+                ["openings"]=new JArray(new JObject{["key"]="window",["kind"]="window",["start"]=.25,["end"]=.6})})};
+            var receipt=ReferenceArchitecture.Build(root,spec,"B");Assert.True((bool)receipt["walls"][0]["surface_audit"]["passed"]);
         }
         GameObject FinishFixture(){
             var root=new GameObject("Reconstruction");
