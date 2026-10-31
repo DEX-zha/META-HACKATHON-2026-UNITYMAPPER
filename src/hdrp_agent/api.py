@@ -22,6 +22,8 @@ from .orchestrator import Orchestrator
 from . import reporting
 from .reference_worker import ReferenceWorker
 from .reference_commands import ReferenceCommands
+from .chat_turns import ChatTurns
+from .chat_api import attach as attach_chat
 
 
 def create_app(settings=None):
@@ -34,6 +36,7 @@ def create_app(settings=None):
     orchestrator=Orchestrator(settings,store,queue,artifacts)
     reference_worker=ReferenceWorker(settings,store,artifacts,orchestrator)
     app_commands=ReferenceCommands(settings,store,queue,artifacts)
+    chat_turns=ChatTurns(settings,store,artifacts)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -45,6 +48,7 @@ def create_app(settings=None):
         orchestrator.recover_startup()
         reference_worker.recover_startup()
         app_commands.recover_startup()
+        chat_turns.recover_startup()
         async def monitor():
             while True:
                 await asyncio.sleep(1)
@@ -74,6 +78,7 @@ def create_app(settings=None):
     app.state.orchestrator=orchestrator
     app.state.reference_worker=reference_worker
     app.state.app_commands=app_commands
+    attach_chat(app,settings,store,artifacts,chat_turns)
 
     @app.middleware('http')
     async def boundary(request, call_next):
@@ -139,6 +144,10 @@ def create_app(settings=None):
     @app.post('/v1/app/actions',status_code=202)
     async def admit_action(request: Request):
         return await asyncio.to_thread(app_commands.admit,await body(request,'AppActionRequest'))
+
+    @app.post('/v1/app/actions/{action_id}/stop',status_code=202)
+    async def stop_action(action_id: str,request: Request):
+        return await asyncio.to_thread(app_commands.stop,action_id,await body(request,'StopRequest'))
 
     @app.get('/v1/app/actions/{action_id}')
     def get_action(action_id: str):return app_commands.get(action_id)

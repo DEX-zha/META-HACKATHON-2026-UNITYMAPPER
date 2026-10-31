@@ -84,7 +84,7 @@ func (c *Client) Do(ctx context.Context, method, path string, input, output any)
 		if json.Unmarshal(raw, &failure) == nil {
 			// Only reviewed codes cross into the UI; arbitrary bodies may contain secrets.
 			switch failure.Code {
-			case "NOT_FOUND", "STALE_VERSION", "SESSION_ACTIVE", "BUDGET_LIMIT", "COST_BOUND_UNKNOWN", "UNAUTHORIZED", "INVALID_INPUT", "PROJECT_MISMATCH", "IDEMPOTENCY_CONFLICT", "RESPONSE_UNKNOWN":
+			case "EDITOR_UNAVAILABLE", "CAPABILITY_MISSING", "STALE_EPOCH", "NOT_FOUND", "STALE_VERSION", "SESSION_ACTIVE", "BUDGET_LIMIT", "COST_BOUND_UNKNOWN", "UNAUTHORIZED", "INVALID_INPUT", "PROJECT_MISMATCH", "IDEMPOTENCY_CONFLICT", "RESPONSE_UNKNOWN":
 				code = failure.Code
 			}
 		}
@@ -92,6 +92,25 @@ func (c *Client) Do(ctx context.Context, method, path string, input, output any)
 	}
 	if output != nil && json.Unmarshal(raw, output) != nil {
 		return &Error{Code: "invalid_response", Status: resp.StatusCode, Unknown: mutation}
+	}
+	return nil
+}
+
+func (c *Client) PutImage(ctx context.Context, hash, mime string, data []byte) error {
+	req, e := http.NewRequestWithContext(ctx, "PUT", c.origin+"/v1/artifacts/"+hash, bytes.NewReader(data))
+	if e != nil {
+		return e
+	}
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Content-Type", mime)
+	resp, e := c.http.Do(req)
+	if e != nil {
+		return &Error{Code: "upload_unknown", Unknown: true}
+	}
+	defer resp.Body.Close()
+	io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	if resp.StatusCode != 201 {
+		return &Error{Code: "upload_rejected", Status: resp.StatusCode}
 	}
 	return nil
 }

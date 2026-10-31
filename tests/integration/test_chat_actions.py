@@ -17,6 +17,9 @@ def setup(tmp_path):
     with store.tx() as c:
         c.execute('UPDATE projects SET body=?',(canonical(dict(project_root=str(project),scene_version='source',capabilities=['prepare_reference_run'])),))
     service=ReferenceCommands(worker.settings,store,worker.runner.queue,worker.artifacts)
+    with store.tx() as c:
+        epoch=c.execute('SELECT epoch FROM projects WHERE id=?',('project',)).fetchone()[0]
+        worker.runner.queue.touch(c,'project',epoch)
     h=worker.artifacts.put((legacy/'input.png').read_bytes(),'image/png')
     with store.tx() as c:c.execute('INSERT INTO app_artifacts VALUES(?,?)',('project',h))
     request=dict(schema_version='1.0',action_id='action',project_id='project',conversation_id='chat',message_id='message',kind='reconstruct_reference',expected_scene_version='source',artifact_hashes=[h],parameters=dict(brief='Murs B et plafond, conserver le cadrage.',reference_hashes=[h],building_policy='atmospheric-house',interior_style='B',ceiling_prefab='Ceiling_3x3'),idempotency_key='once')
@@ -115,3 +118,20 @@ def test_refused_adoption_requires_reconciliation_not_endless_wait(tmp_path):
     worker.run(path)
     assert service.get('action')['state']=='recovery_required'
     assert (path.parent/'native-stop.json').exists()
+
+
+def test_stop_request_is_distinct_from_native_stop_receipt(tmp_path):
+    worker,legacy,service,request=setup(tmp_path);state,path=prepared(worker,legacy,service,request);worker.claim(path)
+    result=service.stop('action',{'reason':'Stop test'})
+    assert result['stop_requested'] and result['state']=='running'
+    with worker.store.tx() as c:worker.store.update_session(c,state['session_id'],state='interrupted')
+    assert service.get('action')['state']=='verifying'
+    (path.parent/'app-stop-receipt.json').write_text(canonical(dict(run_id=state['run_id'],stopped=True,version='v')))
+    assert service.get('action')['state']=='interrupted'
+
+
+def test_disconnected_editor_refused_before_session_creation(tmp_path):
+    worker,legacy,service,request=setup(tmp_path)
+    with worker.store.tx() as c:c.execute("UPDATE project_presence SET last_seen='2000-01-01T00:00:00+00:00'")
+    with pytest.raises(AgentError,match='Connect Unity'):service.admit(request)
+    with closing(worker.store.connect()) as c:assert c.execute('SELECT count(*) FROM sessions').fetchone()[0]==0

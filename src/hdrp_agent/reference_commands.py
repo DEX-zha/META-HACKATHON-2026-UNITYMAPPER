@@ -44,6 +44,9 @@ class ReferenceCommands:
             if 'prepare_reference_run' not in project_data['capabilities']:raise AgentError('CAPABILITY_MISSING','Editor has not registered reference preparation capability')
             if not request['expected_scene_version'] or request['expected_scene_version']!=project_data['scene_version']:raise AgentError('STALE_VERSION','Expected scene version does not match registered editor')
             if c.execute("SELECT 1 FROM sessions WHERE state NOT IN ('completed','interrupted','limit_reached')").fetchone():raise AgentError('SESSION_ACTIVE','Another session owns the editor')
+            presence=c.execute('SELECT epoch,last_seen FROM project_presence WHERE project_id=?',(request['project_id'],)).fetchone()
+            if not presence or presence['epoch']!=project['epoch'] or datetime.fromisoformat(presence['last_seen'].replace('Z','+00:00')) < datetime.now(timezone.utc)-timedelta(seconds=15):
+                raise AgentError('EDITOR_UNAVAILABLE','Connect Unity Local Service before starting an action')
             params=request['parameters'];hashes=params['reference_hashes']
             if not 1<=len(hashes)<=3 or len(set(hashes))!=len(hashes) or set(hashes)!=set(request['artifact_hashes']):raise AgentError('INVALID_INPUT','One to three distinct owned references required',422)
             if params['building_policy']!='atmospheric-house' or params['ceiling_prefab']!='Ceiling_3x3':raise AgentError('INVALID_INPUT','Unknown registered building policy or ceiling',422)
@@ -74,12 +77,34 @@ class ReferenceCommands:
         state=row['state']
         if session['state'] in {'recovery_required','interrupted','completed'}:state=session['state']
         elif session['state']=='limit_reached':state='inconclusive'
+        if session['stop_requested'] and state=='interrupted':
+            directory=self.settings.state/'reconstructions'/row['run_id']
+            if (directory/'app-stop-request.json').exists():
+                try:receipt=json.loads((directory/'app-stop-receipt.json').read_text())
+                except (OSError,ValueError):receipt={}
+                if receipt.get('run_id')!=row['run_id'] or receipt.get('stopped') is not True or not isinstance(receipt.get('version'),str):state='verifying'
         return payload('AppActionState',dict(action_id=row['id'],project_id=row['project_id'],conversation_id=request['conversation_id'],message_id=request['message_id'],operation_id=row['operation_id'],session_id=row['session_id'],run_id=row['run_id'],state=state,stop_requested=bool(session['stop_requested']),evidence_hashes=[],error_code=None))
 
     def get(self,action_id):
         with self.store.tx() as c:
             row=c.execute('SELECT * FROM app_actions WHERE id=?',(action_id,)).fetchone()
             if not row:raise AgentError('NOT_FOUND','Action not found',404)
+            return self._state(c,row)
+
+    def stop(self,action_id,reason):
+        reason=payload('StopRequest',reason)
+        with self.store.tx() as c:
+            row=c.execute('SELECT * FROM app_actions WHERE id=?',(action_id,)).fetchone()
+            if not row:raise AgentError('NOT_FOUND','Action not found',404)
+            session=c.execute('SELECT state FROM sessions WHERE id=?',(row['session_id'],)).fetchone()
+            if session['state'] in {'completed','interrupted','limit_reached'}:return self._state(c,row)
+            c.execute('UPDATE sessions SET stop_requested=1 WHERE id=?',(row['session_id'],))
+            c.execute("UPDATE commands SET cancel_requested=1,status=CASE WHEN status='queued' THEN 'cancelled' ELSE status END WHERE session_id=?",(row['session_id'],))
+            self.store.event(c,action_id,'action.stop_requested',reason)
+            directory=self.settings.state/'reconstructions'/row['run_id']
+            if directory.is_dir():
+                from .reference_worker import atomic
+                atomic(directory/'app-stop-request.json',dict(operation_id=row['operation_id'],reason=reason['reason']))
             return self._state(c,row)
 
     def reconcile(self):

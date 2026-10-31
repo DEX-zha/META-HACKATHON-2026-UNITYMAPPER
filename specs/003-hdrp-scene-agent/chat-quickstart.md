@@ -1,19 +1,16 @@
-# Recette prévue — application Go UnityMapper
+# Chat local — application Go UnityMapper
 
-Cette procédure est la cible d’implémentation, pas une application déjà disponible. Préconditions : assets AtmosphericHouse installés localement, Unity/HDRP qualifiés, workspace enregistré, clé uniquement dans `.env`, grand livre existant conservé. Go 1.27.3 est installé ; module Go et dépendances seront créés aux tâches T157–T158.
+Le MVP conversationnel est disponible : Muse live, historique SQLite, images PNG/JPEG, lancement de reconstruction et demande d’arrêt. Les recettes ci-dessous restent des critères de qualification, pas une déclaration que toutes les fonctions sont livrées.
 
-## Commandes cibles
+Préconditions : `.venv` installée, Go installé, clé dans `.env`, budget existant réconcilié, projet Unity avec AtmosphericHouse.
 
 ```sh
-# Une fois T157–T184 terminées
-cd apps/unitymapper
-go test -race ./...
-go build ./cmd/unitymapper
-# Depuis la racine, lancement coordonné Python + Go
-./scripts/run-chat.sh --workspace "$PWD"
+./scripts/run-chat.sh
 ```
 
-Le lanceur transmet une configuration explicite, vérifie le backend et ouvre l’interface sur 127.0.0.1:8787. Il ne réinitialise jamais budget/base, ne réessaie pas automatiquement un POST payé et ne démarre pas un deuxième worker si le service existe déjà.
+Le lanceur dérive le workspace depuis son emplacement, vérifie le backend et ouvre 127.0.0.1:8787 via un bootstrap privé à usage unique. Dans Unity, activer Window → HDRP Agent → Connect Local Service. Un éditeur sans signe de présence depuis 15 secondes ne peut recevoir de nouvelle reconstruction.
+
+Limites actuelles : trois PNG/JPEG de 10 Mo maximum ; suivi par polling, sans SSE ; seule l’action reconstruct_reference est reliée. Les corrections/refine, la vidéo, les overlays et la mémoire résumée restent ouverts. L’arrêt est une demande tant que le reçu natif n’est pas confirmé.
 
 ## Recettes et critères
 

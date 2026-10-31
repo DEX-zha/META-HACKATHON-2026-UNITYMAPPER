@@ -162,6 +162,7 @@ namespace HdrpAgent.Editor
         }
         static void Release(){
             ReferenceVision.Cancel("Reference workflow released");stage=null;
+            if(directory!=null&&File.Exists(Path.Combine(directory,"app-stop-request.json")))Atomic(Path.Combine(directory,"app-stop-receipt.json"),new JObject{["run_id"]=id,["stopped"]=true,["scene_path"]=SceneManager.GetActiveScene().path,["version"]=SceneInspector.Version()});
             if(File.Exists(Owner)){try{if((string)JObject.Parse(File.ReadAllText(Owner))["id"]==id)File.Delete(Owner);}catch(Newtonsoft.Json.JsonException){}}
             if(!EditorApplication.isPlayingOrWillChangePlaymode&&!SceneManager.GetActiveScene().isDirty)BridgeClient.Connect();
         }
@@ -174,6 +175,7 @@ namespace HdrpAgent.Editor
         static void Tick(){
             if(!Running||EditorApplication.isCompiling)return;
             try{
+                if(stage!="stopping"&&File.Exists(Path.Combine(directory,"app-stop-request.json")))Stop();
                 if(EditorApplication.timeSinceStartup-began>2450)throw new TimeoutException("Reference workflow time limit reached");
                 if(EditorApplication.isPlayingOrWillChangePlaymode||Lightmapping.isRunning)return;
                 if(capture!=null&&File.Exists(Path.Combine(capture,"interruption.json")))throw new InvalidOperationException("Native capture interrupted; no replay");

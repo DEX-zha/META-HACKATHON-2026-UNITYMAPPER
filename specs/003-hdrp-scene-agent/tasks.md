@@ -584,13 +584,13 @@ Précondition : contrats T153 validés. Les étapes d’intégration sont néces
 
 But : application Go avec mémoire de projet et réponse Muse. Recette indépendante C0 : message + image, réponse réelle comptabilisée, historique intact après redémarrage.
 
-- [ ] T164 [US11] Exposer liste et état vérifié des projets via `src/hdrp_agent/chat_api.py` et lier les projets Go dans `apps/unitymapper/internal/chat/projects.go` ; refus de racines hors workspace et de projet non lié à Unity.
-- [ ] T165 [US11] Implémenter bootstrap local, cookie, contrôle Host/Origin et limites HTTP dans `apps/unitymapper/internal/httpapi/security.go` ; aucun token Python ou Meta dans les réponses, logs ou navigateur.
-- [ ] T166 [US11] Implémenter conversations, messages persistés avant envoi et clés idempotentes dans `apps/unitymapper/internal/chat/conversations.go` et `internal/httpapi/messages.go` ; erreur de livraison visible.
+- [X] T164 [US11] Exposer liste et état vérifié des projets via `src/hdrp_agent/chat_api.py` et lier les projets Go dans `apps/unitymapper/internal/chat/projects.go` ; refus de racines hors workspace et de projet non lié à Unity.
+- [X] T165 [US11] Implémenter bootstrap local, cookie, contrôle Host/Origin et limites HTTP dans `apps/unitymapper/internal/httpapi/security.go` ; aucun token Python ou Meta dans les réponses, logs ou navigateur.
+- [X] T166 [US11] Implémenter conversations, messages persistés avant envoi et clés idempotentes dans `apps/unitymapper/internal/chat/conversations.go` et `internal/httpapi/messages.go` ; erreur de livraison visible.
 - [ ] T167 [US11] Implémenter uploads et téléchargement autorisé dans `apps/unitymapper/internal/httpapi/attachments.go` : MIME réel, quotas 10/20 MiB, SHA, liaison de projet, pas de chemin client arbitraire ; tests traversée et fichier excessif.
-- [ ] T168 [US11] Implémenter le tour Muse structuré dans `src/hdrp_agent/chat_turns.py` via fournisseur/ledger existants ; contexte projet borné, réponse et outils fermés, usage comptabilisé, unknown conservé sans rejeu.
+- [X] T168 [US11] Implémenter le tour Muse structuré dans `src/hdrp_agent/chat_turns.py` via fournisseur/ledger existants ; contexte projet borné, réponse et outils fermés, usage comptabilisé, unknown conservé sans rejeu.
 - [ ] T169 [US11] Implémenter résumé révisionné et sélection de mémoire dans `apps/unitymapper/internal/chat/context.go` et `src/hdrp_agent/chat_turns.py` ; conserver exigences murs/plafond, versions et parent_run sans mélange entre projets.
-- [ ] T170 [US11] Créer l’UI embarquée dans `apps/unitymapper/web/index.html`, `web/app.js`, `web/styles.css` et `internal/httpapi/assets.go` : liste projets/chats, saisie, pièces jointes, historique, erreurs et mode live explicites.
+- [X] T170 [US11] Créer l’UI embarquée dans `apps/unitymapper/web/index.html`, `web/app.js`, `web/styles.css` et `internal/httpapi/assets.go` : liste projets/chats, saisie, pièces jointes, historique, erreurs et mode live explicites.
 - [ ] T171 [US11] Exécuter C0/C7 via `apps/unitymapper/tests/e2e/conversations_test.go` et une réponse Muse live sous enveloppe ; archiver `.hdrp-agent/reports/chat-conversation.json`, puis commit du MVP conversationnel sans prétendre que les mutations sont prêtes.
 
 ### Phase 5 — US12 : agir depuis le chat, sans MCP
@@ -611,7 +611,7 @@ But : l’app expose la réalité de l’agent et survit aux coupures sans rép�
 
 - [ ] T179 [US13] Exposer les états/events backend dans `src/hdrp_agent/chat_api.py` ; stocker et servir le flux SSE dans `apps/unitymapper/internal/events/events.go` avec séquence monotone, Last-Event-ID, pagination/reprise et déduplication.
 - [ ] T180 [US13] Afficher captures, contours SAM, versions, variantes de murs/plafonds et limites dans `apps/unitymapper/web/app.js` ; relier chaque preuve au run/version et distinguer candidat seul, référence et comparaison.
-- [ ] T181 [US13] Raccorder arrêt UI→Go→Python→Unity dans `internal/chat/actions.go`, `reference_commands.py`, `Editor/AppCommandBridge.cs` ; stop_requested distinct du reçu réel, aucune libération des coûts inconnus.
+- [X] T181 [US13] Raccorder arrêt UI→Go→Python→Unity dans `internal/chat/actions.go`, `reference_commands.py`, `Editor/AppCommandBridge.cs` ; stop_requested distinct du reçu réel, aucune libération des coûts inconnus.
 - [ ] T182 [US13] Implémenter la réconciliation après crash Go dans `internal/chat/recovery.go` : relire l’autorité Python par action_id, aucun replay aveugle ; afficher recovery_required si preuve insuffisante.
 - [ ] T183 [US13] Afficher le budget global et les erreurs de fournisseur dans `internal/httpapi/budget.go` et `web/app.js` ; jamais de budget remis à zéro à l’ouverture d’un projet/chat.
 - [ ] T184 [US13] Fournir `scripts/run-chat.sh` et mettre à jour `chat-quickstart.md` : démarrage coordonné sans second worker, paramètres explicites, vérification de disponibilité, ouverture locale et arrêt propre.
@@ -642,3 +642,11 @@ Qualification T154–T156 (2026-10-31) : 22 tests natifs passent, dont variante 
 Qualification T157–T161 (2026-10-31) : module Go 1.27.3 et SQLite v1.61.1 verrouillés, compilation darwin/arm64, tests Go avec race detector et vet réussis. Serveur testé avec Python live : santé réelle, deuxième instance refusée, Origin tiers refusé, SIGTERM propre. Transactions testées pour conflit de clé, rollback interprojet et reprise sans réémission après coupure. Contrats chat/actions fermés ajoutés au domaine et à OpenAPI ; 11 tests contractuels ciblés passent. Les routes de chat décrites restent à implémenter ; le serveur Go expose seulement `/health`. Prochaine dépendance : T162 admission unique, puis T163 pont natif.
 
 Qualification T162–T163 (2026-10-31) : admission durable et commande `prepare_reference_run`, reçus/hash/epoch/projet vérifiés, worker adoptant la session existante. Essai réel HTTP → Unity → reçu accepté → adoption sur le run `83b5c4f724df47e98f50be56b4e3b5d1` : une session, catalogue de 668 assets, brief et style B préservés, GP inchangée, zéro appel fournisseur ajouté (491 avant/après). Le worker fournisseur était volontairement désactivé durant cette recette de préparation ; aucune reconstruction complète ni conversation Muse n’est revendiquée. Service live normal et scène précédente restaurés ensuite. Preuves locales : `.hdrp-agent/reports/chat-native-preparation.json`.
+
+### Qualification chat — 2026-10-31
+
+T164/T165/T166/T168/T170 : implémentation regroupée dans `internal/chat/service.go`, `internal/httpapi/server.go`, `internal/store/chat.go` et `web/embed.go` plutôt que les fichiers indicatifs initiaux. 277 tests Python passent ; tests Go race et vet passent. Test navigateur réel : upload PNG, réponse Muse comptabilisée, historique après reload et redémarrage Go.
+
+T181 : test navigateur réel demande → Muse → admission → reçu de préparation Unity → arrêt UI → reçu natif confirmé, run `45112e36f97d46fe81067b241e9b605f`. Aucun résultat de fidélité revendiqué. Le premier essai a révélé un éditeur déconnecté : admission désormais refusée après 15 secondes sans présence du pont ; ancien essai annulé sans rejeu.
+
+T167 partiel (PNG/JPEG, pas vidéo), T171 partiel (C7 exhaustif restant), T172 partiel (reconstruct_reference seulement), T184 lanceur disponible. Mémoire résumée, refine/inspection conversationnels, SSE et preuves intégrées restent ouverts. Rapports locaux : `chat-browser.json`, `chat-action-browser.json`.

@@ -15,7 +15,13 @@ def instant(value):
 
 
 class CommandQueue:
-    def __init__(self, store): self.store = store
+    def __init__(self, store):
+        self.store = store
+        with store.tx() as c:
+            c.execute('CREATE TABLE IF NOT EXISTS project_presence(project_id TEXT PRIMARY KEY REFERENCES projects(id),epoch TEXT NOT NULL,last_seen TEXT NOT NULL)')
+
+    def touch(self,c,project_id,epoch):
+        c.execute('INSERT OR REPLACE INTO project_presence VALUES(?,?,?)',(project_id,epoch,utc_now()))
 
     def _epoch(self, c, project_id, epoch):
         row = c.execute('SELECT * FROM projects WHERE id=?', (project_id,)).fetchone()
@@ -45,6 +51,7 @@ class CommandQueue:
         request = payload('Poll', request)
         with self.store.tx() as c:
             self._epoch(c, request['project_id'], request['bridge_epoch'])
+            self.touch(c,request['project_id'],request['bridge_epoch'])
             session_active=c.execute("SELECT 1 FROM sessions WHERE project_id=? AND state NOT IN ('completed','interrupted','limit_reached') LIMIT 1",(request['project_id'],)).fetchone() is not None
             # Unknown mutation prevents another mutation, but inspection can reconcile state.
             busy = c.execute("SELECT 1 FROM commands WHERE project_id=? AND status IN ('claimed','running')", (request['project_id'],)).fetchone()
@@ -64,6 +71,7 @@ class CommandQueue:
         request = payload('Progress', request)
         with self.store.tx() as c:
             row = self._command(c, command_id, request['bridge_epoch'])
+            self.touch(c,row['project_id'],request['bridge_epoch'])
             if row['status'] not in ACTIVE: raise AgentError('COMMAND_STATE', 'Command is not active')
             body = json.loads(row['body'])
             session = c.execute('SELECT stop_requested,state FROM sessions WHERE id=?', (row['session_id'],)).fetchone()

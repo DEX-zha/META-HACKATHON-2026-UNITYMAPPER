@@ -83,3 +83,7 @@ scripts/run-chat.sh
 La constitution locale est un gabarit sans règle supplémentaire. Les contraintes ci-dessus proviennent du besoin utilisateur et du code existant. Gate de conception : PASS avec les décisions de [chat-research.md](chat-research.md). Trois runtimes sont justifiés : Unity éditeur, Python fournisseur/vision existants, Go demandé pour l’application. Pas de réécriture du cœur avant preuve de la tranche verticale.
 
 La recette et les états non prouvés restent explicites. Ni « terminé » dans le chat ni tests mock ne démontrent une amélioration visuelle. Toute dépendance nouvelle est épinglée, toute transmission payante reste comptabilisée.
+
+## Livraison conversationnelle du 2026-10-31
+
+Le MVP suit la séparation Go/Python/Unity prévue. Routes conversationnelles Go et UI embarquée livrées ; préparation Unity et arrêt vérifiés depuis un navigateur réel. Pour ce jalon : images PNG/JPEG uniquement, reconstruct_reference uniquement, interrogation de l’état toutes les deux secondes. Les capacités non raccordées restent explicitement indisponibles. Une présence de pont de moins de 15 secondes est requise avant une nouvelle admission. Voir tasks.md pour les lots qui restent ouverts ; ne pas confondre ce raccordement avec la recette de fidélité complète.

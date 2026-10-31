@@ -165,3 +165,11 @@ Unity prépare via `AppCommandBridge` sur son thread éditeur, garde les prefabs
 Recette native réelle : run `83b5c4f724df47e98f50be56b4e3b5d1`, 668 assets, reçu HTTP accepté, adoption de la seule session, brief/style préservés. GP inchangée et 491 appels financiers avant/après. Pour isoler ce jalon, la boucle fournisseur était désactivée ; la recette s’est arrêtée après adoption, sans construire une nouvelle scène ni appeler Muse. Service normal et scène précédente restaurés. Le chat reste à implémenter à partir de T164. Rapport local : `.hdrp-agent/reports/chat-native-preparation.json`.
 
 Validation finale de T162–T163 : **272 tests Python et 23 tests Unity passent**. Service live rétabli, scène `finish-qualified-20261031-113116` réenregistrée, aucune session active résiduelle.
+
+## Chat raccordé — 2026-10-31
+
+Le chat Go embarqué appelle désormais Muse via le service Python et son ledger. Conversations SQLite, images PNG/JPEG liées au projet, reprise de lecture, clés idempotentes, bootstrap privé/cookie et contrôle Host/Origin sont implémentés. L’action reconstruct_reference rejoint la préparation native qualifiée, avec validation de présence réelle Unity. Le bouton arrêt attend une confirmation native ; les coûts inconnus ne sont pas libérés.
+
+Qualification réelle navigateur : réponse Muse à l’image du salon, conservation après redémarrage Go, puis reconstruction demandée via chat et préparation native acquittée (`45112e36f97d46fe81067b241e9b605f`), arrêt confirmé. Zéro erreur JavaScript. Tests : 277 Python, Go race et vet. La qualification s’arrête avant la reproduction complète ; elle ne valide pas la fidélité.
+
+Lancer `./scripts/run-chat.sh`. Restent ouverts : vidéo, mémoire résumée, corrections de run depuis la conversation, SSE, preuves et overlays intégrés, recette complète C1/C2/C7. Le suivi courant utilise un polling de deux secondes.
