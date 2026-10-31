@@ -51,6 +51,13 @@ namespace HdrpAgent.Tests
             var root=FinishFixture();var ceiling=ReferenceAssets.InstantiateAssembly(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/AtmosphericHouse/Prefabs/Building/Ceiling_3x3.prefab"));ceiling.transform.SetParent(root.transform,false);ceiling.transform.position=new Vector3(0,3,0);int id=ceiling.GetInstanceID();
             var result=ReferenceRoomFinish.Apply(root);Assert.AreEqual("explicit_plan_preserved",(string)result["ceiling"]);Assert.AreEqual(id,ceiling.GetInstanceID());Assert.AreEqual(new Vector3(0,3,0),ceiling.transform.position);Assert.False(root.scene.GetRootGameObjects().Any(o=>o.name==ReferenceRoomFinish.CeilingGroup));
         }
+        [Test]public void AppPreparationIsClosedAndCannotBypassCommandOwnership(){
+            var data=new JObject{["operation_id"]="operation-test",["project_id"]="project-test",["run_id"]=new string('a',32),["brief"]="Preserve this user brief",["building_policy"]="atmospheric-house",["interior_style"]="B",["ceiling_prefab"]="Ceiling_3x3",["media"]=new JArray(new JObject{["artifact_hash"]=new string('a',64),["extension"]=".png"})};
+            AppCommandBridge.Validate(data);
+            var before=File.ReadAllBytes(temporary);var command=new BridgeCommand{payload=data};Assert.Throws<InvalidOperationException>(()=>AppCommandBridge.Prepare(command));Assert.AreEqual(before,File.ReadAllBytes(temporary));
+            data["script"]="forbidden";Assert.Throws<InvalidDataException>(()=>AppCommandBridge.Validate(data));data.Remove("script");
+            data["media"][0]["artifact_hash"]="../../outside";Assert.Throws<InvalidDataException>(()=>AppCommandBridge.Validate(data));
+        }
         [Test]public void NormalizedMatrixPoseMatchesPythonHash(){
             var value=BridgeJson.Read<JObject>("{\"value\":[0.0,0.0,-14.0,0.02]}");
             Assert.AreEqual("6a4a6779e53758141c194cee346a2ed500187e4d07625589cdced3d00798b64d",BridgeJson.CanonicalHash(value));

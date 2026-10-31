@@ -2893,6 +2893,9 @@
           },
           {
             "$ref": "#/components/schemas/RestoreCommand"
+          },
+          {
+            "$ref": "#/components/schemas/PrepareReferenceCommand"
           }
         ]
       },
@@ -5860,6 +5863,116 @@
           "state",
           "evidence_hashes"
         ]
+      },
+      "PrepareReferencePayload": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "run_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "brief": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "building_policy": {
+            "const": "atmospheric-house"
+          },
+          "interior_style": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ]
+          },
+          "ceiling_prefab": {
+            "const": "Ceiling_3x3"
+          },
+          "media": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "artifact_hash",
+                "extension"
+              ],
+              "properties": {
+                "artifact_hash": {
+                  "$ref": "#/components/schemas/Hash"
+                },
+                "extension": {
+                  "enum": [
+                    ".png",
+                    ".jpg",
+                    ".mp4"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "operation_id",
+          "run_id",
+          "project_id",
+          "brief",
+          "building_policy",
+          "interior_style",
+          "ceiling_prefab",
+          "media"
+        ]
+      },
+      "PrepareReferenceCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "prepare_reference_run"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/PrepareReferencePayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
       }
     }
   }

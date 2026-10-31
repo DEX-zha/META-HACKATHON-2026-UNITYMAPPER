@@ -17,6 +17,7 @@ namespace HdrpAgent.Editor
         public static Func<string> CurrentVersion = ()=>"unqualified";
         public static ReceiptStore Receipts {get;set;}
         public static bool Busy=>command!=null;
+        public static bool Owns(BridgeCommand value)=>command!=null&&ReferenceEquals(command,value);
         public static string[] Capabilities=>handlers.Keys.OrderBy(s=>s).ToArray();
         static CommandExecutor(){EditorApplication.update+=Tick;AssemblyReloadEvents.beforeAssemblyReload+=BeforeReload;}
         public static void Register(string kind,Func<BridgeCommand,ICommandJob> factory){handlers[kind]=factory;}

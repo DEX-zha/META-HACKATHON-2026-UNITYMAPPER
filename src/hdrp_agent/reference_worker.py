@@ -134,6 +134,8 @@ def validate_native_placement(native,proposed,analysis,frames,catalogue,*,suppor
 class ReferenceWorker:
     def __init__(self,settings,store,artifacts,runner):
         self.settings,self.store,self.artifacts,self.runner=settings,store,artifacts,runner
+        from .reference_commands import install
+        install(store)
         self.root=settings.state/'reconstructions';self.root.mkdir(exist_ok=True)
         self.last_record_focus=0
         with store.tx() as c:c.execute('CREATE TABLE IF NOT EXISTS reference_runs(id TEXT PRIMARY KEY,session_id TEXT NOT NULL REFERENCES sessions(id),status TEXT NOT NULL,body TEXT NOT NULL)')
@@ -175,7 +177,11 @@ class ReferenceWorker:
             if not re.fullmatch('[a-f0-9]{32}',path.parent.name):continue
             contained(self.root,path)
             with closing(self.store.connect()) as c:exists=c.execute('SELECT 1 FROM reference_runs WHERE id=?',(path.parent.name,)).fetchone()
-            if not exists and not (path.parent/'native-stop.json').exists():return path
+            if not exists and not (path.parent/'native-stop.json').exists():
+                with closing(self.store.connect()) as c:
+                    admitted=c.execute('SELECT app_actions.state,commands.status FROM app_actions JOIN commands ON commands.id=app_actions.command_id WHERE run_id=?',(path.parent.name,)).fetchone()
+                if admitted and (admitted['state']!='preparing' or admitted['status']!='succeeded'):continue
+                return path
             if exists and (path.parent/'resume-request.json').exists() and not (path.parent/'native-stop.json').exists():
                 with closing(self.store.connect()) as c:row=c.execute('SELECT status,body FROM reference_runs WHERE id=?',(path.parent.name,)).fetchone()
                 if row['status']=='interrupted' and not json.loads(row['body']).get('resume_count'):return path
@@ -228,13 +234,19 @@ class ReferenceWorker:
             if noise:job['capture_noise']=noise;job['capture_noise_artifact']=self.artifacts.put(canonical(noise).encode(),'application/json')
         with self.store.tx() as c:
             if c.execute('SELECT 1 FROM reference_runs WHERE id=?',(job_id,)).fetchone():raise AgentError('REFERENCE_ALREADY_STARTED','Reference job is never implicitly replayed')
-            if c.execute("SELECT 1 FROM sessions WHERE state NOT IN ('completed','interrupted','limit_reached')").fetchone():raise AgentError('SESSION_ACTIVE','Another session owns the editor')
+            from .reference_commands import verify_adoption
+            admission=verify_adoption(c,bundle,job['input_bundle_sha256'],self.artifacts)
+            if c.execute("SELECT 1 FROM sessions WHERE state NOT IN ('completed','interrupted','limit_reached') AND id!=?",(admission['session_id'] if admission else '',)).fetchone():raise AgentError('SESSION_ACTIVE','Another session owns the editor')
             if not c.execute('SELECT 1 FROM projects WHERE id=?',(bundle['project_id'],)).fetchone():raise AgentError('NOT_FOUND','Native project must have been registered',404)
             budget=Budget(self.store,load_pricing(self.settings.state/'pricing.json'))
             if not self.settings.api_key or not budget.state(c)['live_enabled']:raise AgentError('COST_BOUND_UNKNOWN','Reconciled global budget and live key required')
-            c.execute('INSERT INTO scenes VALUES(?,?,?)',(scene_id,bundle['project_id'],canonical(dict(kind='reference_reconstruction',input_bundle_sha256=job['input_bundle_sha256']))))
+            if not admission:c.execute('INSERT INTO scenes VALUES(?,?,?)',(scene_id,bundle['project_id'],canonical(dict(kind='reference_reconstruction',input_bundle_sha256=job['input_bundle_sha256']))))
             session=payload('Session',dict(id=sid,state='preflight',verdict='pending',best_version='reference-pending',current_version='reference-pending',attempts_used=0,max_attempts=bundle['max_iterations'],criteria_hash=job.get('policy_hash') or fingerprint(dict(metric='reference_priority_regions_v2',priority_view=bundle.get('priority_view','work-top-front'),priority_weight=.55,global_weight=.25,worst_object_weight=.2,view_regression_bound=.025,object_regression_bound=.06,exact_fidelity_unverified=True)),inspection_hash=fingerprint(bundle.get('inspection',{})),stop_reason=None,provider_mode='live'))
-            c.execute('INSERT INTO sessions(id,project_id,scene_id,state,body) VALUES(?,?,?,?,?)',(sid,bundle['project_id'],scene_id,'preflight',canonical(session)))
+            if admission:
+                if sid!=admission['session_id']:raise AgentError('APP_BUNDLE_MISMATCH','Reserved session differs')
+                c.execute("UPDATE sessions SET body=? WHERE id=?",(canonical(session),sid))
+                c.execute("UPDATE app_actions SET state='running',bundle_hash=? WHERE id=?",(job['input_bundle_sha256'],admission['id']))
+            else:c.execute('INSERT INTO sessions(id,project_id,scene_id,state,body) VALUES(?,?,?,?,?)',(sid,bundle['project_id'],scene_id,'preflight',canonical(session)))
             c.execute('INSERT INTO reference_runs VALUES(?,?,?,?)',(job_id,sid,'preflight',canonical(job)))
             self.store.event(c,sid,'reference_created',dict(job_id=job_id,input_bundle_sha256=job['input_bundle_sha256'],source_scene_transforms_provided=False))
         return job
@@ -449,6 +461,8 @@ class ReferenceWorker:
         try:
             resuming=(Path(path).parent/'resume-request.json').exists()
             job=self.resume_claim(path) if resuming else self.claim(path);sid=job['session_id'];directory=self.root/job['id'];bundle=job['bundle']
+            brief=bundle['brief']
+            if bundle.get('building_policy')=='atmospheric-house':brief='[building-prefabs-required] '+brief+' Interior family '+bundle['interior_style']+'; connected '+bundle['ceiling_prefab']+' ceiling required.'
             self.status(job,'preflight','Préparation des images et du catalogue local…')
             catalogue_path=contained(directory,directory/bundle['catalogue_file']);catalogue_raw=catalogue_path.read_bytes()
             if len(catalogue_raw)>1_000_000:raise AgentError('INVALID_CATALOGUE','Catalogue exceeds native handoff limit')
@@ -458,7 +472,7 @@ class ReferenceWorker:
             budget=SessionBudget(self,sid,Budget(self.store,load_pricing(self.settings.state/'pricing.json')))
             provider=MetaResponses(self.settings,budget,self.artifacts);planner=ReferencePlanner(provider,self.artifacts)
             self.guard(sid);self.status(job,'analysing','Muse analyse les objets, la composition et les caméras…')
-            analysed=job['analysis_response'] if resuming else self.checkpoint_analysis(job,frames,catalogue) if bundle.get('analysis_checkpoint_job_id') else planner.analyse(frames,catalogue,bundle['brief']);validate_analysis(analysed['value'],frames,catalogue);job['analysis_response']=analysed;self.save(job);self._event(sid,'reference_analysis_reused' if resuming or bundle.get('analysis_checkpoint_job_id') else 'reference_analysis',analysed)
+            analysed=job['analysis_response'] if resuming else self.checkpoint_analysis(job,frames,catalogue) if bundle.get('analysis_checkpoint_job_id') else planner.analyse(frames,catalogue,brief);validate_analysis(analysed['value'],frames,catalogue);job['analysis_response']=analysed;self.save(job);self._event(sid,'reference_analysis_reused' if resuming or bundle.get('analysis_checkpoint_job_id') else 'reference_analysis',analysed)
             details=self.acquire_details(job,analysed['value'],frames) if bundle.get('asset_visual_matching') else []
             self.status(job,'segmenting','SAM mesure chaque objet, la vue du dessus et les gros plans…')
             def save_segments(partial):
@@ -511,7 +525,7 @@ class ReferenceWorker:
                 if decision['action']=='stop':stopping=decision['reason'];break
                 phase=decision['action']
                 photometry=None
-                if external_visual and '[building-prefabs-required]' in bundle['brief'] and ordinal>0:
+                if external_visual and '[building-prefabs-required]' in brief and ordinal>0:
                     from .reference_plan_fit import exposure_probe
                     photometry=None if (best or {}).get('metrics',{}).get('architecture',{}).get('defect_count') else exposure_probe(job['attempts'])
                     if photometry is not None:phase='photometry_probe';decision['action']=phase;decision['reason']='measured_floor_luminance_bracket'
@@ -522,7 +536,7 @@ class ReferenceWorker:
                     base=proposal_base(job['attempts'],best,phase)
                     proposed=dict(value=base['applied_plan'],local_geometry_proposal=True,base_candidate_ordinal=base['ordinal'])
                 elif not policy and not external_visual and ordinal==1 and geometry and bundle.get('autonomous_refinement'):proposed=dict(value=previous,local_mask_refinement=True)
-                else:proposed=planner.layout(effective,frames,catalogue,segments,bundle['brief'],previous,previous_frames,metrics,matched_assets=bool(job.get('asset_match_response')),memory=memory,phase=phase,inspection_pairs=best.get('inspection_pairs',[]) if best else [],appearance_experiment=appearance_experiment)
+                else:proposed=planner.layout(effective,frames,catalogue,segments,brief,previous,previous_frames,metrics,matched_assets=bool(job.get('asset_match_response')),memory=memory,phase=phase,inspection_pairs=best.get('inspection_pairs',[]) if best else [],appearance_experiment=appearance_experiment)
                 self._event(sid,'reference_layout_reused' if 'reused_from' in proposed else 'reference_layout',proposed)
                 plan=deepcopy(proposed['value']) if external_visual else constrain_proposal(proposed['value'],previous,phase,appearance_experiment);fits=[]
                 if policy and previous:
@@ -555,7 +569,7 @@ class ReferenceWorker:
                 if policy and phase!='appearance':
                     from .reference_geometry import native_pose_precision
                     plan=native_pose_precision(plan);fits.append(dict(method='native_pose_serialization',decimal_places=12,source_transforms_used=False))
-                if external_visual and '[building-prefabs-required]' in bundle['brief']:
+                if external_visual and '[building-prefabs-required]' in brief:
                     if ordinal==0:
                         from .reference_plan_fit import fit_overhead_plan
                         plan,region_fits=fit_overhead_plan(plan,effective,frames,catalogue,segments);fits.extend(region_fits)
@@ -593,7 +607,7 @@ class ReferenceWorker:
                     candidates.append(dict(key=frame['key'],artifact_hash=self.artifacts.put(data,'image/png'),calibration=view,**transform))
                 metrics=score_pairs(self.artifacts,frames,candidates,effective,priority_view=memory['priority_view'],segments=segments)
                 metrics['contacts']=native['contacts']
-                if external_visual and '[building-prefabs-required]' in bundle['brief']:
+                if external_visual and '[building-prefabs-required]' in brief:
                     from .reference_plan_fit import luminance_stats
                     floor_ids={a['asset_id'] for a in catalogue if a['name'].startswith('Floor_')}
                     floor=next((o for o in effective['objects'] if o['asset_id'] in floor_ids),None)
@@ -680,6 +694,11 @@ class ReferenceWorker:
                 atomic(Path(path).parent/'status.json',dict(state='failed',message=message))
                 # Keep malformed/refused input from being admitted in a polling loop.
                 atomic(Path(path).parent/'native-stop.json',dict(reason=message,replay_allowed=False))
+                with self.store.tx() as c:
+                    admission=c.execute('SELECT * FROM app_actions WHERE run_id=?',(Path(path).parent.name,)).fetchone()
+                    if admission and admission['state']=='preparing':
+                        self.store.update_session(c,admission['session_id'],state='recovery_required',verdict='inconclusive',stop_reason=message)
+                        c.execute("UPDATE app_actions SET state='recovery_required' WHERE id=?",(admission['id'],))
         finally:
             if provider is not None:provider.client.close()
 

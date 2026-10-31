@@ -50,3 +50,5 @@ curl http://127.0.0.1:8787/health
 ```
 
 La santé affiche explicitement `foundation_ready` et `chat: not_implemented`. L’historique applicatif est stocké dans `.hdrp-agent/chat/chat.sqlite3`, séparément du budget Python. Une livraison inconnue ne déclenche aucun renvoi automatique. Ctrl+C arrête uniquement ce serveur Go.
+
+Le pont applicatif de préparation est désormais qualifié : admission HTTP, copie native Unity, catalogue et reçu, puis adoption d’une seule session. La recette s’arrête avant les appels modèles ; le parcours conversation → reconstruction complète reste à livrer.

@@ -13,7 +13,7 @@ namespace HdrpAgent.Editor
     [InitializeOnLoad]
     public static class EditorJobs
     {
-        static EditorJobs(){foreach(var kind in new[]{"inspect","snapshot","apply_patch","restore","bake","capture"})CommandExecutor.Register(kind,c=>new Job(c));}
+        static EditorJobs(){foreach(var kind in new[]{"inspect","snapshot","apply_patch","restore","bake","capture","prepare_reference_run"})CommandExecutor.Register(kind,c=>new Job(c));}
         sealed class Upload{public byte[] bytes;public string path,type;public Action<string> accept;}
         sealed class Job:ICommandJob
         {
@@ -29,7 +29,7 @@ namespace HdrpAgent.Editor
             JArray captures=new JArray();
             public CommandResult Result{get;private set;}
             public Job(BridgeCommand command){this.command=command;before=SceneInspector.Version();}
-            public void Cancel(){cancelled=true;bake?.Cancel();if(command.kind=="capture"&&EditorApplication.isPlaying)EditorApplication.isPlaying=false;}
+            public void Cancel(){cancelled=true;bake?.Cancel();if(command.kind=="prepare_reference_run")ReferenceWorkflow.Stop();if(command.kind=="capture"&&EditorApplication.isPlaying)EditorApplication.isPlaying=false;}
             void Add(JObject value){uploads.Add(new Upload{bytes=Encoding.UTF8.GetBytes(value.ToString(Newtonsoft.Json.Formatting.None)),type="application/json",accept=h=>detailsHash=h});}
             void Fail(string code,string message,string status="failed"){
                 Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,before_version=before,after_version=SceneInspector.Version(),status=status,manifest_hash=SnapshotStore.ManifestHash(SceneInspector.Scope),error=new BridgeError{code=code,message=message,command_id=command.id}};
@@ -41,6 +41,7 @@ namespace HdrpAgent.Editor
                     if(BridgeClient.RequestInProgress)return;
                     begun=true;
                     switch(command.kind){
+                        case "prepare_reference_run":details=AppCommandBridge.Prepare(command);prepared=true;break;
                         case "inspect":details=SceneInspector.Inspect();prepared=true;break;
                         case "snapshot":if((string)command.payload["scope_id"]!=SceneInspector.Scope)throw new InvalidDataException("Snapshot scope mismatch");var snapshot=SnapshotStore.Take(SceneInspector.Scope);snapshotId=snapshot.id;details=JObject.FromObject(snapshot);prepared=true;break;
                         case "apply_patch":var needsBake=PatchExecutor.Apply(command.payload,command.expected_version);details=JObject.FromObject(new{schema_version="1.0",before_version=before,after_version=SceneInspector.Version(),needs_bake=needsBake,operations=command.payload["operations"]});prepared=true;break;

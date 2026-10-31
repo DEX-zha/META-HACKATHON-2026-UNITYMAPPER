@@ -23,15 +23,16 @@ namespace HdrpAgent.Editor
         public static bool Running=>stage!=null;
         public static string Status=>SessionState.GetString("HdrpAgent.ReferenceStatus","Prêt à enregistrer une référence.");
         public static string LastDirectory=>SessionState.GetString("HdrpAgent.ReferenceDirectory","");
-        static string Workspace=>Directory.GetParent(Application.dataPath).Parent.Parent.FullName;
+        static string Workspace=>BridgeClient.ResolveWorkspace();
         static string Owner=>Path.Combine(Workspace,".hdrp-agent","reference-owner.json");
         static ReferenceWorkflow(){EditorApplication.update+=Tick;AssemblyReloadEvents.beforeAssemblyReload+=()=>{if(Running)Fail("Domain reload interrupted the reference workflow; no automatic replay");};}
         public static void Atomic(string path,JToken value){var temp=path+".writing";File.WriteAllText(temp,value.ToString(Newtonsoft.Json.Formatting.None));if(File.Exists(path))File.Replace(temp,path,null);else File.Move(temp,path);}
         static void Say(string text){SessionState.SetString("HdrpAgent.ReferenceStatus",text);}
-        static void Begin(string kind,string brief,string[] media,string checkpoint=null){
-            if(Running||BridgeClient.SessionOwnsEditor||CommandExecutor.Busy||LocalValidationRunner.Running||EditorApplication.isPlayingOrWillChangePlaymode||Lightmapping.isRunning||EditorApplication.isCompiling)throw new InvalidOperationException("Another operation owns the editor");
+        static void Begin(string kind,string brief,string[] media,string checkpoint=null,BridgeCommand admission=null){
+            if(Running||(admission==null&&(BridgeClient.SessionOwnsEditor||CommandExecutor.Busy))||LocalValidationRunner.Running||EditorApplication.isPlayingOrWillChangePlaymode||Lightmapping.isRunning||EditorApplication.isCompiling)throw new InvalidOperationException("Another operation owns the editor");
+            if(admission!=null&&!CommandExecutor.Owns(admission))throw new InvalidOperationException("Preparation does not own the active command");
             if(File.Exists(Owner))throw new InvalidOperationException("A previous reference workflow requires reconciliation; no replay");
-            id=Guid.NewGuid().ToString("N");directory=Path.Combine(Workspace,".hdrp-agent","reconstructions",id);Directory.CreateDirectory(directory);iteration=0;capture=null;previewBegan=0;began=EditorApplication.timeSinceStartup;
+            id=admission==null?Guid.NewGuid().ToString("N"):(string)admission.payload["run_id"];directory=Path.Combine(Workspace,".hdrp-agent","reconstructions",id);Directory.CreateDirectory(directory);iteration=0;capture=null;previewBegan=0;began=EditorApplication.timeSinceStartup;
             using(var stream=new FileStream(Owner,FileMode.CreateNew,FileAccess.Write,FileShare.Read))using(var writer=new StreamWriter(stream))writer.Write(new JObject{["id"]=id,["directory"]=directory}.ToString());
             stage="preparing";SessionState.SetString("HdrpAgent.ReferenceDirectory",directory);
             try{
@@ -45,13 +46,14 @@ namespace HdrpAgent.Editor
                     if(!AssetDatabase.CopyAsset(saved,source))throw new IOException("Could not preserve recorded reference");
                 }
                 Atomic(Path.Combine(directory,"source-private.json"),new JObject{["source_scene"]=source,["previous_scene"]=scene.path,["source_scene_sha256"]=BridgeJson.Hash(File.ReadAllBytes(source))});
-                BridgeClient.Disconnect();EditorSceneManager.OpenScene(source,OpenSceneMode.Single);
+                if(admission==null)BridgeClient.Disconnect();EditorSceneManager.OpenScene(source,OpenSceneMode.Single);
                 catalogue=ReferenceAssets.Catalogue("Assets/AtmosphericHouse/Prefabs");Atomic(Path.Combine(directory,"catalogue.json"),catalogue);
                 // Domain reload may clear the disconnected bridge's cached ID.
                 // Use the same deterministic project identity; the worker still
                 // requires its existing registration before admitting any call.
                 var projectId="project-"+BridgeJson.Hash(Encoding.UTF8.GetBytes(Directory.GetParent(Application.dataPath).FullName)).Substring(0,24);
                 bundle=new JObject{["schema_version"]="1.0",["id"]=id,["kind"]=kind,["brief"]=brief,["provider_mode"]="live",["max_iterations"]=6,["session_timeout_seconds"]=2400,["autonomous_refinement"]=true,["scene_inspection"]=true,["fidelity_mode"]="1.0",["scale_mode"]=SessionState.GetBool("HdrpAgent.EvidencedScale",false)?"evidenced":"locked",["priority_view"]="work-top-front",["project_id"]=projectId,["catalogue_file"]="catalogue.json",["asset_visual_matching"]=true,["pose_geometry"]=true,["detail_capture"]=checkpoint==null&&kind=="recorded"};
+                if(admission!=null){bundle["operation_id"]=admission.payload["operation_id"];bundle["session_id"]=admission.session_id;foreach(var key in new[]{"building_policy","interior_style","ceiling_prefab"})bundle[key]=admission.payload[key].DeepClone();}
                 if(kind=="external"){bundle.Remove("fidelity_mode");bundle["priority_view"]="reference-0";}
                 if(previousBundle!=null&&kind=="external"){
                     SnapshotStore.CreateWorkingCopy(source,"reference-"+id);expectedVersion=SceneInspector.Version();
@@ -84,6 +86,11 @@ namespace HdrpAgent.Editor
                     SnapshotStore.CreateWorkingCopy(source,"reference-"+id);expectedVersion=SceneInspector.Version();Submit();
                 }
             }catch(Exception e){Fail(e.GetType().Name+": "+e.Message);throw;}
+        }
+        public static JObject PrepareAdmitted(BridgeCommand command,string[] media){
+            Begin("external",(string)command.payload["brief"],media,null,command);
+            var path=Path.Combine(directory,"bundle.json");
+            return new JObject{["operation_id"]=command.payload["operation_id"],["session_id"]=command.session_id,["run_id"]=id,["bundle_sha256"]=BridgeJson.Hash(File.ReadAllBytes(path))};
         }
         public static void RecordCurrent()=>Begin("recorded","Reproduire fidèlement la composition visible, les objets du projet, les matériaux, les lumières et l’atmosphère de la référence.",Array.Empty<string>());
         public static void RebuildSavedReference(){var saved=LastDirectory;var previous=JObject.Parse(File.ReadAllText(Path.Combine(saved,"bundle.json")));var kind=(string)previous["kind"];Begin(kind,((string)previous["brief"]??"")+" Reproduire fidèlement la référence conservée ; corriger la disposition, le cadrage et le rendu depuis les comparaisons visuelles. Les dimensions d’une image non cotée sont estimées.",Array.Empty<string>(),saved);}
@@ -250,7 +257,7 @@ namespace HdrpAgent.Editor
                 var receiptFile=Path.Combine(directory,"receipt-"+iteration+".json");if(File.Exists(receiptFile))throw new InvalidDataException("Construction already started; reconcile instead of replaying");
                 var plan=(JObject)command["plan"];ReferenceSceneBuilder.Validate(plan,catalogue);ReferenceContacts.Validate((JArray)command["supports"],plan);
                 Atomic(receiptFile,new JObject{["status"]="started",["ordinal"]=iteration,["command_sha256"]=BridgeJson.Hash(File.ReadAllBytes(planFile)),["before_version"]=expectedVersion});
-                var scene=ReferenceSceneBuilder.Build(plan,catalogue,"repro-"+id+"-"+iteration,(JObject)command["inspection"],(JArray)command["supports"],(JObject)command["capture_protocol"]);
+                var scene=ReferenceSceneBuilder.Build(plan,catalogue,"repro-"+id+"-"+iteration,(JObject)command["inspection"],(JArray)command["supports"],(JObject)command["capture_protocol"],(string)bundle["interior_style"]??"B");
                 appliedPlan=(JObject)plan.DeepClone();contactReport=ReferenceSceneBuilder.LastContacts;
                 expectedVersion=SceneInspector.Version();Atomic(receiptFile,new JObject{["status"]="built",["ordinal"]=iteration,["scene_path"]=scene,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});
                 capture=CaptureController.BeginReference((JObject)command["inspection"],true);stage="capturing";Say("Construction et capture du candidat "+(iteration+1)+"/"+(int)bundle["max_iterations"]+"…");

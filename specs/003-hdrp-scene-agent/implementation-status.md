@@ -155,3 +155,13 @@ T154–T156 exécutées : prévalidation des variantes et de la couverture recta
 T157–T161 implémentées. `apps/unitymapper` contient le serveur loopback, contrôle d’instance, client Python authentifié sans retry de mutation, migrations SQLite séparées et transactions messages/actions/outbox/événements. Tests race + vet passent ; démarrage avec Python live et arrêt propre vérifiés. Le journal de budget Python n’est pas lu directement par Go. Le serveur expose pour l’instant uniquement `/health`, avec `chat=not_implemented` ; aucune conversation Muse ni action Unity depuis le chat n’est revendiquée. Contrats des tours et six outils ajoutés et synchronisés, tests de champs arbitraires/identités/limites. T162–T190 restent ouverts. Rapport local : `.hdrp-agent/reports/chat-foundation.json`.
 
 Vérification finale de ce lot : **262 tests Python**, **22 tests Unity**, **6 tests Go avec race detector** passent ; `go vet ./...` sans diagnostic. Aucun appel payant ajouté. Le processus Go de vérification a été arrêté proprement ; le service Python reste indépendant.
+
+## Admission et pont applicatif — 2026-10-31
+
+T162–T163 implémentées et qualifiées. `POST /v1/app/actions` admet `reconstruct_reference`, `GET /v1/app/actions/{action_id}` retourne l’état durable. Les autres kinds restent explicitement refusés jusqu’à leur raccordement. Une clé réutilisée ne crée ni seconde session ni seconde commande. Le worker attend le reçu natif acquitté et vérifie l’identité, le brief, l’epoch et le hash du bundle avant adoption. Les délais et reprises aboutissent à interruption/réconciliation sans replay.
+
+Unity prépare via `AppCommandBridge` sur son thread éditeur, garde les prefabs, copie la source, matérialise les médias par hash et transmet style/plafond sans code libre. Le bridge peut publier le reçu pendant que ReferenceWorkflow attend le plan ; il ne lance pas de seconde commande. Workspace configurable et résolu sans hypothèse sur le nombre de parents de Assets.
+
+Recette native réelle : run `83b5c4f724df47e98f50be56b4e3b5d1`, 668 assets, reçu HTTP accepté, adoption de la seule session, brief/style préservés. GP inchangée et 491 appels financiers avant/après. Pour isoler ce jalon, la boucle fournisseur était désactivée ; la recette s’est arrêtée après adoption, sans construire une nouvelle scène ni appeler Muse. Service normal et scène précédente restaurés. Le chat reste à implémenter à partir de T164. Rapport local : `.hdrp-agent/reports/chat-native-preparation.json`.
+
+Validation finale de T162–T163 : **272 tests Python et 23 tests Unity passent**. Service live rétabli, scène `finish-qualified-20261031-113116` réenregistrée, aucune session active résiduelle.

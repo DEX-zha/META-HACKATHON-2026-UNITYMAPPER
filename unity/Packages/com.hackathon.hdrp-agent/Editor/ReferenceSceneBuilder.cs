@@ -48,7 +48,7 @@ namespace HdrpAgent.Editor
             }
         }
         public static JObject LastContacts { get; private set; }
-        public static string Build(JObject plan,JArray catalogue,string scope,JObject inspection,JArray supports=null,JObject captureProtocol=null){
+        public static string Build(JObject plan,JArray catalogue,string scope,JObject inspection,JArray supports=null,JObject captureProtocol=null,string interiorStyle="B"){
             if(captureProtocol!=null)ReferenceFidelity.ValidateCaptureProtocol(captureProtocol);
             Validate(plan,catalogue);if(supports!=null)ReferenceContacts.Validate(supports,plan);LastContacts=null;var folder=SnapshotStore.Root(scope);
             if(Directory.Exists(folder))throw new InvalidOperationException("Construction scope already exists; no replay");
@@ -74,7 +74,7 @@ namespace HdrpAgent.Editor
                 }
             }
             if(supports!=null)LastContacts=ReferenceContacts.Resolve(root,plan,supports);
-            LastRoomFinish=ReferenceRoomFinish.Apply(root);
+            LastRoomFinish=ReferenceRoomFinish.Apply(root,interiorStyle);
             foreach(JObject item in (JArray)plan["lights"]){
                 var go=new GameObject("Reference light");go.transform.position=Vector(item["position_m"],-100,100);go.transform.eulerAngles=Vector(item["rotation_deg"],-360,360);
                 var light=go.AddComponent<Light>();var type=(string)item["type"];light.type=type=="directional"?LightType.Directional:type=="spot"?LightType.Spot:LightType.Point;

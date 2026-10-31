@@ -21,6 +21,7 @@ from .store import Store
 from .orchestrator import Orchestrator
 from . import reporting
 from .reference_worker import ReferenceWorker
+from .reference_commands import ReferenceCommands
 
 
 def create_app(settings=None):
@@ -32,6 +33,7 @@ def create_app(settings=None):
     configure([settings.api_key, settings.token])
     orchestrator=Orchestrator(settings,store,queue,artifacts)
     reference_worker=ReferenceWorker(settings,store,artifacts,orchestrator)
+    app_commands=ReferenceCommands(settings,store,queue,artifacts)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -42,10 +44,12 @@ def create_app(settings=None):
         queue.expire(restart=True)
         orchestrator.recover_startup()
         reference_worker.recover_startup()
+        app_commands.recover_startup()
         async def monitor():
             while True:
                 await asyncio.sleep(1)
                 await asyncio.to_thread(queue.expire)
+                await asyncio.to_thread(app_commands.reconcile)
         async def worker():
             while not orchestrator.shutdown.is_set():
                 reference=await asyncio.to_thread(reference_worker.next_ready)
@@ -69,6 +73,7 @@ def create_app(settings=None):
     app.state.settings,app.state.store,app.state.queue,app.state.artifacts,app.state.budget = settings,store,queue,artifacts,budget
     app.state.orchestrator=orchestrator
     app.state.reference_worker=reference_worker
+    app.state.app_commands=app_commands
 
     @app.middleware('http')
     async def boundary(request, call_next):
@@ -130,6 +135,13 @@ def create_app(settings=None):
             store.event(c,data['project_id'],'registered',data)
             return payload('ProjectRegistered',dict(project_id=data['project_id'],scene_id=data['scene_id'],scene_version=data['scene_version'],capability_report_hash=report))
         return store.idempotent('register',request.headers.get('idempotency-key'),data,action)
+
+    @app.post('/v1/app/actions',status_code=202)
+    async def admit_action(request: Request):
+        return await asyncio.to_thread(app_commands.admit,await body(request,'AppActionRequest'))
+
+    @app.get('/v1/app/actions/{action_id}')
+    def get_action(action_id: str):return app_commands.get(action_id)
 
     @app.get('/v1/budget')
     def get_budget(): return payload('Budget',budget.state())

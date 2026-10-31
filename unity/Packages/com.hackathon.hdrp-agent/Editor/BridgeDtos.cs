@@ -53,6 +53,7 @@ namespace HdrpAgent.Editor
             DateTimeOffset.Parse(deadline_utc, CultureInfo.InvariantCulture);
             if (payload_hash != BridgeJson.CanonicalHash(payload)) throw new InvalidDataException("Payload hash mismatch");
             switch(kind) {
+                case "prepare_reference_run": AppCommandBridge.Validate(payload); break;
                 case "inspect": BridgeJson.Closed(payload,"diagnostic_keys");
                     var keys=payload["diagnostic_keys"] as JArray;
                     var allowed=new[]{"geometry","lights","volumes","materials","gi","bake_state"};

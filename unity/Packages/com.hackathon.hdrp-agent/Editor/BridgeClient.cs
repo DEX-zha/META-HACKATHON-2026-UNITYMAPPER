@@ -38,14 +38,29 @@ namespace HdrpAgent.Editor
                 if(EditorPrefs.GetBool("HdrpAgent.BridgeEnabled",false)) Connect();
             };
         }
+        public static string ResolveWorkspace(){
+            var project=Directory.GetParent(Application.dataPath).FullName;
+            var configured=EditorPrefs.GetString("HdrpAgent.Workspace."+project,"");
+            if(string.IsNullOrEmpty(configured)){
+                var ancestor=new DirectoryInfo(project);while(ancestor!=null&&!File.Exists(Path.Combine(ancestor.FullName,"pyproject.toml")))ancestor=ancestor.Parent;
+                if(ancestor==null)throw new IOException("Configure the workspace before connecting");configured=ancestor.FullName;
+            }
+            var root=Path.GetFullPath(configured).TrimEnd(Path.DirectorySeparatorChar);
+            if(!project.StartsWith(root+Path.DirectorySeparatorChar,StringComparison.Ordinal)||!File.Exists(Path.Combine(root,"pyproject.toml")))throw new IOException("Project is outside configured workspace");
+            return root;
+        }
+        public static void ConfigureWorkspace(string path){
+            if(CommandExecutor.Busy||ReferenceWorkflow.Running)throw new InvalidOperationException("Editor is busy");
+            var project=Directory.GetParent(Application.dataPath).FullName;var root=Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
+            if(!project.StartsWith(root+Path.DirectorySeparatorChar,StringComparison.Ordinal)||!File.Exists(Path.Combine(root,"pyproject.toml")))throw new IOException("Invalid workspace");
+            EditorPrefs.SetString("HdrpAgent.Workspace."+project,root);Workspace=root;
+        }
         [MenuItem("Window/HDRP Agent/Connect Local Service")]
         public static void Connect(){
             try{
                 var project=Directory.GetParent(Application.dataPath).FullName;
-                var root=new DirectoryInfo(project);
-                while(root!=null&&!File.Exists(Path.Combine(root.FullName,"pyproject.toml")))root=root.Parent;
-                if(root==null)throw new IOException("No registered workspace found");
-                Workspace=root.FullName;
+                Workspace=ResolveWorkspace();
+                ConfigureWorkspace(Workspace);
                 // Asset import workers share the Unity application name. Bind OS
                 // activation to this editor process, never to the ambiguous name.
                 File.WriteAllText(Path.Combine(Workspace,".hdrp-agent","unity-editor.pid"),System.Diagnostics.Process.GetCurrentProcess().Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -61,9 +76,8 @@ namespace HdrpAgent.Editor
         [MenuItem("Window/HDRP Agent/Disconnect Local Service")]
         public static void Disconnect(){enabled=false;Registered=false;Status="Disconnected";EditorPrefs.SetBool("HdrpAgent.BridgeEnabled",false);}
         static void Update(){
-            if(!enabled||requesting||ReferenceWorkflow.Running||EditorApplication.isCompiling||EditorApplication.timeSinceStartup<nextPoll)return;
+            if(!enabled||requesting||EditorApplication.isCompiling||EditorApplication.timeSinceStartup<nextPoll)return;
             nextPoll=EditorApplication.timeSinceStartup+.5;
-            if(!Registered){Register();return;}
             if(pendingResult!=null){SendResult(pendingResult);return;}
             var receipt=CommandExecutor.Receipts.Pending().FirstOrDefault(p=>(string)p["bridge_epoch"]==Epoch&&p["result"].Type!=JTokenType.Null);
             if(receipt!=null){pendingResult=(string)receipt["command_id"];SendResult(pendingResult);return;}
@@ -77,6 +91,8 @@ namespace HdrpAgent.Editor
                     catch(Exception){Status="Invalid control response; recovery required";CommandExecutor.Cancel();}
                 });return;
             }
+            if(ReferenceWorkflow.Running)return;
+            if(!Registered){Register();return;}
             Request("POST","/v1/bridge/poll",BridgeJson.Write(new{project_id=ProjectId,bridge_epoch=Epoch,last_receipt_id=(string)null}),null,(ok,text)=>{
                 if(!ok)return;
                 try{
