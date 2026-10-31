@@ -26,9 +26,22 @@ namespace HdrpAgent.Tests
             Assert.False(parts.Any(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject).Contains("WallOut_")));
             Assert.True(parts.All(t=>(t.lossyScale-Vector3.one).magnitude<.001f));
             Assert.AreEqual("whole_native_prefab_modules",(string)proof["method"]);
-            var group=root.transform.Find("partition/Connected structural modules");group.GetComponentInChildren<MeshRenderer>().enabled=false;
+            var group=root.transform.Find("partition/Connected structural modules/segment");group.GetComponentInChildren<MeshRenderer>().enabled=false;
             Assert.False((bool)ReferenceArchitecture.Audit(group,3,2.8f,(JArray)proof["walls"][0]["openings"])["passed"]);
 
+        }
+        [Test] public void DistinctWallSegmentsReuseOneLogicalPrefabWithoutLosingGeometry(){
+            var root=new GameObject("Reconstruction");new GameObject("wall").transform.SetParent(root.transform,false);
+            try {
+                var walls=new JArray();
+                for(int i=0;i<2;i++)walls.Add(new JObject{["object_key"]="wall",["segment_key"]="wall-"+i,["rotation_deg"]=new JArray(0,0,0),["start_m"]=new JArray(-1.5,0,i*3),["end_m"]=new JArray(1.5,0,i*3),["partition"]=false,["openings"]=new JArray()});
+                var spec=new JObject{["height_m"]=2.8,["thickness_m"]=.2,["lighting"]="neutral_construction",["surfaces"]=new JArray(),["walls"]=walls};
+                var receipt=ReferenceArchitecture.Build(root,spec,"B");
+                Assert.AreEqual(1,root.transform.childCount);Assert.AreEqual(2,root.transform.Find("wall/Connected structural modules").childCount);
+                Assert.AreEqual(2,((JArray)receipt["walls"]).Count);
+                foreach(var wall in receipt["walls"])Assert.True((bool)wall["surface_audit"]["passed"]);
+                foreach(var t in root.GetComponentsInChildren<Transform>().Where(t=>PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject))){Assert.AreEqual(PrefabInstanceStatus.Connected,PrefabUtility.GetPrefabInstanceStatus(t.gameObject));Assert.That((t.lossyScale-Vector3.one).magnitude,Is.LessThan(.001f));}
+            }finally{UnityEngine.Object.DestroyImmediate(root);}
         }
         [TestCase(false)] [TestCase(true)] public void NativeFloorAndCeilingTileWithoutRescaling(bool rotated){
             var root=new GameObject("Reconstruction");

@@ -16,11 +16,17 @@ def rect(p):return [p[0]-p[2]/2,p[1]-p[3]/2,p[0]+p[2]/2,p[1]+p[3]/2]
 def pose(b):return [(b[0]+b[2])/2,(b[1]+b[3])/2,b[2]-b[0],b[3]-b[1]]
 
 
+def wall_id(wall):return wall.get('segment_key',wall['object_key'])
+
+
 def validate_observation(ir,object_keys):
-    payload('ModelFloorplanObservation',ir)
+    reviewed=deepcopy(ir)
+    for wall in reviewed['walls']:wall.setdefault('segment_key',wall['object_key'])
+    payload('ModelFloorplanObservation',reviewed)
     if ir['projection']!='overhead_cutaway':raise AgentError('UNSUPPORTED_PROJECTION','The composition solver requires an overhead cutaway reference')
-    rooms={r['key']:r['bounds'] for r in ir['rooms']};walls={w['object_key']:w for w in ir['walls']}
-    if len(rooms)!=len(ir['rooms']) or len(walls)!=len(ir['walls']):raise AgentError('INVALID_TOPOLOGY','Duplicate room or wall')
+    rooms={r['key']:r['bounds'] for r in ir['rooms']};walls={wall_id(w):w for w in ir['walls']}
+    if len(rooms)!=len(ir['rooms']):raise AgentError('INVALID_TOPOLOGY','Room keys must be unique')
+    if len(walls)!=len(ir['walls']):raise AgentError('INVALID_TOPOLOGY','Wall segment_key values must be unique; object_key may repeat to reuse a prefab')
     boxes=[ir['envelope']]+list(rooms.values())+[o['bounds'] for o in ir['objects']]
     if any(area(b)<=1e-7 for b in boxes):raise AgentError('INVALID_TOPOLOGY','Empty room or object footprint')
     for key,b in rooms.items():
@@ -54,7 +60,7 @@ def validate_observation(ir,object_keys):
 
 
 def door_zones(ir):
-    walls={w['object_key']:w for w in ir['walls']};zones=[]
+    walls={wall_id(w):w for w in ir['walls']};zones=[]
     for opening in ir['openings']:
         if opening['kind']!='door':continue
         w=walls[opening['wall_key']];a=np.array(w['start']);d=np.array(w['end'])-a
@@ -114,7 +120,7 @@ def checkpoint(path,state=None,*,evidence_hash=None):
     return value
 
 
-def extract(provider,artifacts,frames,analysis,catalogue,segments,brief):
+def extract(provider,artifacts,frames,analysis,catalogue,segments,brief,*,on_response=None,guard=None):
     from .providers.meta_responses import spark_request
     from .domain import canonical
     if len(frames)!=1:raise AgentError('UNSUPPORTED_PROJECTION','First composition release accepts one overhead image')
@@ -122,10 +128,25 @@ def extract(provider,artifacts,frames,analysis,catalogue,segments,brief):
     objects=[dict(o,asset_name=assets.get(o['asset_id'],{}).get('name')) for o in analysis['objects']]
     context=dict(brief=brief,objects=objects,segmentation=[dict(object_key=s['object_key'],bbox=s.get('selection',{}).get('bbox_xyxy') if s.get('selection') else None) for s in segments])
     instruction='Extract a normalized 2D architectural layout from this overhead cutaway drawing. Coordinates u right, v down, normalized to the WHOLE supplied image. Return unsupported for non-plan perspective photographs. Rooms are disjoint axis-aligned rectangular interior footprints, excluding wall thickness, within envelope. Include every supplied object_key exactly once in objects; use no new object keys. Exclude drawn text labels from geometry. Furniture bounds describe footprint rather than shadow. Choose cardinal Unity yaw (0 faces image top, 90 faces image right) from visible evidence; room keys are your IDs. Walls reference actual supplied structural object keys and image start/end centreline points; assign one room for perimeter walls, two for partitions. Openings are ordered fractional intervals ALONG a wall from its start toward end; door denotes a passage, window denotes glazing. Do not invent unseen doors. A floor may cover several rooms: its room_key can be null. Rugs are rug, table-supported small objects are supported. Ceilings may exist but are hidden in this cutaway reference; use room or envelope bounds and role ceiling. For openings with separate door-leaf objects use role opening and visible bounds. Keep uncertainty in limits. Do not copy source world poses or metric dimensions.'
-    response=provider.send(spark_request(instruction+'\nReference metadata:\n'+canonical(context),[artifacts.read(frames[0]['artifact_hash'])],'ModelFloorplanObservation'),'ModelFloorplanObservation')
-    ir=validate_observation(response['value'],{o['key'] for o in analysis['objects']})
-    if {o['object_key'] for o in ir['objects']}!={o['key'] for o in analysis['objects']}:raise AgentError('INVALID_TOPOLOGY','Every selected object requires a floorplan observation')
-    return response
+    instruction+=' Each wall has a globally unique segment_key, separate from object_key. object_key binds an existing structural object/prefab and MAY repeat across distinct segments. Every opening.wall_key MUST equal exactly one wall.segment_key; never invent an unmatched alias. A segment touching more than two rooms must be split into uniquely named segments. Room keys and opening keys must also be unique.'
+    prompt=instruction+'\nReference metadata:\n'+canonical(context)
+    seen=set();repairs=[]
+    while True:
+        if guard:guard()
+        response=provider.send(spark_request(prompt,[artifacts.read(frames[0]['artifact_hash'])],'ModelFloorplanObservation'),'ModelFloorplanObservation')
+        if on_response:on_response(response,None)
+        try:
+            ir=validate_observation(response['value'],{o['key'] for o in analysis['objects']})
+            if {o['object_key'] for o in ir['objects']}!={o['key'] for o in analysis['objects']}:raise AgentError('INVALID_TOPOLOGY','Every selected object requires a floorplan observation')
+            response['topology_repairs']=repairs
+            return response
+        except AgentError as error:
+            if error.code!='INVALID_TOPOLOGY':raise
+            if on_response:on_response(response,str(error))
+            rejected=fingerprint(response['value'])
+            if rejected in seen:raise AgentError('INVALID_TOPOLOGY','Repeated invalid topology with no correction: '+str(error))
+            seen.add(rejected);repairs.append(dict(call_id=response.get('call_id'),reason=str(error)))
+            prompt=instruction+'\nReference metadata:\n'+canonical(context)+'\nCorrect this completed but invalid extraction. Keep physical segments; repair their IDs, bindings and topology. Return the entire corrected observation. Validation error: '+str(error)+'\nRejected observation:\n'+canonical(response['value'])
 
 
 def build_plan(ir,fit,analysis,catalogue,frame):
@@ -264,7 +285,10 @@ def architecture(ir,width,height):
     for w in walls:
         start=[(w['start'][0]-.5)*width,0.,(.5-w['start'][1])*height]
         end=[(w['end'][0]-.5)*width,0.,(.5-w['end'][1])*height]
-        result.append(dict(object_key=w['object_key'],start_m=start,end_m=end,partition=len(w['rooms'])==2,openings=[dict(key=o['key'],kind=o['kind'],start=o['start'],end=o['end']) for o in ir['openings'] if o['wall_key']==w['object_key']]))
+        room_center=pose(next(r['bounds'] for r in ir['rooms'] if r['key']==w['rooms'][0]))
+        horizontal=abs(w['start'][1]-w['end'][1])<.005
+        yaw=(0 if w['start'][1]<room_center[1] else 180) if horizontal else (270 if w['start'][0]<room_center[0] else 90)
+        result.append(dict(object_key=w['object_key'],segment_key=wall_id(w),rotation_deg=[0.,float(yaw),0.],start_m=start,end_m=end,partition=len(w['rooms'])==2,openings=[dict(key=o['key'],kind=o['kind'],start=o['start'],end=o['end']) for o in ir['openings'] if o['wall_key']==wall_id(w)]))
     return dict(walls=result,height_m=2.8,thickness_m=.2,lighting='neutral_construction')
 
 

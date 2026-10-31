@@ -133,3 +133,32 @@ def test_native_assembly_rejects_impossible_fit_without_shrinking():
     ir=fixture();ir['objects'][0]['bounds']=[.01,.01,.99,.99]
     with pytest.raises(AgentError,match='native placement'):
         arrange(ir,8,6)
+
+
+def test_distinct_segments_share_prefab_binding_and_keep_their_openings():
+    from hdrp_agent.floorplan import architecture
+    ir=fixture()
+    ir['walls'][0]['segment_key']='partition-a'
+    ir['walls'][0]['end']=[.5,.5]
+    ir['walls'].append(dict(object_key='partition',segment_key='partition-b',start=[.5,.5],end=[.5,.9],rooms=['left','right']))
+    ir['openings'][0]['wall_key']='partition-b'
+    assert validate_observation(ir,{'bed','cabinet','partition'})==ir
+    built=architecture(ir,12,10)['walls']
+    assert [len(w['openings']) for w in built]==[0,1]
+    assert built[0]['segment_key']!=built[1]['segment_key']
+    ir['walls'][1]['segment_key']='partition-a'
+    with pytest.raises(AgentError,match='segment_key values must be unique'):validate_observation(ir,{'bed','cabinet','partition'})
+
+
+def test_extraction_repairs_completed_topology_without_replaying_unknown_calls(monkeypatch):
+    from hdrp_agent.floorplan import extract
+    from hdrp_agent.providers import meta_responses
+    from types import SimpleNamespace
+    monkeypatch.setattr(meta_responses,'spark_request',lambda prompt,images,schema:prompt)
+    good=fixture();good['objects'].append(dict(object_key='partition',room_key=None,role='wall',bounds=[.49,.1,.51,.9],yaw_deg=0,confidence=.9));bad=deepcopy(good);bad['openings'][0]['wall_key']='absent'
+    responses=iter([dict(value=bad,call_id='bad'),dict(value=good,call_id='good')]);prompts=[];records=[]
+    def send(prompt,schema):prompts.append(prompt);return next(responses)
+    result=extract(SimpleNamespace(send=send),SimpleNamespace(read=lambda _:b'image'),[dict(artifact_hash='h')],dict(objects=[dict(key=o['object_key'],asset_id='a') for o in good['objects']]),[],[],'test',on_response=lambda r,e:records.append((r['call_id'],e)))
+    assert result['value']==good and len(prompts)==2
+    assert 'Rejected observation' in prompts[1] and 'absent' in prompts[1]
+    assert len(records)==3 and records[1][1]

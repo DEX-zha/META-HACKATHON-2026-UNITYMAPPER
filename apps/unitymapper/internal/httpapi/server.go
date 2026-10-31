@@ -104,6 +104,28 @@ func (s *Server) Handler() http.Handler {
 		}
 		reply(w, 202, result)
 	})
+	mux.HandleFunc("GET /api/actions/{action}/inspection", func(w http.ResponseWriter, r *http.Request) {
+		data, e := s.Service.Inspection(r.Context(), r.PathValue("action"))
+		if e != nil {
+			failure(w, 404, "inspection_unavailable")
+			return
+		}
+		reply(w, 200, data)
+	})
+	mux.HandleFunc("GET /api/actions/{action}/media/{media}", func(w http.ResponseWriter, r *http.Request) {
+		data, e := s.Service.Inspection(r.Context(), r.PathValue("action"))
+		if e != nil {
+			failure(w, 404, "image_unavailable")
+			return
+		}
+		for _, v := range data.Images {
+			if v.ID == r.PathValue("media") {
+				http.ServeFile(w, r, v.Path)
+				return
+			}
+		}
+		failure(w, 404, "image_unavailable")
+	})
 	mux.HandleFunc("GET /api/budget", func(w http.ResponseWriter, r *http.Request) {
 		var data json.RawMessage
 		if s.Service.Agent.Do(r.Context(), "GET", "/v1/budget", nil, &data) != nil {

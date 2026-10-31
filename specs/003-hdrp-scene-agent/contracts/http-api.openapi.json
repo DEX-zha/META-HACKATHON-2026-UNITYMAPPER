@@ -6063,18 +6063,24 @@
                   },
                   "minItems": 1,
                   "maxItems": 2
+                },
+                "segment_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
                 }
               },
               "required": [
                 "object_key",
                 "start",
                 "end",
-                "rooms"
+                "rooms",
+                "segment_key"
               ],
               "additionalProperties": false
             },
             "minItems": 1,
-            "maxItems": 20
+            "maxItems": 64
           },
           "openings": {
             "type": "array",

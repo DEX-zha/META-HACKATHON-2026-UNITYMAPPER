@@ -144,6 +144,15 @@ class ReferenceWorker:
         with self.store.tx() as c:self.store.event(c,sid,kind,data)
 
     def save(self,job):
+        from .visual_observations import export_observations
+        atomic(self.root/job['id']/'visual-observations.json',export_observations(job))
+        for attempt in job.get('attempts',[]):
+            for index,frame in enumerate(attempt.get('candidate_frames',[])):
+                target=self.root/job['id']/('capture-'+str(int(attempt['ordinal'])))/('view-'+str(index)+'.png')
+                if not target.exists():
+                    target.parent.mkdir(exist_ok=True)
+                    temporary=target.with_suffix('.writing');temporary.write_bytes(self.artifacts.read(frame['artifact_hash']));temporary.replace(target)
+
         with self.store.tx() as c:c.execute('UPDATE reference_runs SET status=?,body=? WHERE id=?',(job['state'],canonical(job),job['id']))
 
     def guard(self,sid):
@@ -524,9 +533,13 @@ class ReferenceWorker:
             if composition_requested:
                 from .floorplan import extract,optimize,build_plan,checkpoint as save_composition
                 self.status(job,'composition','Extraction des pièces et optimisation des contraintes de placement…')
-                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='native-circulation-4'))
+                composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='native-segments-5'))
                 saved=prior.get('composition',{})
-                observation=saved['observation'] if saved.get('evidence_hash')==composition_evidence else extract(provider,self.artifacts,frames,effective,catalogue,segments,brief)
+                def record_extraction(response,error):
+                    name='composition-extraction-'+str(response.get('call_id') or fingerprint(response['value']))+'.json'
+                    atomic(directory/name,dict(response=response,validation_error=error))
+                    if error:self.status(job,'composition_repair','Topologie à corriger : '+error)
+                observation=saved['observation'] if saved.get('evidence_hash')==composition_evidence else extract(provider,self.artifacts,frames,effective,catalogue,segments,brief,on_response=record_extraction,guard=lambda:self.guard(sid))
                 fit=optimize(observation['value'],guard=lambda:self.guard(sid))
                 composition_plan,composition=build_plan(observation['value'],fit,effective,catalogue,frames[0])
                 job['composition']=dict(composition,observation=observation,evidence_hash=composition_evidence)

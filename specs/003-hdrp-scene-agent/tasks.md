@@ -693,3 +693,10 @@ Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est r
 - [x] T208 Ajouter une vérification de circulation reliant les portes et les zones d'utilisation des meubles ; tests des couloirs trop étroits et accès bloqués.
 - [x] T209 Réserver les dégagements et agrandir automatiquement les pièces par modules natifs lorsque le mobilier ne permet pas une circulation correcte.
 - [x] T210 Reconstruire et inspecter le salon/chambre ; publier les dimensions, chemins et limites de la validation fonctionnelle.
+
+### Topologie et suivi visuel dans le chat
+
+- [x] T211 Séparer l'identité des segments de mur du prefab source ; conserver les extractions rejetées et réparer explicitement les références de topologie sans supprimer des murs distincts.
+- [x] T212 Exposer les preuves visuelles du run par des routes authentifiées liées à l'action : référence, zones SAM, planches de prefabs, captures Unity et erreurs détaillées.
+- [x] T213 Ajouter un inspecteur visuel actualisé dans le chat avec étape, horodatage, image sélectionnée, objets détectés et diagnostics ; distinguer captures périodiques et flux vidéo.
+- [x] T214 Tester les contrats, l'isolation des médias et les états d'erreur ; relancer localement avec une session authentifiée.

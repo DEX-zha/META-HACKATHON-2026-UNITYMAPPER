@@ -43,3 +43,33 @@ func TestProgressReadsEvidenceWithoutChangingActionState(t *testing.T) {
 		t.Fatal("invalid run accepted")
 	}
 }
+
+func TestVisualEvidenceAllowlistAndSymlinkIsolation(t *testing.T) {
+	root, e := filepath.EvalSymlinks(t.TempDir())
+	if e != nil {
+		t.Fatal(e)
+	}
+	path := filepath.Join(root, "input-0.png")
+	os.WriteFile(path, []byte("image"), 0600)
+	if !safeEvidence(root, path, 100) {
+		t.Fatal("regular evidence refused")
+	}
+	alias := filepath.Join(root, "input-1.png")
+	os.Symlink(path, alias)
+	if safeEvidence(root, alias, 100) {
+		t.Fatal("symlink exposed")
+	}
+	if safeEvidence(root, path, 2) {
+		t.Fatal("oversize exposed")
+	}
+	for _, name := range []string{"source-private.json", "../input-0.png", ".env", "floorplan-0/../../secret.png", "inspection-0/source-private.json"} {
+		if visualFile.MatchString(name) {
+			t.Fatal("private path allowed", name)
+		}
+	}
+	for _, name := range []string{"input-0.png", "asset-matching-17.png", "floorplan-0/beauty.png", "inspection-0/view-00.png"} {
+		if !visualFile.MatchString(name) {
+			t.Fatal("evidence excluded", name)
+		}
+	}
+}

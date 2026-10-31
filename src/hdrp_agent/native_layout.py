@@ -83,7 +83,7 @@ def compile_grid(ir, analysis, catalogue, aspect, *, grow_x=0, grow_y=0, rotated
             cx=float(np.clip(cx,b[0]+hx+mx,b[2]-hx-mx));cy=float(np.clip(cy,b[1]+hz+mz,b[3]-hz-mz))
         o['bounds']=[cx-hx,cy-hz,cx+hx,cy+hz]
     # Openings move with their complete 3 m module, never retain a pixel-sized gap.
-    walls={w['object_key']:w for w in out['walls']}
+    walls={w.get('segment_key',w['object_key']):w for w in out['walls']}
     for opening in out['openings']:
         wall=walls[opening['wall_key']];a=np.array(wall['start']);b=np.array(wall['end'])
         length=float(np.linalg.norm((b-a)*[screen_w,screen_h]))
@@ -104,7 +104,7 @@ def arrange(ir,width,height,*,names=None,require_circulation=False):
     from .circulation import service_points, check, DOOR_DEPTH
     names=names or {}
     rooms={r['key']:r['bounds'] for r in ir['rooms']}
-    walls={w['object_key']:w for w in ir['walls']}
+    walls={w.get('segment_key',w['object_key']):w for w in ir['walls']}
     doors=[]
     for o in ir['openings']:
         if o['kind']!='door':continue

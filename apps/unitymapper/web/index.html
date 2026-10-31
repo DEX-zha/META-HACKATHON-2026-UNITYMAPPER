@@ -18,4 +18,10 @@
     <div class="composer-wrap"><form id="composer"><div id="attachments"></div><label class="sr-only" for="text">Votre message</label><textarea id="text" rows="2" placeholder="Une idée, une référence… parlons de votre scène." maxlength="16000" required></textarea><div class="compose-bottom"><button type="button" id="attach-button" class="attach" aria-label="Ajouter des images" title="Ajouter des images PNG ou JPEG"><span aria-hidden="true">＋</span><span>Ajouter une image</span></button><input id="file" type="file" accept="image/png,image/jpeg" multiple hidden><span class="model-label"><span aria-hidden="true">✦</span> Muse Spark</span><button id="send" type="submit" aria-label="Envoyer le message"><span>Envoyer</span><span aria-hidden="true">↑</span></button></div></form><div class="composer-meta"><span id="status">Vos conversations sont enregistrées.</span><span>PNG, JPEG · 3 images max.</span></div><p class="note">Vérifiez le résultat dans Unity. Les corrections par chat et la vidéo seront disponibles plus tard.</p></div>
   </div>
 </main>
-</body></html>
+<aside id="inspector" class="inspector" hidden aria-label="Inspection visuelle">
+<div class="inspector-heading"><div><strong>Ce que l’agent observe</strong><p>Captures actualisées · pas un flux vidéo</p></div><button id="close-inspector" aria-label="Fermer l’inspection">×</button></div>
+<p id="inspection-status" role="status"></p><label for="visual-filter">Éléments observés</label><select id="visual-filter"><option value="all">Tout afficher</option><option value="reference">Références</option><option value="comparison">Comparaison des assets</option><option value="prefab">Aperçus de prefabs</option><option value="unity">Captures Unity</option></select>
+<figure class="visual-stage"><canvas id="visual-canvas" aria-label="Image observée et zones SAM"></canvas><figcaption id="visual-caption"></figcaption></figure>
+<label class="follow-control"><input id="follow-visual" type="checkbox" checked> Suivre la dernière capture</label>
+<div id="visual-gallery" class="visual-gallery"></div><h3>Objets et segmentation</h3><div id="visual-objects"></div>
+</aside></body></html>

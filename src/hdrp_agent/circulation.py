@@ -26,7 +26,7 @@ def check(ir,poses,width,height,names=None):
     """
     from .floorplan import rect
     names=names or {};scale=np.array([width,height,width,height]);reports=[]
-    walls={w['object_key']:w for w in ir['walls']}
+    walls={w.get('segment_key',w['object_key']):w for w in ir['walls']}
     radius=WALK_WIDTH/2;step=.1;pad=radius+step*math.sqrt(2)/2
     for room in ir['rooms']:
         bounds=np.array(room['bounds'])*scale;a,b,c,d=bounds

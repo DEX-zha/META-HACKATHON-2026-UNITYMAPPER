@@ -83,15 +83,20 @@ public static class ReferenceArchitecture {
   float height=ReferenceSceneBuilder.Number(description["height_m"],2,4);
   if(Mathf.Abs(height-2.8f)>.001f)throw new InvalidDataException("Native pack interior height is 2.8 metres");
   var rows=description["walls"] as JArray??throw new InvalidDataException("Walls required");var receipts=new JArray();
+  var originals=root.transform.Cast<Transform>().ToDictionary(t=>t.name);var wrappers=new Dictionary<string,GameObject>();
   foreach(JObject wall in rows){
-   BridgeJson.Closed(wall,"object_key","start_m","end_m","partition","openings");
-   var old=root.transform.Cast<Transform>().Single(t=>t.name==(string)wall["object_key"]);
+   if(wall["segment_key"]!=null)BridgeJson.Closed(wall,"object_key","segment_key","rotation_deg","start_m","end_m","partition","openings");
+   else BridgeJson.Closed(wall,"object_key","start_m","end_m","partition","openings");
+   var old=originals[(string)wall["object_key"]];
    var a=ReferenceSceneBuilder.Vector(wall["start_m"],-100,100);var b=ReferenceSceneBuilder.Vector(wall["end_m"],-100,100);float length=Vector3.Distance(a,b);
    int metres=Mathf.RoundToInt(length);bool partition=(bool)wall["partition"];
    if(metres<1||Mathf.Abs(length-metres)>.002f||Mathf.Abs(a.y-b.y)>.001f)throw new InvalidDataException("Wall must fit whole native metre modules");
-   var wrapper=new GameObject(old.name);wrapper.transform.SetParent(root.transform,false);
+   if(!wrappers.TryGetValue(old.name,out var wrapper)){
+    wrapper=new GameObject(old.name);wrapper.transform.SetParent(root.transform,false);wrappers.Add(old.name,wrapper);
+    new GameObject("Connected structural modules").transform.SetParent(wrapper.transform,false);
+   }
    try{
-    var group=new GameObject("Connected structural modules");group.transform.SetParent(wrapper.transform,false);group.transform.position=(a+b)/2;group.transform.rotation=old.rotation;
+    var group=new GameObject((string)wall["segment_key"]??"segment");group.transform.SetParent(wrapper.transform.Find("Connected structural modules"),false);group.transform.position=(a+b)/2;group.transform.rotation=wall["rotation_deg"]==null?old.rotation:Quaternion.Euler(ReferenceSceneBuilder.Vector(wall["rotation_deg"],-360,360));
     float start=group.transform.InverseTransformPoint(a).x,end=group.transform.InverseTransformPoint(b).x;
     var slots=((JArray)wall["openings"]).OfType<JObject>().Select(o=>{
      BridgeJson.Closed(o,"key","kind","start","end");float s=ReferenceSceneBuilder.Number(o["start"],0,1),e=ReferenceSceneBuilder.Number(o["end"],0,1);if(s>=e)throw new InvalidDataException("Invalid aperture interval");
@@ -112,10 +117,10 @@ public static class ReferenceArchitecture {
     var parts=group.GetComponentsInChildren<Transform>().Where(t=>PrefabUtility.IsAnyPrefabInstanceRoot(t.gameObject)).ToArray();
     if(parts.Any(t=>PrefabUtility.GetPrefabInstanceStatus(t.gameObject)!=PrefabInstanceStatus.Connected||(t.lossyScale-Vector3.one).magnitude>.001f))throw new InvalidDataException("Architecture must retain connected native-size prefabs");
     var audit=Audit(group.transform,length,height,holes);if(!(bool)audit["passed"])throw new InvalidDataException("Wall surface validation failed: "+old.name+" "+audit.ToString());
-    receipts.Add(new JObject{["surface_audit"]=audit,["object_key"]=old.name,["partition"]=partition,["length_m"]=length,["two_faces"]=true,["openings"]=holes,["connected_parts"]=parts.Length,["prefabs"]=new JArray(parts.Select(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject)).Distinct())});
+    receipts.Add(new JObject{["surface_audit"]=audit,["segment_key"]=wall["segment_key"]??old.name,["object_key"]=old.name,["partition"]=partition,["length_m"]=length,["two_faces"]=true,["openings"]=holes,["connected_parts"]=parts.Length,["prefabs"]=new JArray(parts.Select(t=>PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(t.gameObject)).Distinct())});
    }catch{UnityEngine.Object.DestroyImmediate(wrapper);throw;}
-   UnityEngine.Object.DestroyImmediate(old.gameObject);
   }
+  foreach(var key in wrappers.Keys)UnityEngine.Object.DestroyImmediate(originals[key].gameObject);
   var tiles=new JArray();
   foreach(var batch in (description["surfaces"] as JArray??new JArray()).OfType<JObject>().GroupBy(s=>(string)s["object_key"])){
    var old=root.transform.Cast<Transform>().Single(t=>t.name==batch.Key);var wrapper=new GameObject(old.name);wrapper.transform.SetParent(root.transform,false);
