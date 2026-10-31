@@ -652,3 +652,16 @@ T181 : test navigateur réel demande → Muse → admission → reçu de prépar
 T167 partiel (PNG/JPEG, pas vidéo), T171 partiel (C7 exhaustif restant), T172 partiel (reconstruct_reference seulement), T184 lanceur disponible. Mémoire résumée, refine/inspection conversationnels, SSE et preuves intégrées restent ouverts. Rapports locaux : `chat-browser.json`, `chat-action-browser.json`.
 
 - [X] T191 [US13] Afficher la phase réelle et les preuves de progression du run dans le chat sans redémarrer le worker actif : lecture confinée de son handoff, message, aperçus, reçus et ancienneté ; tests Go lecture/symlink et navigateur desktop/mobile. Les mises à jour internes SQLite sans nouveau fichier restent hors de cette première vue.
+
+### Priorité composition multi-pièces et interaction (amendement du 2026-10-31)
+
+Ordre de dépendance : T192 → T193 → T194 → T195 → T196 ; T197 puis T198 avant recette T199. Ces tâches remplacent la poursuite de réécritures libres de scènes pour qualifier l'image externe.
+
+- [ ] T192 Archiver le plan salon/chambre et le dernier candidat comme recette locale ; documenter les défauts et les métriques initiales ; reproduire séparément navigation, sélection, édition, perte de focus et erreurs de caméra, sans conclure à un crash sur simple interruption.
+- [ ] T193 Définir le modèle intermédiaire pièces/polygones/murs partagés/ouvertures/objets/supports et contrat de caméra/coupe ; provenance et incertitude de chaque observation ; tests de deux pièces adjacentes et porte dans la cloison.
+- [ ] T194 Raccorder Muse/SAM à cette représentation, avec masques et relations par pièce ; exclure annotations textuelles des objets, conserver alternatives et cache validé, tester association et absence de segmentation.
+- [ ] T195 Implémenter l'optimisation multi-pièces : projection/enveloppe, topologie, puis poses d'objets ; réutiliser géométrie existante, recherche à démarrages multiples, pertes contours/masques/relations et contraintes collision/ouverture/support. Tester la convergence depuis plusieurs dispositions décalées, sans poses cible codées en dur.
+- [ ] T196 Qualifier les captures géométriques neutres et la vue en coupe avec plafonds préservés dans la scène ; contrôle de clipping/occlusion/saturation avant le score visuel, puis HDRP seulement après admissibilité de la composition.
+- [ ] T197 Séparer vue utilisateur et capture de mesure ; qualifier rendu hors écran HDRP/Metal et isolation de scène. Navigation/sélection sans annulation ; édition réelle signalée comme conflit versionné. Découpler perte de focus/performance et progression géométrique.
+- [ ] T198 Persister checkpoints et deltas acceptés/rejetés ; caméra conservée dans l'état typé ; pause/reprise sans refaire sélection d'assets ni rejouer un appel inconnu ; afficher comparaison, erreurs et raisons de décision dans le chat.
+- [ ] T199 Exécuter la recette salon/chambre et une variante non utilisée pour le réglage : métriques avant/après, conformité des portes/cloison/supports, manipulation utilisateur et reprise. Ne déclarer la composition qualifiée qu'avec preuves enregistrées ; rendu esthétique et surfaces cachées restent séparés.
