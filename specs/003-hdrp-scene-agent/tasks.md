@@ -650,3 +650,5 @@ T164/T165/T166/T168/T170 : implémentation regroupée dans `internal/chat/servic
 T181 : test navigateur réel demande → Muse → admission → reçu de préparation Unity → arrêt UI → reçu natif confirmé, run `45112e36f97d46fe81067b241e9b605f`. Aucun résultat de fidélité revendiqué. Le premier essai a révélé un éditeur déconnecté : admission désormais refusée après 15 secondes sans présence du pont ; ancien essai annulé sans rejeu.
 
 T167 partiel (PNG/JPEG, pas vidéo), T171 partiel (C7 exhaustif restant), T172 partiel (reconstruct_reference seulement), T184 lanceur disponible. Mémoire résumée, refine/inspection conversationnels, SSE et preuves intégrées restent ouverts. Rapports locaux : `chat-browser.json`, `chat-action-browser.json`.
+
+- [X] T191 [US13] Afficher la phase réelle et les preuves de progression du run dans le chat sans redémarrer le worker actif : lecture confinée de son handoff, message, aperçus, reçus et ancienneté ; tests Go lecture/symlink et navigateur desktop/mobile. Les mises à jour internes SQLite sans nouveau fichier restent hors de cette première vue.

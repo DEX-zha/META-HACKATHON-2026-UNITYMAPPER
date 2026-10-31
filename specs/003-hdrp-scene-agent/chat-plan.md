@@ -87,3 +87,9 @@ La recette et les états non prouvés restent explicites. Ni « terminé » dans
 ## Livraison conversationnelle du 2026-10-31
 
 Le MVP suit la séparation Go/Python/Unity prévue. Routes conversationnelles Go et UI embarquée livrées ; préparation Unity et arrêt vérifiés depuis un navigateur réel. Pour ce jalon : images PNG/JPEG uniquement, reconstruct_reference uniquement, interrogation de l’état toutes les deux secondes. Les capacités non raccordées restent explicitement indisponibles. Une présence de pont de moins de 15 secondes est requise avant une nouvelle admission. Voir tasks.md pour les lots qui restent ouverts ; ne pas confondre ce raccordement avec la recette de fidélité complète.
+
+## Visibilité du run en cours — 2026-10-31
+
+Le chat expose maintenant une vue de progression en lecture seule des fichiers de handoff appartenant au worker (`status.json`, aperçus et reçus de rendu). Ce raccordement permet d'observer un run existant sans redémarrer Python. L'identifiant provient exclusivement de l'action enregistrée ; format strict, refus des symlinks et taille de lecture bornée. Go ne lit pas le ledger et ne déduit pas l'état terminal à partir de ces fichiers : l'API Python conserve cette autorité.
+
+UI : message réel de phase, étape active, nombre d'aperçus et de reçus de rendu, ancienneté de la dernière preuve sur disque. Une absence de nouveau fichier ne signifie pas que le modèle est arrêté ; ce cas est indiqué explicitement. Pas de pourcentage inventé. Limite restante : les réponses intermédiaires de comparaison enregistrées uniquement en SQLite ne figurent pas encore dans ce compteur de fichiers.

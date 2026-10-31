@@ -161,7 +161,7 @@ func (s *Server) Handler() http.Handler {
 			failure(w, 500, "storage_error")
 			return
 		}
-		reply(w, 200, map[string]any{"conversation": c, "messages": messages, "actions": actions})
+		reply(w, 200, map[string]any{"conversation": c, "messages": messages, "actions": s.Service.Progress(actions)})
 	})
 	mux.HandleFunc("POST /api/conversations/{conversation}/messages", func(w http.ResponseWriter, r *http.Request) {
 		var data struct {
