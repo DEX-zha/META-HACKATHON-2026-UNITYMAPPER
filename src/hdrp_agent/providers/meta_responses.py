@@ -49,6 +49,14 @@ def strict_schema(name,bindings=None):
             continue
         if field not in {'scene_version','hypothesis_key'} or field not in schema['properties'] or not validator('Id').is_valid(value):raise AgentError('INVALID_SCHEMA','Only existing opaque root IDs may be bound',422)
         schema['properties'][field]['const']=value
+    if name in {'ModelReferenceAnalysis','ModelReconstructionPlan'}:
+        item=schema['properties']['objects']['items']
+        prefab=deepcopy(item);primitive=deepcopy(item)
+        prefab['properties']['asset_id']=deepcopy(item['properties']['asset_id']['anyOf'][0])
+        prefab['properties']['primitive']={'type':'null'}
+        primitive['properties']['asset_id']={'type':'null'}
+        primitive['properties']['primitive']=deepcopy(item['properties']['primitive']['anyOf'][0])
+        schema['properties']['objects']['items']={'anyOf':[prefab,primitive]}
     return schema
 
 
@@ -64,7 +72,7 @@ def reviewed_format(name,format_value):
             targets=branches[0]['properties'].get('target_id',{}).get('enum')
             if targets is not None:bindings['operation_target_ids']=targets
         if name in {'ModelReferenceAnalysis','ModelReconstructionPlan'}:
-            ids=properties['objects']['items']['properties']['asset_id']['anyOf'][0].get('enum')
+            ids=properties['objects']['items']['anyOf'][0]['properties']['asset_id'].get('enum')
             if ids is not None:bindings['catalog_asset_ids']=ids
         return format_value=={'format':dict(type='json_schema',name='hdrp_'+name.lower(),strict=True,schema=strict_schema(name,bindings))}
     except (KeyError,TypeError,IndexError,AgentError):return False

@@ -195,3 +195,9 @@ Défauts visuels confirmés : candidat fortement surexposé (fraction claire du 
 283 tests passent. La requête réelle >100k caractères passe la validation locale sans requête réseau. L'ancien run reste interrompu, ses preuves sont préservées.
 
 Essai Muse réel de correction : réponse structurée valide, coût 0,0050044 USD, 41498 tokens entrants / 4273 sortants. Proposition : inversion des deux murs signalés, baisse de l'intensité lumineuse et augmentation de l'EV. Le modèle identifie explicitement le plafond qui masque la vue en coupe comme problème non résolu. Rapport `correction-request-qualified.json`. Proposition non appliquée : ce test valide la sortie de l'erreur technique et la prise en compte des mesures, pas un rendu final fidèle.
+
+## Préfab et primitive simultanés — 2026-10-31
+
+Run `7de90d6b45334c7da17fb20075684410` : les 20 identifiants de prefabs étaient conservés, mais le plan ajoutait aussi primitive=cube/plane à chaque objet. Le validateur signalait à tort une erreur de famille visuelle. Les schémas stricts transmis à Muse pour analyse et plan imposent maintenant deux branches exclusives : asset_id non nul + primitive nulle, ou asset_id nul + primitive réelle. La validation locale retourne INVALID_OBJECT_SOURCE avec la clé concernée si cette contradiction subsiste ; aucun remplacement arbitraire ni normalisation silencieuse.
+
+Validation : suite complète 284 tests puis test de régression supplémentaire, 43 tests ciblés passent. Essai Meta réel sur le même contexte et les assets déjà sélectionnés : plan valide, 20/20 objets préfab, zéro primitive contradictoire, coût 0,0014638 USD. Rapport `prefab-schema-qualified.json`. Plan non appliqué ; ce test qualifie le contrat fournisseur, pas la fidélité du rendu.

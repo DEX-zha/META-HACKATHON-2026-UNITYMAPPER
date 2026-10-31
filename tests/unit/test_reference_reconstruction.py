@@ -58,7 +58,7 @@ def test_assets_are_narrowed_in_both_provider_schemas():
     for schema in ['ModelReferenceAnalysis','ModelReconstructionPlan']:
         request=spark_request('Rebuild',[],schema,dict(catalog_asset_ids=['asset-chair']))
         assert reviewed_format(schema,request['text'])
-        enum=request['text']['format']['schema']['properties']['objects']['items']['properties']['asset_id']['anyOf'][0]['enum']
+        enum=request['text']['format']['schema']['properties']['objects']['items']['anyOf'][0]['properties']['asset_id']['enum']
         assert enum==['asset-chair']
     with pytest.raises(AgentError):spark_request('Rebuild',[],'ModelReferenceAnalysis',dict(catalog_asset_ids=['asset-'+str(i).zfill(40) for i in range(668)]))
 
@@ -296,3 +296,11 @@ def test_comprehensive_segmentation_covers_small_objects_and_priority_closeups(t
     assert {s['object_key'] for s in results}=={f'object-{i}' for i in range(10)}
     assert sum(key=='work-top-front' for key in observed)==10
     assert len(results)<=50 and all(any(s['object_key']==f'object-{i}' and s['view_key']==f'detail-{i}-top' for s in results) for i in range(10))
+
+
+def test_prefab_shape_hint_is_reported_as_source_conflict(tmp_path):
+    artifacts,frames,catalogue,analysis,plan=data(tmp_path)
+    plan['objects'][0]['primitive']='cube'
+    with pytest.raises(AgentError) as error:validate_plan(plan,analysis,frames,catalogue)
+    assert error.value.code=='INVALID_OBJECT_SOURCE'
+    assert 'chair' in error.value.message

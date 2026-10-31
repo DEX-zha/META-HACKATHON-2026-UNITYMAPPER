@@ -185,3 +185,22 @@ def test_large_correction_context_is_not_rejected_as_image_overflow():
     with pytest.raises(AgentError) as exc:spark_request('Inspect',[b'']*13,'ModelReconstructionPlan')
     assert exc.value.code=='IMAGE_BATCH_EXCEEDED'
     with pytest.raises(AgentError,match='non-empty'):spark_request(' ',[],'ModelReferenceAnalysis')
+
+
+def test_prefab_and_primitive_are_exclusive_in_provider_schema():
+    from jsonschema import Draft202012Validator
+    from hdrp_agent.providers.meta_responses import strict_schema,reviewed_format
+    for name in ('ModelReferenceAnalysis','ModelReconstructionPlan'):
+        request=spark_request('Build',[],name,{'catalog_asset_ids':['asset-floor']})
+        assert reviewed_format(name,request['text'])
+        branches=request['text']['format']['schema']['properties']['objects']['items']['anyOf']
+        sources={'anyOf':[{'type':'object','properties':{k:b['properties'][k] for k in ('asset_id','primitive')},'required':['asset_id','primitive']} for b in branches]}
+        v=Draft202012Validator(sources)
+        assert v.is_valid({'asset_id':'asset-floor','primitive':None})
+        assert v.is_valid({'asset_id':None,'primitive':'cube'})
+        assert not v.is_valid({'asset_id':'asset-floor','primitive':'cube'})
+        assert not v.is_valid({'asset_id':None,'primitive':None})
+        assert not v.is_valid({'asset_id':'unknown','primitive':None})
+        changed=json.loads(json.dumps(request['text']))
+        changed['format']['schema']['properties']['objects']['items']['anyOf'][0]['properties']['primitive']={'type':['string','null']}
+        assert not reviewed_format(name,changed)
