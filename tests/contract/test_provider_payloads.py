@@ -176,3 +176,12 @@ def test_reference_analysis_has_room_for_reasoning_and_geometry(tmp_path):
 def test_analysis_requests_do_not_send_client_output_caps():
     for name in ['ModelReferenceAnalysis','ModelReconstructionPlan','ModelDiagnosis']:
         assert 'max_output_tokens' not in spark_request('Analyse',[],name)
+
+
+def test_large_correction_context_is_not_rejected_as_image_overflow():
+    request=spark_request('Geometry evidence. '*10000,[],'ModelReconstructionPlan')
+    assert len(request['input'][0]['content'][0]['text'])>100000
+    assert 'max_output_tokens' not in request
+    with pytest.raises(AgentError) as exc:spark_request('Inspect',[b'']*13,'ModelReconstructionPlan')
+    assert exc.value.code=='IMAGE_BATCH_EXCEEDED'
+    with pytest.raises(AgentError,match='non-empty'):spark_request(' ',[],'ModelReferenceAnalysis')

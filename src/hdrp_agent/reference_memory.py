@@ -109,6 +109,10 @@ def prompt_metrics(metrics):
         result['per_object'][key]=dict(priority_rgb_mae=row.get('priority_rgb_mae'),mask_view_count=len(row.get('mask_views',[])),contact=contact(row.get('support_contact')),pose_fit={k:fit[k] for k in ['accepted','initial_mean_iou','best_mean_iou','orientation_ambiguous'] if k in fit})
     geometry=metrics.get('geometry')
     if geometry:result['geometry']=dict(score=geometry['score'],coverage_complete=geometry['coverage_complete'],per_object={key:{k:row.get(k) for k in ['mean_iou','contour_error_px','view_count','covered','missing_reasons']} for key,row in geometry['per_object'].items()})
+    # These are correction evidence, not just report decoration. Omitting them
+    # left Muse unaware of clipped lighting and measured inward/outward defects.
+    for key in ('architecture','plan_photometry'):
+        if key in metrics:result[key]=deepcopy(metrics[key])
     result['contacts_passed']=metrics.get('contacts',{}).get('passed')
     return result
 

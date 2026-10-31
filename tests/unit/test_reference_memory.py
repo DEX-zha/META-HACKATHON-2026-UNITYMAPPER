@@ -57,3 +57,13 @@ def test_rejected_lighting_values_are_available_to_the_next_proposal():
     assert not remembered['accepted']
     assert remembered['appearance_values']['exposure_ev']==7
     assert remembered['appearance_values']['lights'][0]['intensity']==500
+
+
+def test_correction_keeps_architecture_and_clipped_lighting_evidence():
+    from hdrp_agent.reference_memory import prompt_metrics
+    metrics=dict(architecture=dict(defect_count=2,defects=[dict(object_key='west',kind='interior_faces_point_away_from_center')]),plan_photometry=dict(reference=dict(bright_fraction=.001),candidate=dict(bright_fraction=.52)))
+    result=prompt_metrics(metrics)
+    assert result['architecture']==metrics['architecture']
+    assert result['plan_photometry']==metrics['plan_photometry']
+    result['architecture']['defects'].clear()
+    assert metrics['architecture']['defects']

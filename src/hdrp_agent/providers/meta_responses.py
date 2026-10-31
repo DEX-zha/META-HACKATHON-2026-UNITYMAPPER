@@ -79,7 +79,8 @@ def image_part(data):
 
 
 def spark_request(text,images,schema_name,bindings=None):
-    if len(images)>12 or not isinstance(text,str) or not 1<=len(text)<=100000:raise AgentError('INVALID_INPUT','Bounded prompt and at most 12 images required',422)
+    if not isinstance(text,str) or not text.strip():raise AgentError('INVALID_INPUT','A non-empty text prompt is required',422)
+    if len(images)>12:raise AgentError('IMAGE_BATCH_EXCEEDED','This request contains more than 12 images; split the observations into batches',422)
     request=dict(model='muse-spark-1.3-contributor',truncation='disabled',reasoning={'effort':'low'},input=[dict(role='user',content=[dict(type='input_text',text=text)]+[image_part(data) for data in images])],text={'format':dict(type='json_schema',name='hdrp_'+schema_name.lower(),strict=True,schema=strict_schema(schema_name,bindings))})
 
     if schema_name=='ModelChatResponse':request['max_output_tokens']=4096

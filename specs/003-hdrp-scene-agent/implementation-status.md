@@ -185,3 +185,13 @@ Qualification sur les mêmes frames et catalogue du dernier échec : analyse liv
 À la demande utilisateur, retrait de max_output_tokens des requêtes Muse d’analyse, diagnostic et reconstruction. Le plafond 8192 du correctif précédent est remplacé par le comportement par défaut du fournisseur, pas par un autre plafond transmis. Le chat conversationnel conserve sa borne distincte de 4096. Les limites intrinsèques de l’API restent applicables : https://dev.meta.ai/docs/protocols/responses ; fenêtre Muse documentée à 1048576 tokens : https://dev.meta.ai/docs/models.
 
 Le ledger réserve conservativement le coût d’une fenêtre complète en sortie lorsqu’aucun plafond client n’est envoyé (0,314573 USD au total input/output selon le tarif Contributor configuré), puis acquitte l’usage réel. Cette borne comptable ne modifie pas la requête fournisseur. Aucun rejeu des runs interrompus.
+
+## Requête de correction bloquée après le premier candidat — 2026-10-31
+
+Run `28f29e0c89444f0db70bbccb96395768` : l'erreur générique mentionnant 12 images venait en réalité de la limite locale de 100000 caractères. Reconstruction exacte du contexte : 100852 caractères, 12 images, premier candidat déjà capturé. Le plafond texte client est retiré, sans troncature des observations ; texte vide et dépassement du lot d'images ont désormais des erreurs distinctes.
+
+Défauts visuels confirmés : candidat fortement surexposé (fraction claire du sol 0,522 contre 0,00066 dans la référence), orientation incorrecte de deux murs. `prompt_metrics` omettait architecture et photométrie : ces mesures sont maintenant transmises, avec priorité à la visibilité et aux faces des murs avant les petits déplacements. Le cadrage au-dessus d'une pièce plafonnée doit encore être qualifié face à une référence en coupe ; aucune fidélité ne peut être revendiquée sur ce candidat.
+
+283 tests passent. La requête réelle >100k caractères passe la validation locale sans requête réseau. L'ancien run reste interrompu, ses preuves sont préservées.
+
+Essai Muse réel de correction : réponse structurée valide, coût 0,0050044 USD, 41498 tokens entrants / 4273 sortants. Proposition : inversion des deux murs signalés, baisse de l'intensité lumineuse et augmentation de l'EV. Le modèle identifie explicitement le plafond qui masque la vue en coupe comme problème non résolu. Rapport `correction-request-qualified.json`. Proposition non appliquée : ce test valide la sortie de l'erreur technique et la prise en compte des mesures, pas un rendu final fidèle.
