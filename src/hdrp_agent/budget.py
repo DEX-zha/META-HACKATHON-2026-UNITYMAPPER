@@ -24,7 +24,10 @@ class Pricing:
 
     def bound_usd(self, model, *, frames=None, images=1, max_output_tokens=4096):
         self.validate()
-        if type(max_output_tokens) is not int or max_output_tokens not in {4096,8192}:raise AgentError('COST_BOUND_UNKNOWN','Unreviewed output token bound')
+        # No client cap: reserve conservatively against the full model context,
+        # without sending this accounting bound to the provider.
+        if max_output_tokens is None:max_output_tokens=1048576
+        if type(max_output_tokens) is not int or max_output_tokens not in {4096,8192,1048576}:raise AgentError('COST_BOUND_UNKNOWN','Unreviewed output token bound')
         if model == 'muse-spark-1.3':
             return Decimal(1048576) * Decimal('1.25') / 1000000 + Decimal(max_output_tokens) * Decimal('4.25') / 1000000
         if model == 'muse-spark-1.3-contributor':
@@ -103,7 +106,7 @@ class Budget:
             if state['reconciliation_state'] == 'required': raise AgentError('PRIOR_SPEND_UNKNOWN', 'Prior expenditure must be reconciled')
             if state['reconciliation_state'] != 'reconciled': raise AgentError('BUDGET_FROZEN', 'A financial violation requires resolution')
             if self.pricing is None: raise AgentError('COST_BOUND_UNKNOWN', 'Verified pricing is required')
-            amount = self.pricing.usd_micro(self.pricing.bound_usd(model, frames=frames, images=images,max_output_tokens=request.get('max_output_tokens',4096) if model.startswith('muse-') else 4096))
+            amount = self.pricing.usd_micro(self.pricing.bound_usd(model, frames=frames, images=images,max_output_tokens=request.get('max_output_tokens') if model.startswith('muse-') else 4096))
             if amount > state['available_usd_micro']: raise AgentError('BUDGET_LIMIT', 'Conservative reservation exceeds available funds', 429)
             if envelope is not None:
                 name,cap = envelope

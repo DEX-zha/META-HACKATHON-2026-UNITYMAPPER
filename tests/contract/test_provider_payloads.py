@@ -36,7 +36,7 @@ def test_timeout_is_reserved_and_sent_once(tmp_path):
     p,b=provider(tmp_path,timeout)
     with pytest.raises(AgentError):p.send(spark_request('Inspect',[],'ModelDiagnosis'),'ModelDiagnosis')
     assert len(sent)==1
-    assert b.state()['unknown_reserved_usd_micro']==105677
+    assert b.state()['unknown_reserved_usd_micro']==314573
 
 
 def test_transport_failure_records_safe_diagnostics_without_retry_or_exception_text(tmp_path):
@@ -55,7 +55,7 @@ def test_transport_failure_records_safe_diagnostics_without_retry_or_exception_t
     assert detail['exception_type']=='ReadTimeout' and detail['retry_attempted'] is False
     assert detail['elapsed_seconds']>=0 and detail['response_received'] is False
     for secret in ['fixture-secret','fixture-local-token','private user prompt']:assert secret not in events[0]['body']
-    assert b.state()['unknown_reserved_usd_micro']==105677
+    assert b.state()['unknown_reserved_usd_micro']==314573
 
 
 def test_request_forbids_tools_history_and_alternate_models(tmp_path):
@@ -70,7 +70,7 @@ def test_missing_usage_keeps_full_reservation(tmp_path):
     data=response();data.pop('usage')
     p,b=provider(tmp_path,lambda request:httpx.Response(200,json=data))
     with pytest.raises(AgentError):p.send(spark_request('Inspect',[],'ModelDiagnosis'),'ModelDiagnosis')
-    assert b.state()['unknown_reserved_usd_micro']==105677
+    assert b.state()['unknown_reserved_usd_micro']==314573
 
 
 def test_terminal_reasoning_item_is_ignored_and_paid_response_can_be_reprocessed(tmp_path):
@@ -150,7 +150,7 @@ def test_diagnostic_evidence_can_only_cite_the_supplied_capture_frame_pairs():
 def test_nonobject_provider_envelope_keeps_unknown_reservation(tmp_path):
     p,b=provider(tmp_path,lambda request:httpx.Response(200,json=[]))
     with pytest.raises(AgentError):p.send(spark_request('Inspect',[],'ModelDiagnosis'),'ModelDiagnosis')
-    assert b.state()['unknown_reserved_usd_micro']==105677
+    assert b.state()['unknown_reserved_usd_micro']==314573
 
 
 def test_truncated_response_fixture_is_billed_and_never_accepted(tmp_path):
@@ -165,9 +165,14 @@ def test_truncated_response_fixture_is_billed_and_never_accepted(tmp_path):
 def test_reference_analysis_has_room_for_reasoning_and_geometry(tmp_path):
     from hdrp_agent.providers.meta_responses import terminal_text
     request=spark_request('Inspect room',[],'ModelReferenceAnalysis')
-    assert request['max_output_tokens']==8192
+    assert 'max_output_tokens' not in request
     assert spark_request('Chat',[],'ModelChatResponse')['max_output_tokens']==4096
     p,b=provider(tmp_path,lambda r:httpx.Response(200,json=response()))
     # Request passes admission and is billed even when fixture JSON is invalid.
     with pytest.raises(AgentError,match='valid reviewed JSON'):p.send(request,'ModelReferenceAnalysis')
     assert b.state()['settled_usd_micro']>0
+
+
+def test_analysis_requests_do_not_send_client_output_caps():
+    for name in ['ModelReferenceAnalysis','ModelReconstructionPlan','ModelDiagnosis']:
+        assert 'max_output_tokens' not in spark_request('Analyse',[],name)

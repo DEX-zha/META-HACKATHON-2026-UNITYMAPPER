@@ -80,7 +80,10 @@ def image_part(data):
 
 def spark_request(text,images,schema_name,bindings=None):
     if len(images)>12 or not isinstance(text,str) or not 1<=len(text)<=100000:raise AgentError('INVALID_INPUT','Bounded prompt and at most 12 images required',422)
-    return dict(model='muse-spark-1.3-contributor',max_output_tokens=8192 if schema_name in {'ModelReconstructionPlan','ModelReferenceAnalysis'} else 4096,truncation='disabled',reasoning={'effort':'low'},input=[dict(role='user',content=[dict(type='input_text',text=text)]+[image_part(data) for data in images])],text={'format':dict(type='json_schema',name='hdrp_'+schema_name.lower(),strict=True,schema=strict_schema(schema_name,bindings))})
+    request=dict(model='muse-spark-1.3-contributor',truncation='disabled',reasoning={'effort':'low'},input=[dict(role='user',content=[dict(type='input_text',text=text)]+[image_part(data) for data in images])],text={'format':dict(type='json_schema',name='hdrp_'+schema_name.lower(),strict=True,schema=strict_schema(schema_name,bindings))})
+
+    if schema_name=='ModelChatResponse':request['max_output_tokens']=4096
+    return request
 
 
 def sam_request(concept,image):
@@ -147,10 +150,10 @@ class MetaResponses:
         if self.settings.provider_mode!='live':raise AgentError('OFFLINE_MODE','Live provider transmission is disabled')
         if not self.settings.api_key:raise AgentError('KEY_MISSING','Meta API key is not configured')
         model=request.get('model')
-        fields={'model','max_output_tokens','truncation','reasoning','input','text'} if model=='muse-spark-1.3-contributor' else {'model','input','stream','metadata'}
+        fields=({'model','truncation','reasoning','input','text'} | ({'max_output_tokens'} if schema_name=='ModelChatResponse' else set())) if model=='muse-spark-1.3-contributor' else {'model','input','stream','metadata'}
         if model not in {'muse-spark-1.3-contributor','sam-3.1'} or set(request)!=fields:raise AgentError('INVALID_PROVIDER_REQUEST','Only the reviewed fields and Meta models are allowed',422)
-        expected_output=8192 if schema_name in {'ModelReconstructionPlan','ModelReferenceAnalysis'} else 4096
-        if model=='muse-spark-1.3-contributor' and (request['max_output_tokens']!=expected_output or request['truncation']!='disabled' or request['reasoning']!={'effort':'low'} or schema_name is None or not reviewed_format(schema_name,request['text'])):raise AgentError('INVALID_PROVIDER_REQUEST','Strict reviewed schema, low reasoning effort and output bound required',422)
+        expected_output=4096 if schema_name=='ModelChatResponse' else None
+        if model=='muse-spark-1.3-contributor' and (request.get('max_output_tokens')!=expected_output or request['truncation']!='disabled' or request['reasoning']!={'effort':'low'} or schema_name is None or not reviewed_format(schema_name,request['text'])):raise AgentError('INVALID_PROVIDER_REQUEST','Strict reviewed schema, low reasoning effort and output bound required',422)
         image_count=0
         for message in request['input']:
             if set(message)!={'role','content'} or message['role']!='user':raise AgentError('INVALID_PROVIDER_REQUEST','Stateless user content required',422)

@@ -98,3 +98,8 @@ def test_confirmed_remaining_balance_is_recorded_once_and_never_refills(tmp_path
     assert budget.state()['available_usd_micro']==149_990_000
     assert budget.state()['currency']=='USD'
     assert book.bound_usd('muse-spark-1.3-contributor')==Decimal('.1056768')
+
+
+def test_provider_default_output_reserves_full_context_without_request_cap():
+    book=Pricing(date.today().isoformat(),verified=True)
+    assert book.bound_usd('muse-spark-1.3-contributor',max_output_tokens=None)==Decimal('.3145728')
