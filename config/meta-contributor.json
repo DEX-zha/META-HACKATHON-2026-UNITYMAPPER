@@ -1,0 +1,17 @@
+{
+  "verified_on": "2026-10-28",
+  "verified": false,
+  "pricing_source": "https://dev.meta.ai/docs/pricing-rate-limits",
+  "context_source": "https://dev.meta.ai/docs/models",
+  "spark_input_usd_per_million": "0.10",
+  "spark_cached_usd_per_million": "0.002",
+  "spark_output_usd_per_million": "0.20",
+  "spark_context_bound": 1048576,
+  "spark_max_output_tokens": 4096,
+  "sam_usd_per_image": "0.0025",
+  "sam_usd_per_frame": "0.0002",
+  "sam_minimum_video_frames": 50,
+  "sam_maximum_video_frames": 15000,
+  "currency": "USD",
+  "selected_model": "muse-spark-1.3-contributor"
+}

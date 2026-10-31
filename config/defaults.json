@@ -1,0 +1,13 @@
+{
+  "provider_mode": "offline",
+  "max_attempts": 3,
+  "session_timeout_seconds": 1200,
+  "bake_timeout_seconds": 600,
+  "width": 1280,
+  "height": 720,
+  "fps": 24,
+  "duration_seconds": 6,
+  "warmup_frames": 32,
+  "max_warmup_frames": 120,
+  "cap_usd_micro": 150000000
+}

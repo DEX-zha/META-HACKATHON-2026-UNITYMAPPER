@@ -1,0 +1,11 @@
+{
+  "name": "HdrpAgent.Runtime.Tests",
+  "rootNamespace": "HdrpAgent.Tests",
+  "references": [
+    "HdrpAgent.Runtime"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

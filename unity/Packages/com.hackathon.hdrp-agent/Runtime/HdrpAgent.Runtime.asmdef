@@ -1,0 +1,9 @@
+{
+  "name": "HdrpAgent.Runtime",
+  "rootNamespace": "HdrpAgent",
+  "references": [
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.HighDefinition.Runtime"
+  ],
+  "autoReferenced": true
+}

@@ -1,0 +1,13 @@
+{
+  "text": "Inspecter la petite pièce HDRP et corriger les défauts observés, en gardant une lumière naturelle et un faisceau volumétrique visible.",
+  "ambiance": "Lumière naturelle douce, faisceau visible, objets lisibles.",
+  "required_elements": [
+    "pièce",
+    "fenêtre",
+    "table",
+    "faisceau volumétrique"
+  ],
+  "allowed_asset_ids": [],
+  "reference_artifact_hashes": [],
+  "mutation_scope_id": "room-workspace"
+}

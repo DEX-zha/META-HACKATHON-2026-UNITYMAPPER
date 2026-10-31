@@ -1,0 +1,4387 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HDRP Agent loopback API",
+    "version": "1.0.0",
+    "description": "Conception non implémentée. Contraintes métier : editor-bridge.md et data-model.md."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8765"
+    }
+  ],
+  "security": [
+    {
+      "LocalBearer": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "État local, sans appel fournisseur",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/register": {
+      "post": {
+        "operationId": "registerProject",
+        "summary": "Inscription locale et capacités",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRegistered"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectRegister"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions": {
+      "post": {
+        "operationId": "createSession",
+        "summary": "Figer brief, critères et limites",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{session_id}": {
+      "get": {
+        "operationId": "getSession",
+        "summary": "État et meilleure version",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/sessions/{session_id}/stop": {
+      "post": {
+        "operationId": "stopSession",
+        "summary": "Arrêt et annulation sûrs",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{session_id}/restore": {
+      "post": {
+        "operationId": "restoreSession",
+        "summary": "Restauration conditionnelle",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ack"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sessions/{session_id}/report": {
+      "get": {
+        "operationId": "getReport",
+        "summary": "Rapport opérateur, jamais contexte planificateur",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/budget": {
+      "get": {
+        "operationId": "getBudget",
+        "summary": "Grand livre global ; inconnus inclus dans réservations actives",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/budget/reconcile": {
+      "post": {
+        "operationId": "reconcileBudget",
+        "summary": "Rapprocher consommation externe cumulative",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reconcile"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bridge/poll": {
+      "post": {
+        "operationId": "pollCommand",
+        "summary": "Claim au plus une commande pour cet epoch",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandBatch"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Poll"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bridge/commands/{command_id}/progress": {
+      "post": {
+        "operationId": "commandProgress",
+        "summary": "Battement et réception de demande d’annulation",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandControl"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "command_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Progress"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bridge/commands/{command_id}/result": {
+      "post": {
+        "operationId": "commandResult",
+        "summary": "Reçu durable idempotent, contrôlé par hash",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ack"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "command_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommandResult"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/artifacts/{sha256}": {
+      "put": {
+        "operationId": "putArtifact",
+        "summary": "Dépôt immuable, hash et taille contrôlés",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ack"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sha256",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Hash"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getArtifact",
+        "summary": "Lire un artefact autorisé",
+        "responses": {
+          "200": {
+            "description": "Artifact bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid local token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, recovery or capability conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input or out-of-scope command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Session or financial admission limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "sha256",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Hash"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "LocalBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "Hash": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "Vector3": {
+        "type": "array",
+        "items": {
+          "type": "number",
+          "minimum": -10000,
+          "maximum": 10000
+        },
+        "minItems": 3,
+        "maxItems": 3
+      },
+      "Color4": {
+        "type": "array",
+        "items": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minItems": 4,
+        "maxItems": 4
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "command_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Id"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retryable",
+          "command_id"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "recovery_required"
+            ]
+          },
+          "schema_version": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "offline"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "schema_version",
+          "provider_mode"
+        ],
+        "additionalProperties": false
+      },
+      "Criterion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "artifact",
+              "visibility",
+              "geometry",
+              "artistic",
+              "performance"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "luminance_error",
+              "luminance_range",
+              "beam_visibility",
+              "support_gap",
+              "intersection_depth",
+              "artistic_review",
+              "frame_time_regression"
+            ]
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "target",
+          "method",
+          "minimum",
+          "maximum",
+          "unit",
+          "required"
+        ],
+        "additionalProperties": false
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Vector3"
+          },
+          "rotation_deg": {
+            "$ref": "#/components/schemas/Vector3"
+          },
+          "fov_deg": {
+            "type": "number",
+            "minimum": 10,
+            "maximum": 140
+          }
+        },
+        "required": [
+          "key",
+          "position_m",
+          "rotation_deg",
+          "fov_deg"
+        ],
+        "additionalProperties": false
+      },
+      "InspectionPlan": {
+        "type": "object",
+        "properties": {
+          "work_views": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/View"
+            },
+            "minItems": 3,
+            "maxItems": 8
+          },
+          "control_views": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/View"
+            },
+            "minItems": 2,
+            "maxItems": 4
+          },
+          "path_key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "fps": {
+            "type": "integer",
+            "minimum": 12,
+            "maximum": 30
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 10
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 640,
+            "maximum": 1920
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 360,
+            "maximum": 1080
+          },
+          "fixed_ev": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 30
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "warmup_frames": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          }
+        },
+        "required": [
+          "work_views",
+          "control_views",
+          "path_key",
+          "fps",
+          "duration_seconds",
+          "width",
+          "height",
+          "fixed_ev",
+          "seed",
+          "warmup_frames"
+        ],
+        "additionalProperties": false
+      },
+      "Brief": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "ambiance": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "required_elements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "minItems": 1,
+            "maxItems": 50
+          },
+          "allowed_asset_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "reference_artifact_hashes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Hash"
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "mutation_scope_id": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "text",
+          "ambiance",
+          "required_elements",
+          "allowed_asset_ids",
+          "reference_artifact_hashes",
+          "mutation_scope_id"
+        ],
+        "additionalProperties": false
+      },
+      "SessionCreate": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "scene_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "base_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "inspect",
+              "create_room",
+              "create_forest"
+            ]
+          },
+          "brief": {
+            "$ref": "#/components/schemas/Brief"
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Criterion"
+            },
+            "minItems": 1,
+            "maxItems": 30
+          },
+          "inspection": {
+            "$ref": "#/components/schemas/InspectionPlan"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "session_timeout_seconds": {
+            "type": "integer",
+            "minimum": 60,
+            "maximum": 7200
+          },
+          "bake_timeout_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 3600
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "offline"
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "scene_id",
+          "base_version",
+          "mode",
+          "brief",
+          "criteria",
+          "inspection",
+          "max_attempts",
+          "session_timeout_seconds",
+          "bake_timeout_seconds",
+          "provider_mode"
+        ],
+        "additionalProperties": false
+      },
+      "Session": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "created",
+              "preflight",
+              "baseline",
+              "diagnosing",
+              "proposing",
+              "applying",
+              "baking",
+              "capturing",
+              "verifying",
+              "restoring",
+              "completed",
+              "limit_reached",
+              "interrupted",
+              "recovery_required"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "improved",
+              "no_improvement",
+              "rejected",
+              "inconclusive"
+            ]
+          },
+          "best_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "current_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "attempts_used": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "criteria_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "inspection_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "offline"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "verdict",
+          "best_version",
+          "current_version",
+          "attempts_used",
+          "max_attempts",
+          "criteria_hash",
+          "inspection_hash",
+          "stop_reason",
+          "provider_mode"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectRegister": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "scene_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "project_root": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "working_scene_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "editor_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "hdrp_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "graphics_api": {
+            "type": "string",
+            "enum": [
+              "Metal"
+            ]
+          },
+          "scene_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "project_id",
+          "scene_id",
+          "project_root",
+          "working_scene_path",
+          "editor_version",
+          "hdrp_version",
+          "graphics_api",
+          "scene_version",
+          "capabilities",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectRegistered": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "scene_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "scene_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "capability_report_hash": {
+            "$ref": "#/components/schemas/Hash"
+          }
+        },
+        "required": [
+          "project_id",
+          "scene_id",
+          "scene_version",
+          "capability_report_hash"
+        ],
+        "additionalProperties": false
+      },
+      "TransformOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "set_transform"
+          },
+          "target_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "position_m": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Vector3"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rotation_deg": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Vector3"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scale": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 100
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "op",
+          "target_id",
+          "position_m",
+          "rotation_deg",
+          "scale"
+        ],
+        "additionalProperties": false
+      },
+      "LightOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "set_light"
+          },
+          "target_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "property": {
+            "type": "string",
+            "enum": [
+              "intensity_lumen",
+              "illuminance_lux",
+              "temperature_kelvin",
+              "volumetric_dimmer",
+              "use_volumetric"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        },
+        "required": [
+          "op",
+          "target_id",
+          "property",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "FogOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "set_fog"
+          },
+          "target_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "property": {
+            "type": "string",
+            "enum": [
+              "mean_free_path_m",
+              "anisotropy",
+              "enable_volumetric_fog"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        },
+        "required": [
+          "op",
+          "target_id",
+          "property",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "MaterialOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "set_material"
+          },
+          "target_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "property": {
+            "type": "string",
+            "enum": [
+              "base_color_rgba",
+              "emission_nits"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Color4"
+              },
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000
+              }
+            ]
+          }
+        },
+        "required": [
+          "op",
+          "target_id",
+          "property",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "GiOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "set_gi"
+          },
+          "target_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "property": {
+            "type": "string",
+            "enum": [
+              "contribute_gi",
+              "scale_in_lightmap",
+              "lightmap_uv_pack_margin"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number",
+                "minimum": 0.00390625,
+                "maximum": 4
+              }
+            ]
+          }
+        },
+        "required": [
+          "op",
+          "target_id",
+          "property",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "BakeOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "set_bake"
+          },
+          "target_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "indirect_samples": {
+            "type": "integer",
+            "minimum": 16,
+            "maximum": 1024
+          }
+        },
+        "required": [
+          "op",
+          "target_id",
+          "indirect_samples"
+        ],
+        "additionalProperties": false
+      },
+      "CreateOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "create_primitive"
+          },
+          "parent_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "new_object_key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "primitive": {
+            "type": "string",
+            "enum": [
+              "cube",
+              "sphere",
+              "plane",
+              "cylinder"
+            ]
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Vector3"
+          },
+          "rotation_deg": {
+            "$ref": "#/components/schemas/Vector3"
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 100
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "required": [
+          "op",
+          "parent_id",
+          "new_object_key",
+          "primitive",
+          "position_m",
+          "rotation_deg",
+          "scale"
+        ],
+        "additionalProperties": false
+      },
+      "PrefabOperation": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "instantiate_prefab"
+          },
+          "parent_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "new_object_key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "asset_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Vector3"
+          },
+          "rotation_deg": {
+            "$ref": "#/components/schemas/Vector3"
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 100
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "required": [
+          "op",
+          "parent_id",
+          "new_object_key",
+          "asset_id",
+          "position_m",
+          "rotation_deg",
+          "scale"
+        ],
+        "additionalProperties": false
+      },
+      "Operation": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TransformOperation"
+          },
+          {
+            "$ref": "#/components/schemas/LightOperation"
+          },
+          {
+            "$ref": "#/components/schemas/FogOperation"
+          },
+          {
+            "$ref": "#/components/schemas/MaterialOperation"
+          },
+          {
+            "$ref": "#/components/schemas/GiOperation"
+          },
+          {
+            "$ref": "#/components/schemas/BakeOperation"
+          },
+          {
+            "$ref": "#/components/schemas/CreateOperation"
+          },
+          {
+            "$ref": "#/components/schemas/PrefabOperation"
+          }
+        ]
+      },
+      "Patch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "hypothesis_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "expected_effect": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "needs_bake": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "expected_version",
+          "hypothesis_id",
+          "expected_effect",
+          "operations",
+          "needs_bake"
+        ],
+        "additionalProperties": false
+      },
+      "Capture": {
+        "type": "object",
+        "properties": {
+          "artifact_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "version_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "inspection_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "conditions_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "work",
+              "control",
+              "diagnostic"
+            ]
+          },
+          "camera_key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "frame_index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "simulated_time": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "render_ready": {
+            "type": "boolean"
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "live",
+              "replay",
+              "offline"
+            ]
+          }
+        },
+        "required": [
+          "artifact_hash",
+          "version_id",
+          "inspection_hash",
+          "conditions_hash",
+          "role",
+          "camera_key",
+          "frame_index",
+          "simulated_time",
+          "render_ready",
+          "provenance"
+        ],
+        "additionalProperties": false
+      },
+      "InspectionPayload": {
+        "type": "object",
+        "properties": {
+          "diagnostic_keys": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "geometry",
+                "lights",
+                "volumes",
+                "materials",
+                "gi",
+                "bake_state"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 6
+          }
+        },
+        "required": [
+          "diagnostic_keys"
+        ],
+        "additionalProperties": false
+      },
+      "SnapshotPayload": {
+        "type": "object",
+        "properties": {
+          "scope_id": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "scope_id"
+        ],
+        "additionalProperties": false
+      },
+      "CapturePayload": {
+        "type": "object",
+        "properties": {
+          "inspection_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "work",
+              "control",
+              "all"
+            ]
+          }
+        },
+        "required": [
+          "inspection_hash",
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "BakePayload": {
+        "type": "object",
+        "properties": {
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 3600
+          },
+          "lightmapper": {
+            "type": "string",
+            "const": "progressive_gpu"
+          }
+        },
+        "required": [
+          "timeout_seconds",
+          "lightmapper"
+        ],
+        "additionalProperties": false
+      },
+      "RestorePayload": {
+        "type": "object",
+        "properties": {
+          "snapshot_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "expected_manifest_hash": {
+            "$ref": "#/components/schemas/Hash"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "expected_manifest_hash"
+        ],
+        "additionalProperties": false
+      },
+      "InspectCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "inspect"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/InspectionPayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "SnapshotCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "snapshot"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/SnapshotPayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "CaptureCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "capture"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/CapturePayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "ApplyPatchCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "apply_patch"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Patch"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "BakeCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "bake"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/BakePayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "RestoreCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "restore"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RestorePayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
+        ],
+        "additionalProperties": false
+      },
+      "Command": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/InspectCommand"
+          },
+          {
+            "$ref": "#/components/schemas/SnapshotCommand"
+          },
+          {
+            "$ref": "#/components/schemas/CaptureCommand"
+          },
+          {
+            "$ref": "#/components/schemas/ApplyPatchCommand"
+          },
+          {
+            "$ref": "#/components/schemas/BakeCommand"
+          },
+          {
+            "$ref": "#/components/schemas/RestoreCommand"
+          }
+        ]
+      },
+      "Poll": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "last_receipt_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Id"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "bridge_epoch",
+          "last_receipt_id"
+        ],
+        "additionalProperties": false
+      },
+      "CommandBatch": {
+        "type": "object",
+        "properties": {
+          "commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Command"
+            },
+            "minItems": 0,
+            "maxItems": 1
+          },
+          "session_active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "commands",
+          "session_active"
+        ],
+        "additionalProperties": false
+      },
+      "Progress": {
+        "type": "object",
+        "properties": {
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "claimed",
+              "running",
+              "cancelling"
+            ]
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "bridge_epoch",
+          "phase",
+          "progress",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CommandControl": {
+        "type": "object",
+        "properties": {
+          "command_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "directive": {
+            "type": "string",
+            "enum": [
+              "continue",
+              "cancel"
+            ]
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "command_id",
+          "directive",
+          "deadline_utc"
+        ],
+        "additionalProperties": false
+      },
+      "CommandResult": {
+        "type": "object",
+        "properties": {
+          "command_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed",
+              "cancelled",
+              "unknown"
+            ]
+          },
+          "before_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "after_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "artifact_hashes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Hash"
+            },
+            "minItems": 0,
+            "maxItems": 500
+          },
+          "captures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Capture"
+            },
+            "minItems": 0,
+            "maxItems": 500
+          },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Id"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manifest_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "bake_status": {
+            "type": "string",
+            "enum": [
+              "not_required",
+              "pending",
+              "running",
+              "complete",
+              "failed",
+              "interrupted"
+            ]
+          },
+          "details_artifact_hash": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Hash"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Error"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "command_id",
+          "bridge_epoch",
+          "payload_hash",
+          "status",
+          "before_version",
+          "after_version",
+          "artifact_hashes",
+          "captures",
+          "snapshot_id",
+          "manifest_hash",
+          "bake_status",
+          "details_artifact_hash",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Ack": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "accepted",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "StopRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "RestoreRequest": {
+        "type": "object",
+        "properties": {
+          "snapshot_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "expected_version"
+        ],
+        "additionalProperties": false
+      },
+      "Budget": {
+        "type": "object",
+        "properties": {
+          "cap_usd_micro": {
+            "type": "integer",
+            "const": 150000000
+          },
+          "settled_usd_micro": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "active_reserved_usd_micro": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "unknown_reserved_usd_micro": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "available_usd_micro": {
+            "type": "integer"
+          },
+          "reconciliation_state": {
+            "type": "string",
+            "enum": [
+              "required",
+              "reconciled",
+              "violation"
+            ]
+          },
+          "live_enabled": {
+            "type": "boolean"
+          },
+          "currency": {
+            "type": "string",
+            "const": "USD"
+          }
+        },
+        "required": [
+          "cap_usd_micro",
+          "settled_usd_micro",
+          "active_reserved_usd_micro",
+          "unknown_reserved_usd_micro",
+          "available_usd_micro",
+          "reconciliation_state",
+          "live_enabled",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "Reconcile": {
+        "type": "object",
+        "properties": {
+          "external_total_usd_micro": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "source_reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "as_of_utc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "external_total_usd_micro",
+          "source_reference",
+          "as_of_utc"
+        ],
+        "additionalProperties": false
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "created",
+              "preflight",
+              "baseline",
+              "diagnosing",
+              "proposing",
+              "applying",
+              "baking",
+              "capturing",
+              "verifying",
+              "restoring",
+              "completed",
+              "limit_reached",
+              "interrupted",
+              "recovery_required"
+            ]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "improved",
+              "no_improvement",
+              "rejected",
+              "inconclusive"
+            ]
+          },
+          "best_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "report_artifact_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "provider_mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "offline"
+            ]
+          }
+        },
+        "required": [
+          "session_id",
+          "state",
+          "verdict",
+          "best_version",
+          "report_artifact_hash",
+          "unresolved",
+          "provider_mode"
+        ],
+        "additionalProperties": false
+      },
+      "ModelEvidence": {
+        "type": "object",
+        "properties": {
+          "capture_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "frame_index": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bbox_xyxy": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "capture_id",
+          "frame_index",
+          "bbox_xyxy",
+          "target_ids",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "ModelObservation": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "lighting",
+              "volumetric",
+              "geometry",
+              "material",
+              "artistic"
+            ]
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelEvidence"
+            },
+            "minItems": 1,
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "key",
+          "category",
+          "claim",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "ModelHypothesis": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "observation_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "target_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "cause": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelEvidence"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "uncertainty": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "missing_information": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "minItems": 0,
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "key",
+          "observation_keys",
+          "target_ids",
+          "cause",
+          "evidence",
+          "uncertainty",
+          "missing_information"
+        ],
+        "additionalProperties": false
+      },
+      "ModelDiagnosis": {
+        "type": "object",
+        "properties": {
+          "scene_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelObservation"
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "hypotheses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelHypothesis"
+            },
+            "minItems": 0,
+            "maxItems": 10
+          },
+          "unsupported_limits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "minItems": 0,
+            "maxItems": 20
+          },
+          "inspected_capture_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 0,
+            "maxItems": 12
+          }
+        },
+        "required": [
+          "scene_version",
+          "observations",
+          "hypotheses",
+          "unsupported_limits",
+          "inspected_capture_ids"
+        ],
+        "additionalProperties": false
+      },
+      "ModelProposal": {
+        "type": "object",
+        "properties": {
+          "scene_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "hypothesis_key": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "expected_effect": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "needs_bake": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scene_version",
+          "hypothesis_key",
+          "expected_effect",
+          "operations",
+          "needs_bake"
+        ],
+        "additionalProperties": false
+      },
+      "ModelReferenceAnalysis": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "objects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "asset_id": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "primitive": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "cube",
+                        "sphere",
+                        "plane",
+                        "cylinder"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "view_boxes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "view_key": {
+                        "$ref": "#/components/schemas/Id"
+                      },
+                      "bbox_xyxy": {
+                        "type": "array",
+                        "items": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "view_key",
+                      "bbox_xyxy"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 4
+                },
+                "support_key": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "asset_id",
+                "primitive",
+                "view_boxes",
+                "support_key"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "limits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "minItems": 0,
+            "maxItems": 8
+          },
+          "inspected_view_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Id"
+            },
+            "minItems": 1,
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "summary",
+          "objects",
+          "limits",
+          "inspected_view_keys"
+        ],
+        "additionalProperties": false
+      },
+      "ModelReconstructionPlan": {
+        "type": "object",
+        "properties": {
+          "objects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "asset_id": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "primitive": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "cube",
+                        "sphere",
+                        "plane",
+                        "cylinder"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "position_m": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "rotation_deg": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": -360,
+                    "maximum": 360
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "scale": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 100
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "base_color_rgba": {
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "asset_id",
+                "primitive",
+                "position_m",
+                "rotation_deg",
+                "scale",
+                "base_color_rgba"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 20
+          },
+          "lights": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "point",
+                    "spot",
+                    "directional"
+                  ]
+                },
+                "position_m": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "rotation_deg": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": -360,
+                    "maximum": 360
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "intensity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 150000
+                },
+                "color_rgb": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "spot_angle_deg": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 179
+                }
+              },
+              "required": [
+                "type",
+                "position_m",
+                "rotation_deg",
+                "intensity",
+                "color_rgb",
+                "spot_angle_deg"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 4
+          },
+          "estimated_views": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "$ref": "#/components/schemas/Id"
+                    },
+                    "position_m": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": -100,
+                        "maximum": 100
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "rotation_deg": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": -360,
+                        "maximum": 360
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "fov_deg": {
+                      "type": "number",
+                      "minimum": 5,
+                      "maximum": 120
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "position_m",
+                    "rotation_deg",
+                    "fov_deg"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 3
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exposure_ev": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 30
+          },
+          "sky_color_rgb": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "fog_mean_free_path_m": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 1000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "minItems": 0,
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "objects",
+          "lights",
+          "estimated_views",
+          "exposure_ev",
+          "sky_color_rgb",
+          "fog_mean_free_path_m",
+          "notes"
+        ],
+        "additionalProperties": false
+      },
+      "ModelReferenceAssetSelection": {
+        "type": "object",
+        "properties": {
+          "matches": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "object_key": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "asset_id": {
+                  "$ref": "#/components/schemas/Id"
+                }
+              },
+              "required": [
+                "object_key",
+                "asset_id"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "limits": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          }
+        },
+        "required": [
+          "matches",
+          "limits"
+        ],
+        "additionalProperties": false
+      },
+      "FidelityPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "solver_version",
+          "max_candidates",
+          "max_seconds",
+          "max_local_evaluations",
+          "max_local_seconds",
+          "max_images",
+          "max_inspection_views",
+          "min_geometry_views",
+          "min_anchor_views",
+          "minimum_geometry_gain",
+          "object_regression_bound",
+          "view_regression_bound",
+          "geometry_iou_gate",
+          "geometry_contour_gate_px",
+          "scale_change_bound",
+          "scale_mode",
+          "noise_baseline_hash"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "solver_version": {
+            "enum": [
+              "fidelity-1",
+              "fidelity-2",
+              "fidelity-3",
+              "fidelity-4",
+              "fidelity-5"
+            ]
+          },
+          "max_candidates": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "max_seconds": {
+            "type": "integer",
+            "minimum": 1200,
+            "maximum": 2400
+          },
+          "max_local_evaluations": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2000
+          },
+          "max_local_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          },
+          "max_images": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "max_inspection_views": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "min_geometry_views": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 8
+          },
+          "min_anchor_views": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 8
+          },
+          "minimum_geometry_gain": {
+            "type": "number",
+            "minimum": 0.0001,
+            "maximum": 0.1
+          },
+          "object_regression_bound": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.1
+          },
+          "view_regression_bound": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.1
+          },
+          "geometry_iou_gate": {
+            "type": "number",
+            "minimum": 0.9,
+            "maximum": 1
+          },
+          "geometry_contour_gate_px": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "scale_change_bound": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.15
+          },
+          "scale_mode": {
+            "enum": [
+              "locked",
+              "evidenced"
+            ]
+          },
+          "noise_baseline_hash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "PoseProposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "proposal_id",
+          "origin",
+          "phase",
+          "parent_version",
+          "policy_hash",
+          "proposed_plan_hash",
+          "evidence_hashes"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "proposal_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "origin": {
+            "enum": [
+              "muse",
+              "local",
+              "baseline"
+            ]
+          },
+          "phase": {
+            "enum": [
+              "baseline",
+              "anchoring",
+              "arranging",
+              "placement",
+              "appearance",
+              "scaling"
+            ]
+          },
+          "parent_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "policy_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "proposed_plan_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "evidence_hashes": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "AppliedPoseEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "proposal_id",
+          "version",
+          "applied_plan_hash",
+          "contacts_hash",
+          "metrics_hash",
+          "stage"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "proposal_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applied_plan_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "contacts_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "metrics_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "stage": {
+            "const": "after_native_contacts"
+          }
+        }
+      },
+      "GeometryMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "applied_plan_hash",
+          "stage",
+          "score",
+          "coverage_complete",
+          "per_object",
+          "render_issues",
+          "excluded_masks",
+          "grid_width",
+          "metric",
+          "fidelity_verified"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "applied_plan_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "stage": {
+            "const": "after_native_contacts"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage_complete": {
+            "type": "boolean"
+          },
+          "per_object": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "views",
+                "missing_reasons",
+                "view_count",
+                "mean_iou",
+                "contour_error_px",
+                "covered"
+              ],
+              "properties": {
+                "views": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "visible_iou",
+                      "contour_error_px",
+                      "centroid_error_px",
+                      "missing_reason"
+                    ],
+                    "properties": {
+                      "visible_iou": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "contour_error_px": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "centroid_error_px": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "missing_reason": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "contour_samples_max": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 512
+                      }
+                    }
+                  }
+                },
+                "missing_reasons": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "view_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "mean_iou": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "contour_error_px": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "covered": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "render_issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "view_key",
+                "unsupported_objects",
+                "near_plane_clipping_unqualified"
+              ],
+              "properties": {
+                "view_key": {
+                  "type": "string"
+                },
+                "unsupported_objects": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "near_plane_clipping_unqualified": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "excluded_masks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "object_key",
+                "view_key",
+                "reason"
+              ],
+              "properties": {
+                "object_key": {
+                  "type": "string"
+                },
+                "view_key": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "grid_width": {
+            "type": "integer",
+            "minimum": 32,
+            "maximum": 1280
+          },
+          "metric": {
+            "const": "visible_mesh_iou_without_rgb"
+          },
+          "fidelity_verified": {
+            "const": false
+          }
+        }
+      },
+      "ModelReferenceObservationPlan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requests",
+          "reason"
+        ],
+        "properties": {
+          "requests": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "object_key",
+                "concept",
+                "view_keys"
+              ],
+              "properties": {
+                "object_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "concept": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "view_keys": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 3,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "ModelRoomInspectionPlan": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "views",
+          "reason"
+        ],
+        "properties": {
+          "views": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "object_key",
+                "position_m",
+                "rotation_deg",
+                "fov_deg"
+              ],
+              "properties": {
+                "object_key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "position_m": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  }
+                },
+                "rotation_deg": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "number",
+                    "minimum": -360,
+                    "maximum": 360
+                  }
+                },
+                "fov_deg": {
+                  "type": "number",
+                  "minimum": 15,
+                  "maximum": 100
+                }
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      }
+    }
+  }
+}

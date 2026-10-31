@@ -1,0 +1,21 @@
+{
+  "name": "HdrpAgent.Editor.Tests",
+  "rootNamespace": "HdrpAgent.Tests",
+  "references": [
+    "HdrpAgent.Runtime",
+    "HdrpAgent.Editor",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.HighDefinition.Runtime"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false,
+  "includePlatforms": [
+    "Editor"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "Newtonsoft.Json.dll"
+  ]
+}

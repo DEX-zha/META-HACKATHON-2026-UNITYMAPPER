@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hdrp-scene-agent"
+version = "0.1.0"
+description = "Local HDRP inspection, evidence and reversible scene correction"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.136,<1",
+  "uvicorn>=0.51,<1",
+  "pydantic>=2.13,<3",
+  "httpx>=0.28,<1",
+  "pillow>=12,<13",
+  "numpy>=2.4,<3",
+  "jsonschema>=4.26,<5",
+  "python-dotenv>=1.2,<2",
+]
+
+[project.optional-dependencies]
+validation = ["pytest>=9,<10", "openapi-spec-validator>=0.7,<1"]
+sam = ["meta-sam-parser"]
+
+[project.scripts]
+hdrp-agent = "hdrp_agent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hdrp_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["offline: never sends a provider request", "live: explicitly budgeted integration"]
+addopts = "-ra"
+

@@ -1,0 +1,84 @@
+{
+  "work_views": [
+    {
+      "key": "work-front",
+      "position_m": [
+        0,
+        1.6,
+        -3.5
+      ],
+      "rotation_deg": [
+        5,
+        0,
+        0
+      ],
+      "fov_deg": 60
+    },
+    {
+      "key": "work-right",
+      "position_m": [
+        2.3,
+        1.7,
+        -1.8
+      ],
+      "rotation_deg": [
+        8,
+        -45,
+        0
+      ],
+      "fov_deg": 60
+    },
+    {
+      "key": "work-left",
+      "position_m": [
+        -2,
+        1.7,
+        -1.5
+      ],
+      "rotation_deg": [
+        8,
+        45,
+        0
+      ],
+      "fov_deg": 60
+    }
+  ],
+  "control_views": [
+    {
+      "key": "control-corner",
+      "position_m": [
+        2.4,
+        1.5,
+        1.8
+      ],
+      "rotation_deg": [
+        5,
+        -130,
+        0
+      ],
+      "fov_deg": 60
+    },
+    {
+      "key": "control-low",
+      "position_m": [
+        -1.5,
+        1.1,
+        -2
+      ],
+      "rotation_deg": [
+        5,
+        30,
+        0
+      ],
+      "fov_deg": 60
+    }
+  ],
+  "path_key": "room-orbit",
+  "fps": 24,
+  "duration_seconds": 6,
+  "width": 1280,
+  "height": 720,
+  "fixed_ev": 8,
+  "seed": 42,
+  "warmup_frames": 32
+}

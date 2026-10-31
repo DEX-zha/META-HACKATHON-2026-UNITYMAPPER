@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "com.hackathon.hdrp-agent": "file:../../Packages/com.hackathon.hdrp-agent",
+    "com.unity.ai.assistant": "2.21.0-pre.2",
+    "com.unity.ai.inference": "2.6.1",
+    "com.unity.inputsystem": "1.17.0",
+    "com.unity.render-pipelines.high-definition": "17.3.0",
+    "com.unity.test-framework": "1.6.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.screencapture": "1.0.0"
+  },
+  "testables": [
+    "com.hackathon.hdrp-agent"
+  ]
+}

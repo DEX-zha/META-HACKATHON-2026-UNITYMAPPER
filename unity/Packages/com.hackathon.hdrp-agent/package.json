@@ -1,0 +1,11 @@
+{
+  "name": "com.hackathon.hdrp-agent",
+  "version": "0.1.0",
+  "displayName": "HDRP Scene Agent",
+  "description": "Local scene inspection and reversible HDRP corrections.",
+  "unity": "6000.3",
+  "dependencies": {
+    "com.unity.render-pipelines.high-definition": "17.3.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.2"
+  }
+}

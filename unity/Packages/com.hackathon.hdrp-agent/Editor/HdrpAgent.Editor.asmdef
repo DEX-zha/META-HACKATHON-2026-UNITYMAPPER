@@ -1,0 +1,17 @@
+{
+  "name": "HdrpAgent.Editor",
+  "rootNamespace": "HdrpAgent.Editor",
+  "references": [
+    "HdrpAgent.Runtime",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.HighDefinition.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "Newtonsoft.Json.dll"
+  ]
+}

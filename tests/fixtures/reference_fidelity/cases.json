@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Synthetic evaluator configurations. Never included in provider context or solver inputs.",
+  "development": [
+    {"id": "height-negative", "translation_error_m": [0, -0.23, 0], "yaw_error_deg": 0, "light_multiplier": 1.0, "occluder": false},
+    {"id": "height-positive", "translation_error_m": [0, 0.11, 0], "yaw_error_deg": 0, "light_multiplier": 1.0, "occluder": false},
+    {"id": "appearance-only", "translation_error_m": [0, 0, 0], "yaw_error_deg": 0, "light_multiplier": 0.45, "occluder": false}
+  ],
+  "reserved": [
+    {"id": "reserved-elevated", "translation_error_m": [0.035, -0.19, -0.025], "yaw_error_deg": 0, "light_multiplier": 1.0, "occluder": false},
+    {"id": "reserved-rotated", "translation_error_m": [-0.02, 0.075, 0.03], "yaw_error_deg": 7, "light_multiplier": 0.7, "occluder": false},
+    {"id": "reserved-occluded", "translation_error_m": [0.015, -0.125, 0.02], "yaw_error_deg": -4, "light_multiplier": 1.2, "occluder": true}
+  ]
+}

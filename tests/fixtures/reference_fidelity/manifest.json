@@ -1,0 +1,2766 @@
+{
+  "schema_version": 1,
+  "reference_run": "de8919eabdab49d78d38c0ec81384b65",
+  "inputs": {
+    "frames": [
+      {
+        "artifact_hash": "b4864d945cc79196092b0b1cb4062e8f6b24f65921538b2d397d8528973e4140",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-front",
+          "position_m": [
+            -1.64638519,
+            4.98410225,
+            7.825884
+          ],
+          "rotation_deg": [
+            25.0,
+            178.684769,
+            2.94385938e-08
+          ]
+        },
+        "key": "work-front",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "a9160061f4e77ca41de28d9bfc0b6f69174a8f0eff5453f3a1045bebbb3e44be",
+        "original_sha256": "a9160061f4e77ca41de28d9bfc0b6f69174a8f0eff5453f3a1045bebbb3e44be",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "ddceb765c2bc573dc263d41d7bf24680f02cccaa480d274e0e0b265f7e522916",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-front-right",
+          "position_m": [
+            3.94848537,
+            4.98410225,
+            4.764715
+          ],
+          "rotation_deg": [
+            24.9999981,
+            238.684784,
+            0.0
+          ]
+        },
+        "key": "work-front-right",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "1b02de190112b6e8addb809ccd9d4de8c826aaadbccc0c163a841ca3aa074f1b",
+        "original_sha256": "1b02de190112b6e8addb809ccd9d4de8c826aaadbccc0c163a841ca3aa074f1b",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "6316408f3860f309ed09098d71979b55d1693ecbd34aa93cc62dbf72f31da1e5",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-back-right",
+          "position_m": [
+            4.09487,
+            4.98410225,
+            -1.61116886
+          ],
+          "rotation_deg": [
+            25.0,
+            298.684753,
+            9.420349e-07
+          ]
+        },
+        "key": "work-back-right",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "753b02b3bc45b5703802ab5ea4a1fab526bb7ad6a6122e713bdabcfdee274d8b",
+        "original_sha256": "753b02b3bc45b5703802ab5ea4a1fab526bb7ad6a6122e713bdabcfdee274d8b",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "5345c33ba89e6952baa85316f9da671b31b7671d385211ecfddb4a3520778f2a",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-back",
+          "position_m": [
+            -1.35361528,
+            4.98410225,
+            -4.92588425
+          ],
+          "rotation_deg": [
+            25.0,
+            358.684784,
+            0.0
+          ]
+        },
+        "key": "work-back",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "5b68152b9cb47b6afaa37d3db12b6a3bb04f66a73dda985105af3a1b8166f56c",
+        "original_sha256": "5b68152b9cb47b6afaa37d3db12b6a3bb04f66a73dda985105af3a1b8166f56c",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "8f4a6b79c8940f9ec5b245053259580f802880cae1eace230b5d896373b0d11e",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-back-left",
+          "position_m": [
+            -6.94848442,
+            4.98410225,
+            -1.864716
+          ],
+          "rotation_deg": [
+            25.0,
+            58.68477,
+            0.0
+          ]
+        },
+        "key": "work-back-left",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "0d5db52b81d14a4f5a0c39c3aaa60528ffc7c1b4a3101c6d5b1501ce24e8de64",
+        "original_sha256": "0d5db52b81d14a4f5a0c39c3aaa60528ffc7c1b4a3101c6d5b1501ce24e8de64",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "763564c3ed03124ebf500c9e5c5ffe9454602d7bac0a974e2e6067f2cf952501",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-front-left",
+          "position_m": [
+            -7.09486961,
+            4.98410225,
+            4.51116943
+          ],
+          "rotation_deg": [
+            25.0000038,
+            118.684784,
+            1.88406966e-06
+          ]
+        },
+        "key": "work-front-left",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "3f4e07e522718a3e8c4b20fce72a84532c12580dcace406923f3c1e2cccca0bc",
+        "original_sha256": "3f4e07e522718a3e8c4b20fce72a84532c12580dcace406923f3c1e2cccca0bc",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "105ab6ba1a46f4ec927a31fa51944c922c054f8e52234b2a1a24511fa975c827",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-top-front",
+          "position_m": [
+            -1.56826055,
+            8.38776,
+            4.42312336
+          ],
+          "rotation_deg": [
+            65.00002,
+            178.684769,
+            0.0
+          ]
+        },
+        "key": "work-top-front",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "f7cf7097b09f1a35024d7128d8796d24507d2167c0e6525a33a4209fb73c03fb",
+        "original_sha256": "f7cf7097b09f1a35024d7128d8796d24507d2167c0e6525a33a4209fb73c03fb",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      },
+      {
+        "artifact_hash": "eacf1de8637678032a1852da7a9bb39ebccc7b25f9a6dfdc558369defed4131e",
+        "calibration": {
+          "fov_deg": 42.0,
+          "key": "work-top-back",
+          "position_m": [
+            -1.43173969,
+            8.38776,
+            -1.5231235
+          ],
+          "rotation_deg": [
+            65.00002,
+            358.684784,
+            -1.26262535e-07
+          ]
+        },
+        "key": "work-top-back",
+        "model_size": [
+          1280,
+          720
+        ],
+        "original_artifact_hash": "38315a4016b6a8d3f4607f9f3029179291cb23edbb4d91daefdcbe7c21e7d36b",
+        "original_sha256": "38315a4016b6a8d3f4607f9f3029179291cb23edbb4d91daefdcbe7c21e7d36b",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop",
+        "timestamp_seconds": null
+      }
+    ],
+    "detail_frames": [
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "9c6711ad5a3bb4b97a2778d61e81739bf988f725f7553ea9712dbba06fa8bbce",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-000",
+          "position_m": [
+            -1.3550086,
+            3.88040876,
+            5.34576845
+          ],
+          "rotation_deg": [
+            19.9999981,
+            173.299316,
+            1.13570863e-07
+          ]
+        },
+        "key": "detail-000",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "wardrobe1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "9961b1bcef9680767f8a34059a63bd5d522160d5ae36aeef49a77f448f39cb73",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-001",
+          "position_m": [
+            -0.193058968,
+            3.88040876,
+            -4.544419
+          ],
+          "rotation_deg": [
+            20.0000019,
+            353.299316,
+            1.13570856e-07
+          ]
+        },
+        "key": "detail-001",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "wardrobe1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "06924ad960c6d2661d12bc3e9abf92bf3e1e799d7516493bc6c9387b5fd4795b",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-002",
+          "position_m": [
+            -0.985491335,
+            7.047268,
+            2.20054173
+          ],
+          "rotation_deg": [
+            70.00001,
+            173.299316,
+            6.24066843e-07
+          ]
+        },
+        "key": "detail-002",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "wardrobe1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "43cb30e8f70ae30a666c8b08ead042fae10d7c42e06b267fa9411888e49b05c4",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-003",
+          "position_m": [
+            -2.05663657,
+            2.46933413,
+            3.44656944
+          ],
+          "rotation_deg": [
+            20.0,
+            185.351822,
+            -2.27141726e-07
+          ]
+        },
+        "key": "detail-003",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "chair1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "91d5b77f2561c2a72b0d5df50577f8fb7d6b07ca179180621cd5aa7c7c044cee",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-004",
+          "position_m": [
+            -2.51707959,
+            2.46933413,
+            -1.46852672
+          ],
+          "rotation_deg": [
+            20.0,
+            5.35181236,
+            -2.27141726e-07
+          ]
+        },
+        "key": "detail-004",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "chair1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "134de6647984a519c01f6e79a29765a0bf636f6b2af8b1a6f28c40c0a6257383",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-005",
+          "position_m": [
+            -2.2030642,
+            4.03925133,
+            1.88349581
+          ],
+          "rotation_deg": [
+            70.00002,
+            185.351822,
+            0.0
+          ]
+        },
+        "key": "detail-005",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "chair1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "858462e5f4cfb025709058d2761f3bf4f45ca338d2e097e9008b3e4a7e4f1564",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-006",
+          "position_m": [
+            -1.52281082,
+            2.10609245,
+            4.17937565
+          ],
+          "rotation_deg": [
+            20.0000019,
+            178.059082,
+            0.0
+          ]
+        },
+        "key": "detail-006",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "table1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "a7b4d608fc22c0e90a9c2191185bfd7b01e46bb8df05301d6ccdd7010e79d3a7",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-007",
+          "position_m": [
+            -1.35617864,
+            2.10609245,
+            -0.7377126
+          ],
+          "rotation_deg": [
+            20.0000038,
+            358.059082,
+            0.0
+          ]
+        },
+        "key": "detail-007",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "table1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "cb2bf8760f07ecad3fde53e04a1e6484fb877b7b401a2d02ffabdc259804d5cf",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-008",
+          "position_m": [
+            -1.46981919,
+            3.67069721,
+            2.6156683
+          ],
+          "rotation_deg": [
+            69.99998,
+            178.059082,
+            0.0
+          ]
+        },
+        "key": "detail-008",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "table1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "e2372e92734a9dccf07562cd9b716df17d597d23e25bde05252ee6300750693c",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-009",
+          "position_m": [
+            -0.8080827,
+            1.91967368,
+            3.43732786
+          ],
+          "rotation_deg": [
+            20.0000038,
+            169.185638,
+            2.27141726e-07
+          ]
+        },
+        "key": "detail-009",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bin1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "d04dccfb92cbcde03239d02bea60c22571dcf5e076b6a8ff2966b3ad9a9f16ae",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-010",
+          "position_m": [
+            -0.149585217,
+            1.91967368,
+            -0.009939194
+          ],
+          "rotation_deg": [
+            20.0000038,
+            349.185638,
+            -2.27141726e-07
+          ]
+        },
+        "key": "detail-010",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bin1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "d366a5e866e72efb1903252f14e57129b332f6dc1fcbb327ac6f7ee4f36113e4",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-011",
+          "position_m": [
+            -0.5986707,
+            3.03577757,
+            2.34104562
+          ],
+          "rotation_deg": [
+            70.00001,
+            169.185638,
+            1.24813346e-06
+          ]
+        },
+        "key": "detail-011",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bin1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "da6b7be058a9a69dae92ee8c82addecb62e150d7eed2a68324795de56ac3b975",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-012",
+          "position_m": [
+            -1.16786361,
+            1.89146161,
+            2.74363041
+          ],
+          "rotation_deg": [
+            20.0000057,
+            174.621155,
+            0.0
+          ]
+        },
+        "key": "detail-012",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "pot1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "5c416526f22c041a9970cb1f7b7254918f99b7db5cce61d67934ccc876a0c0ba",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-013",
+          "position_m": [
+            -1.00528979,
+            1.89146161,
+            1.01697636
+          ],
+          "rotation_deg": [
+            20.0000057,
+            354.621155,
+            0.0
+          ]
+        },
+        "key": "detail-013",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "pot1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "54314675f9900821c5d9c43be881eb9789ea06f8ff1eece0485f92106e79909a",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-014",
+          "position_m": [
+            -1.11616266,
+            2.44299173,
+            2.19452882
+          ],
+          "rotation_deg": [
+            69.9999847,
+            174.62117,
+            -6.240666e-07
+          ]
+        },
+        "key": "detail-014",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "pot1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "dddbdb89dd2b6b1c0bcb879e3bfe6d24930e0ddee035ae3f022ba474a1d41438",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-015",
+          "position_m": [
+            -1.46723986,
+            1.78180838,
+            2.598498
+          ],
+          "rotation_deg": [
+            20.0000057,
+            178.037216,
+            -2.83927157e-08
+          ]
+        },
+        "key": "detail-015",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "plate1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "7a5edad601f5fc8dacf45c3bf3af2ba40e4b31a4508e967d4daa09652f7982f3",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-016",
+          "position_m": [
+            -1.40988326,
+            1.78180838,
+            0.9248554
+          ],
+          "rotation_deg": [
+            20.0000057,
+            358.0372,
+            -2.83927157e-08
+          ]
+        },
+        "key": "detail-016",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "plate1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "82f84af325c6f9d9ffa68ed29b5b3821c2bc8d76e73b4135abc55278aa941aaa",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-017",
+          "position_m": [
+            -1.44899964,
+            2.314364,
+            2.06625485
+          ],
+          "rotation_deg": [
+            70.00002,
+            178.0372,
+            -3.12033421e-07
+          ]
+        },
+        "key": "detail-017",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "plate1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "4a094c5ea2edce89cafc016bcafda8ff699b49a8c6e84952aa41787165f55851",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-018",
+          "position_m": [
+            -1.77658343,
+            1.77955532,
+            2.61985421
+          ],
+          "rotation_deg": [
+            20.0000057,
+            181.432617,
+            0.0
+          ]
+        },
+        "key": "detail-018",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bowl1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "5ad55b973f79bb40c82578dbec72c6b24e2702d30ce9500375347d1c69878ccb",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-019",
+          "position_m": [
+            -1.81419778,
+            1.77955532,
+            1.11582971
+          ],
+          "rotation_deg": [
+            20.0000057,
+            1.43261921,
+            0.0
+          ]
+        },
+        "key": "detail-019",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bowl1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "929984aa4326a71e738b254ae1841d50de4bf551d4b9f27064dcba10c56a4902",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-020",
+          "position_m": [
+            -1.78854537,
+            2.258007,
+            2.141552
+          ],
+          "rotation_deg": [
+            70.00002,
+            181.432617,
+            3.12033421e-07
+          ]
+        },
+        "key": "detail-020",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bowl1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "7c11c45c784a4ff2ba34a4baca1d490622d406bbcbe23052a7bc43c4cf193d3c",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-021",
+          "position_m": [
+            -0.634949446,
+            1.73852611,
+            1.9048636
+          ],
+          "rotation_deg": [
+            20.0000057,
+            238.037735,
+            0.0
+          ]
+        },
+        "key": "detail-021",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bottle1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "49a55128f470f251eed7220d812d84c32f11bd41dbe76f9501239b22f7a31ca0",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-022",
+          "position_m": [
+            -1.51176143,
+            1.73852611,
+            1.35777342
+          ],
+          "rotation_deg": [
+            20.0000057,
+            58.03775,
+            9.08567e-07
+          ]
+        },
+        "key": "detail-022",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bottle1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "a168964b522efa8fb6f1a960226a4cefb96d12d2ca6698517981280af1615062",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-023",
+          "position_m": [
+            -0.9137887,
+            2.067192,
+            1.73088074
+          ],
+          "rotation_deg": [
+            70.00001,
+            238.03775,
+            9.98506948e-06
+          ]
+        },
+        "key": "detail-023",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "bottle1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "3027ac7b4eea8f114b37a6e9b68d4bd6e381507220bc920add2fad74756c5774",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-024",
+          "position_m": [
+            -1.411317,
+            2.02733874,
+            3.36470366
+          ],
+          "rotation_deg": [
+            20.0,
+            176.983765,
+            5.67854279e-08
+          ]
+        },
+        "key": "detail-024",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "mat1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "4b8fc091d57e4ee7e3ca46f90195be0e34295665b9b8364b78dd9f5934b4d605",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-025",
+          "position_m": [
+            -1.24067438,
+            2.02733874,
+            0.126205921
+          ],
+          "rotation_deg": [
+            20.0,
+            356.983765,
+            5.67854279e-08
+          ]
+        },
+        "key": "detail-025",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "mat1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "b28a3a4f75cc9873d3754264d3ec7c18e7d385a6ca383b9dbe3f167fc1c02c6a",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-026",
+          "position_m": [
+            -1.35705006,
+            3.05865812,
+            2.334813
+          ],
+          "rotation_deg": [
+            69.9999847,
+            176.983765,
+            3.12033364e-07
+          ]
+        },
+        "key": "detail-026",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "mat1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "front",
+        "artifact_hash": "45eff3421adf48c90249ede9d86635d4c0d5bd43b02dcf663402af43f3a85fd3",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-027",
+          "position_m": [
+            -1.68504977,
+            3.898563,
+            9.509941
+          ],
+          "rotation_deg": [
+            20.0000057,
+            178.684769,
+            -2.83927157e-08
+          ]
+        },
+        "key": "detail-027",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "floor1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "back",
+        "artifact_hash": "04287bb5827c775a1dc25e157743e657e61795b1220b0fc128e057e91c946b70",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-028",
+          "position_m": [
+            -1.31495082,
+            3.898563,
+            -6.60994148
+          ],
+          "rotation_deg": [
+            20.0000057,
+            358.684784,
+            0.0
+          ]
+        },
+        "key": "detail-028",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "floor1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      },
+      {
+        "acquisition": "native_camera_closeup",
+        "angle": "top",
+        "artifact_hash": "1c6f57f7404aedd9941a7e206b600acee9e24d18f34b920aedaf1d4c670e620d",
+        "calibration": {
+          "fov_deg": 38.0,
+          "key": "detail-029",
+          "position_m": [
+            -1.56735265,
+            9.026277,
+            4.38357925
+          ],
+          "rotation_deg": [
+            70.00001,
+            178.684769,
+            -1.56016668e-07
+          ]
+        },
+        "key": "detail-029",
+        "model_size": [
+          1280,
+          720
+        ],
+        "object_key": "floor1",
+        "original_size": [
+          1280,
+          720
+        ],
+        "resize": "aspect_preserved_no_crop"
+      }
+    ],
+    "segments": [
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "white wardrobe",
+        "object_key": "wardrobe1",
+        "response_id": "resp_6ae33c7f350adbde24374b4d",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.33984375,
+            0.1597222222222222,
+            0.4984375,
+            0.45694444444444443
+          ],
+          "candidates": [],
+          "confidence": 0.7500000596046448,
+          "frame_index": 0,
+          "mask_hash": "472653193aadc1ab926bfd32295a22c19209ae0419e44809d9bcf35d36236e3d",
+          "mask_size": [
+            203,
+            214
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "white wardrobe",
+        "object_key": "wardrobe1",
+        "response_id": "resp_6ae33c81934ab6fda39f43ca",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.3609375,
+            0.2625,
+            0.634375,
+            0.6625
+          ],
+          "candidates": [],
+          "confidence": 0.6995305418968201,
+          "frame_index": 0,
+          "mask_hash": "be1e9b07468b277157156ea29b9686585df5373117c3334c03ee41089dfe3f4c",
+          "mask_size": [
+            350,
+            288
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-002"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "white wardrobe",
+        "object_key": "wardrobe1",
+        "response_id": "resp_6ae33c8309a83e2127f94201",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.37734375,
+            0.21666666666666667,
+            0.61328125,
+            0.8041666666666667
+          ],
+          "candidates": [],
+          "confidence": 0.9452055096626282,
+          "frame_index": 0,
+          "mask_hash": "f163bd985c3c658ab6051102b38729ab215fd01d818e8d004a3ed757eae26bd9",
+          "mask_size": [
+            302,
+            423
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-000"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "white wardrobe",
+        "object_key": "wardrobe1",
+        "response_id": "resp_6ae31fe91c81841d4698443a",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.3609375,
+            0.25833333333333336,
+            0.496875,
+            0.5916666666666667
+          ],
+          "candidates": [],
+          "confidence": 0.9375000596046448,
+          "frame_index": 0,
+          "mask_hash": "00de39fea1ef44230689175d6486a468d0d4ef92cf67c46817a747082b29f1b2",
+          "mask_size": [
+            174,
+            240
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "white wardrobe",
+        "object_key": "wardrobe1",
+        "response_id": "resp_6ae31fea1e743ba7a70b45ab",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.2890625,
+            0.28194444444444444,
+            0.43515625,
+            0.7388888888888889
+          ],
+          "candidates": [],
+          "confidence": 0.7815700173377991,
+          "frame_index": 0,
+          "mask_hash": "880e6a8f7507ee7fcdc888a72b959d1ab611f2683faca8d694f3a0a9013be204",
+          "mask_size": [
+            187,
+            329
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "tall chair",
+        "object_key": "chair1",
+        "response_id": "resp_6ae33c854b0e8566cd304cf5",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.55625,
+            0.38055555555555554,
+            0.6,
+            0.5402777777777777
+          ],
+          "candidates": [],
+          "confidence": 0.8709677457809448,
+          "frame_index": 0,
+          "mask_hash": "4b2df805479f32376fc95ab74f42b6fb085cb8d3f7adfa6328311be343d7cff1",
+          "mask_size": [
+            56,
+            115
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "tall chair",
+        "object_key": "chair1",
+        "response_id": "resp_6ae33c88c2dccb8522ee4d53",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.421875,
+            0.2222222222222222,
+            0.5703125,
+            0.7041666666666667
+          ],
+          "candidates": [],
+          "confidence": 0.7852349281311035,
+          "frame_index": 0,
+          "mask_hash": "1c035e20c900515200404c8a13e30fcea370d421a08a70eb4a2001f270ead6fa",
+          "mask_size": [
+            190,
+            347
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-005"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "tall chair",
+        "object_key": "chair1",
+        "response_id": "resp_6ae33c89328bbf7eb7b246df",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.434375,
+            0.1638888888888889,
+            0.571875,
+            0.8486111111111111
+          ],
+          "candidates": [],
+          "confidence": 0.9298245906829834,
+          "frame_index": 0,
+          "mask_hash": "e081846a51d9d690fc5f7d4b90f05230bcefed582ce14ad8884e68dab85baf00",
+          "mask_size": [
+            176,
+            493
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-003"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "tall chair",
+        "object_key": "chair1",
+        "response_id": "resp_6ae31fecca245d9d66694d94",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.55703125,
+            0.43194444444444446,
+            0.59765625,
+            0.6402777777777777
+          ],
+          "candidates": [],
+          "confidence": 0.9139785170555115,
+          "frame_index": 0,
+          "mask_hash": "5c4d4233ffbfb788e5fa471e059164a3c2d84c2556d21a5cc345cc792f95b83f",
+          "mask_size": [
+            52,
+            150
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "tall chair",
+        "object_key": "chair1",
+        "response_id": "resp_6ae31fefd8d7bdbd182f4b89",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.47421875,
+            0.40555555555555556,
+            0.528125,
+            0.5861111111111111
+          ],
+          "candidates": [],
+          "confidence": 0.8865247964859009,
+          "frame_index": 0,
+          "mask_hash": "3876ac2d18926cccb31408355727009c6f3c361257dd577609bb439dfcc38994",
+          "mask_size": [
+            69,
+            130
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "coffee table",
+        "object_key": "table1",
+        "response_id": "resp_6ae33c8b760815de687c4649",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.4390625,
+            0.5361111111111111,
+            0.546875,
+            0.6555555555555556
+          ],
+          "candidates": [],
+          "confidence": 0.6289855241775513,
+          "frame_index": 0,
+          "mask_hash": "c67a35a630d8f4f99d9de011e700bd2c3c92d66fb36c1d2134fb8eefea982e90",
+          "mask_size": [
+            138,
+            86
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "coffee table",
+        "object_key": "table1",
+        "response_id": "resp_6ae33c8d51fff7137c93434b",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.30859375,
+            0.29305555555555557,
+            0.68515625,
+            0.6819444444444445
+          ],
+          "candidates": [],
+          "confidence": 0.859649121761322,
+          "frame_index": 0,
+          "mask_hash": "733cc8bbb3370caa4355753f03288332f20bd82f5b5a32d957c2d31d6d8d539a",
+          "mask_size": [
+            482,
+            280
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-008"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "coffee table",
+        "object_key": "table1",
+        "response_id": "resp_6ae33c90193a35a2711d4ae4",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.30546875,
+            0.37916666666666665,
+            0.690625,
+            0.6763888888888889
+          ],
+          "candidates": [],
+          "confidence": 0.8709677457809448,
+          "frame_index": 0,
+          "mask_hash": "18bc5d2178bf5cafc96effa32460b214842d09039e1e8d29bfaf798ae92c56ac",
+          "mask_size": [
+            493,
+            214
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-006"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "coffee table",
+        "object_key": "table1",
+        "response_id": "resp_6ae31ff01eda64a87dc94acd",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.43515625,
+            0.5930555555555556,
+            0.55,
+            0.7152777777777778
+          ],
+          "candidates": [],
+          "confidence": 0.8709677457809448,
+          "frame_index": 0,
+          "mask_hash": "7d495a931b2569a4ec7da1ab9f0608feeb9793a7947f0641e755c620e417a5d5",
+          "mask_size": [
+            147,
+            88
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "coffee table",
+        "object_key": "table1",
+        "response_id": "resp_6ae31ff2b4a5415469614a20",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.46484375,
+            0.5625,
+            0.571875,
+            0.7361111111111112
+          ],
+          "candidates": [],
+          "confidence": 0.8827838897705078,
+          "frame_index": 0,
+          "mask_hash": "c0b8359dd5e7ae7a5a782fcfcbbc992923921028e011f4b37f4fba32dbcb0ffd",
+          "mask_size": [
+            137,
+            125
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "black bin",
+        "object_key": "bin1",
+        "response_id": "resp_6ae33c93327ac45f9d2747b3",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.37421875,
+            0.525,
+            0.421875,
+            0.6472222222222223
+          ],
+          "candidates": [],
+          "confidence": 0.8947368264198303,
+          "frame_index": 0,
+          "mask_hash": "34f5e765c4d96dce070ee550fb3c7cd74f0e1a6db96d2df7b4b7efdd342d4018",
+          "mask_size": [
+            61,
+            88
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "black bin",
+        "object_key": "bin1",
+        "response_id": "resp_6ae33c9584a5c1cecc6849fd",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "detail-011"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "black bin",
+        "object_key": "bin1",
+        "response_id": "resp_6ae33c971066fcdecabc4131",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.36875,
+            0.24583333333333332,
+            0.6046875,
+            0.8013888888888889
+          ],
+          "candidates": [],
+          "confidence": 0.8476190567016602,
+          "frame_index": 0,
+          "mask_hash": "07e9dfa9223562592c22fc46a86caf64543e9a8a3c0dcd9fab8444929d8f48de",
+          "mask_size": [
+            302,
+            400
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-009"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "black bin",
+        "object_key": "bin1",
+        "response_id": "resp_6ae31ff44ae06612ae174529",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.365625,
+            0.5708333333333333,
+            0.41796875,
+            0.7069444444444445
+          ],
+          "candidates": [],
+          "confidence": 0.9179486632347107,
+          "frame_index": 0,
+          "mask_hash": "5f0a05be2ee02fd1c71dd41ae71ee926faf733326d49ebb479e68bfdfbb99483",
+          "mask_size": [
+            67,
+            98
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "black bin",
+        "object_key": "bin1",
+        "response_id": "resp_6ae31ff7be82093e6c6c45a0",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.425,
+            0.6402777777777777,
+            0.503125,
+            0.7986111111111112
+          ],
+          "candidates": [],
+          "confidence": 0.921951174736023,
+          "frame_index": 0,
+          "mask_hash": "2d2ca66f2a1caba62e35065190c3ff5b0b64c19e6b4ea25804542c13855312ad",
+          "mask_size": [
+            100,
+            114
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "cooking pot",
+        "object_key": "pot1",
+        "response_id": "resp_6ae33c99b1a3429dcb2f44bc",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.44453125,
+            0.575,
+            0.46875,
+            0.6180555555555556
+          ],
+          "candidates": [],
+          "confidence": 0.6213017702102661,
+          "frame_index": 0,
+          "mask_hash": "e2cbded5a682f743540d027daa56b89af5741aeeebcb854159062efe64d3b6c2",
+          "mask_size": [
+            31,
+            31
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "cooking pot",
+        "object_key": "pot1",
+        "response_id": "resp_6ae33c9be120a6c251de452c",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.3546875,
+            0.2569444444444444,
+            0.64296875,
+            0.7125
+          ],
+          "candidates": [],
+          "confidence": 0.9101123809814453,
+          "frame_index": 0,
+          "mask_hash": "3790095faf0e55708911daba134ffb45c04ecf1e1b4d275c3912685533c4b0ca",
+          "mask_size": [
+            369,
+            328
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-014"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "cooking pot",
+        "object_key": "pot1",
+        "response_id": "resp_6ae33c9d9b26558406d64c47",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.36015625,
+            0.3055555555555556,
+            0.6375,
+            0.7541666666666667
+          ],
+          "candidates": [],
+          "confidence": 0.9259259104728699,
+          "frame_index": 0,
+          "mask_hash": "581c6f7fe6a334faec7007c4ee8f3e0c9db51191a3e162a4ba44fac34896a22e",
+          "mask_size": [
+            355,
+            323
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-012"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "cooking pot",
+        "object_key": "pot1",
+        "response_id": "resp_6ae33ca0b2360a6a36654102",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.440625,
+            0.5680555555555555,
+            0.46875,
+            0.6388888888888888
+          ],
+          "candidates": [],
+          "confidence": 0.859649121761322,
+          "frame_index": 0,
+          "mask_hash": "ce8a5f939fa1d14183f9a4582e8cd3eff4b04b0071a29394bf4ffaf7b9d1bce6",
+          "mask_size": [
+            36,
+            51
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "cooking pot",
+        "object_key": "pot1",
+        "response_id": "resp_6ae33ca2e8a432d6c7174353",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "food plate",
+        "object_key": "plate1",
+        "response_id": "resp_6ae33ca41c82667ebbcb4b8e",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.51640625,
+            0.5805555555555556,
+            0.54140625,
+            0.6277777777777778
+          ],
+          "candidates": [],
+          "confidence": 0.5747508406639099,
+          "frame_index": 0,
+          "mask_hash": "c32b2dcb4d81478e16204e5067d21ced02f12e6a477d6f169451633cf5be55e2",
+          "mask_size": [
+            32,
+            34
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "1"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "food plate",
+        "object_key": "plate1",
+        "response_id": "resp_6ae33ca6d7bcef01495a4f2f",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.36015625,
+            0.28055555555555556,
+            0.640625,
+            0.75
+          ],
+          "candidates": [],
+          "confidence": 0.921951174736023,
+          "frame_index": 0,
+          "mask_hash": "12862539939557ef3d5d0ae62ce3e51ad774b6e0b0d2eb31de5b7b277f06e103",
+          "mask_size": [
+            359,
+            338
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-017"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "food plate",
+        "object_key": "plate1",
+        "response_id": "resp_6ae33ca88129f8523e0544bb",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "detail-015"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "food plate",
+        "object_key": "plate1",
+        "response_id": "resp_6ae33cab89a16d3f4d8f434a",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.478125,
+            0.6041666666666666,
+            0.50703125,
+            0.6305555555555555
+          ],
+          "candidates": [],
+          "confidence": 0.8048780560493469,
+          "frame_index": 0,
+          "mask_hash": "03fba48a88eccee15a63fd1abeb4595457b8e7c6fc77a7d6fdeaace158246018",
+          "mask_size": [
+            37,
+            19
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "food plate",
+        "object_key": "plate1",
+        "response_id": "resp_6ae33cad1e7b3976ac874558",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "small bowl",
+        "object_key": "bowl1",
+        "response_id": "resp_6ae33cafc9ac56df64f14f77",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "small bowl",
+        "object_key": "bowl1",
+        "response_id": "resp_6ae33cb3cd4a3312358b4dd4",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.36015625,
+            0.22916666666666666,
+            0.63984375,
+            0.7
+          ],
+          "candidates": [],
+          "confidence": 0.8083832263946533,
+          "frame_index": 0,
+          "mask_hash": "af6eab997b47c015a06aeff4891276f531e36044ea609d3d0684b413c7c5e530",
+          "mask_size": [
+            358,
+            339
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-020"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "small bowl",
+        "object_key": "bowl1",
+        "response_id": "resp_6ae33cb5fbbbfc53e1ec4b5f",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "detail-018"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "small bowl",
+        "object_key": "bowl1",
+        "response_id": "resp_6ae33cb704d0d1583eca443d",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.51796875,
+            0.5958333333333333,
+            0.54453125,
+            0.6402777777777777
+          ],
+          "candidates": [],
+          "confidence": 0.6952381134033203,
+          "frame_index": 0,
+          "mask_hash": "ad585fb1beca9d95b7af5bdb58762288048f77e089aaab1eb7d42c2b06ddd940",
+          "mask_size": [
+            34,
+            32
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "small bowl",
+        "object_key": "bowl1",
+        "response_id": "resp_6ae33cb9ad40c6cb12b14500",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.53828125,
+            0.5555555555555556,
+            0.56484375,
+            0.5958333333333333
+          ],
+          "candidates": [],
+          "confidence": 0.8324607610702515,
+          "frame_index": 0,
+          "mask_hash": "1f6a310962c913378343d8b3a3a835cc33803d6515516348b68a68979abc6624",
+          "mask_size": [
+            34,
+            29
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "small bottle",
+        "object_key": "bottle1",
+        "response_id": "resp_6ae33cbbff47e434e6894979",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "small bottle",
+        "object_key": "bottle1",
+        "response_id": "resp_6ae33cbe58cb1b5954bc4b95",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "detail-023"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "small bottle",
+        "object_key": "bottle1",
+        "response_id": "resp_6ae33cc0bd9d57a21cf54ee9",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.45234375,
+            0.15,
+            0.54765625,
+            0.8277777777777777
+          ],
+          "candidates": [],
+          "confidence": 0.8947368264198303,
+          "frame_index": 0,
+          "mask_hash": "dd77e3140158ba0a39879846ca986f64035419591d6d1dc1fcfa3c66956005d8",
+          "mask_size": [
+            122,
+            488
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-021"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "small bottle",
+        "object_key": "bottle1",
+        "response_id": "resp_6ae33cc26160eb5c32644558",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.4890625,
+            0.5944444444444444,
+            0.49609375,
+            0.6402777777777777
+          ],
+          "candidates": [],
+          "confidence": 0.7887788414955139,
+          "frame_index": 0,
+          "mask_hash": "c8725f22255356ef82c989619e12ea694096700a0bf20730885efd71afac004f",
+          "mask_size": [
+            9,
+            33
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "small bottle",
+        "object_key": "bottle1",
+        "response_id": "resp_6ae33cc47d0787a8dec14ac0",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.53515625,
+            0.5777777777777777,
+            0.5421875,
+            0.6208333333333333
+          ],
+          "candidates": [],
+          "confidence": 0.7500000596046448,
+          "frame_index": 0,
+          "mask_hash": "a533d2998e4600ab6491e9657bccaa3de205aebeef73e08bc48091715d18edb9",
+          "mask_size": [
+            9,
+            31
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-back-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "table mat",
+        "object_key": "mat1",
+        "response_id": "resp_6ae33cc57fbcadbc07b249bf",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.459375,
+            0.5513888888888889,
+            0.51875,
+            0.6277777777777778
+          ],
+          "candidates": [],
+          "confidence": 0.6800000071525574,
+          "frame_index": 0,
+          "mask_hash": "2f5afe03875d9a333fe9a26467370c1ba5ab23c9b5eefc53f1a9d7c119c3f453",
+          "mask_size": [
+            76,
+            55
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "table mat",
+        "object_key": "mat1",
+        "response_id": "resp_6ae33cc8fa7d81399acf49ea",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.33671875,
+            0.32916666666666666,
+            0.66953125,
+            0.7
+          ],
+          "candidates": [],
+          "confidence": 0.8160918951034546,
+          "frame_index": 0,
+          "mask_hash": "f0a5b80752ad2aeab65e71081076f1f4cb184acb66ae63761e07e8c26d8d34a5",
+          "mask_size": [
+            426,
+            267
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-026"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "table mat",
+        "object_key": "mat1",
+        "response_id": "resp_6ae33ccb8eb43aee0d8f4263",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "detail-024"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "table mat",
+        "object_key": "mat1",
+        "response_id": "resp_6ae33ccc4dc8c21af9054ae2",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "table mat",
+        "object_key": "mat1",
+        "response_id": "resp_6ae33ccde3f55b84e32649c3",
+        "selection": null,
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      },
+      {
+        "association": "priority_overhead_semantic",
+        "concept": "wooden floor",
+        "object_key": "floor1",
+        "response_id": "resp_6ae33ccf4d0115383bdc4801",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.34765625,
+            0.3597222222222222,
+            0.64609375,
+            0.8222222222222222
+          ],
+          "candidates": [],
+          "confidence": 0.9649122953414917,
+          "frame_index": 0,
+          "mask_hash": "69b46207f376947dff032a24fbacf1e02428421f038e932a8fc8edd289310887",
+          "mask_size": [
+            382,
+            333
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-top-front"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "wooden floor",
+        "object_key": "floor1",
+        "response_id": "resp_6ae33cd11bf9e2655f33493c",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.3453125,
+            0.27361111111111114,
+            0.6484375,
+            0.7569444444444444
+          ],
+          "candidates": [],
+          "confidence": 0.9726027250289917,
+          "frame_index": 0,
+          "mask_hash": "0299d4f85639a1f15d52fa42320afb4cd4bee8766034a9fc9c9cad4a2bba3b9f",
+          "mask_size": [
+            388,
+            348
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-029"
+      },
+      {
+        "association": "calibrated_detail_region",
+        "concept": "wooden floor",
+        "object_key": "floor1",
+        "response_id": "resp_6ae33cd3ecb454281bd64ec0",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.3265625,
+            0.4222222222222222,
+            0.66640625,
+            0.6
+          ],
+          "candidates": [],
+          "confidence": 0.9452055096626282,
+          "frame_index": 0,
+          "mask_hash": "4346221ce653f99d248e53ed5a6a2325bc3e0bfd95571a4b6fee933104e07972",
+          "mask_size": [
+            435,
+            128
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "detail-027"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "wooden floor",
+        "object_key": "floor1",
+        "response_id": "resp_6ae33cd57d13645b92734cb3",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.31796875,
+            0.5416666666666666,
+            0.67578125,
+            0.8333333333333334
+          ],
+          "candidates": [],
+          "confidence": 0.9532163739204407,
+          "frame_index": 0,
+          "mask_hash": "74ec6c97de767cb236ad6d0183a5280072b5c18e4e35843aa2037f182794386b",
+          "mask_size": [
+            458,
+            210
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front"
+      },
+      {
+        "association": "reference_region_overlap",
+        "concept": "wooden floor",
+        "object_key": "floor1",
+        "response_id": "resp_6ae33cd7a81cf21e14854935",
+        "selection": {
+          "association": "uncertain",
+          "bbox_xyxy": [
+            0.2875,
+            0.5083333333333333,
+            0.68828125,
+            0.9138888888888889
+          ],
+          "candidates": [],
+          "confidence": 0.9726027250289917,
+          "frame_index": 0,
+          "mask_hash": "c06a77b73c99116a874eb1c3ecdaf7f76a1a7570f399aa082822c6500f7247f6",
+          "mask_size": [
+            513,
+            292
+          ],
+          "parser_version": "0.1.0",
+          "sam_object_id": "0"
+        },
+        "source": "sam-3.1",
+        "view_key": "work-front-right"
+      }
+    ],
+    "effective_analysis": {
+      "inspected_view_keys": [
+        "work-front",
+        "work-front-right",
+        "work-back-right",
+        "work-back",
+        "work-back-left",
+        "work-front-left",
+        "work-top-front",
+        "work-top-back"
+      ],
+      "limits": [],
+      "objects": [
+        {
+          "asset_id": "asset-0092",
+          "key": "wardrobe1",
+          "label": "white wardrobe",
+          "primitive": null,
+          "support_key": null,
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.367,
+                0.283,
+                0.498,
+                0.631
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.304,
+                0.315,
+                0.434,
+                0.717
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.516,
+                0.379,
+                0.688,
+                0.816
+              ],
+              "view_key": "work-back"
+            },
+            {
+              "bbox_xyxy": [
+                0.501,
+                0.328,
+                0.649,
+                0.723
+              ],
+              "view_key": "work-front-left"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0317",
+          "key": "chair1",
+          "label": "tall chair",
+          "primitive": null,
+          "support_key": "floor1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.575,
+                0.467,
+                0.622,
+                0.651
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.476,
+                0.402,
+                0.53,
+                0.62
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.384,
+                0.533,
+                0.439,
+                0.73
+              ],
+              "view_key": "work-back"
+            },
+            {
+              "bbox_xyxy": [
+                0.552,
+                0.538,
+                0.62,
+                0.785
+              ],
+              "view_key": "work-front-left"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0104",
+          "key": "table1",
+          "label": "coffee table",
+          "primitive": null,
+          "support_key": "floor1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.43,
+                0.588,
+                0.573,
+                0.716
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.463,
+                0.557,
+                0.573,
+                0.699
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.451,
+                0.543,
+                0.552,
+                0.665
+              ],
+              "view_key": "work-back"
+            },
+            {
+              "bbox_xyxy": [
+                0.423,
+                0.559,
+                0.53,
+                0.723
+              ],
+              "view_key": "work-front-left"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0097",
+          "key": "bin1",
+          "label": "black bin",
+          "primitive": null,
+          "support_key": "floor1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.365,
+                0.567,
+                0.42,
+                0.709
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.424,
+                0.64,
+                0.504,
+                0.762
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.563,
+                0.614,
+                0.624,
+                0.771
+              ],
+              "view_key": "work-back-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.401,
+                0.514,
+                0.468,
+                0.631
+              ],
+              "view_key": "work-front-left"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0221",
+          "key": "pot1",
+          "label": "cooking pot",
+          "primitive": null,
+          "support_key": "table1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.438,
+                0.573,
+                0.469,
+                0.639
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.501,
+                0.6,
+                0.53,
+                0.653
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.546,
+                0.592,
+                0.575,
+                0.65
+              ],
+              "view_key": "work-back-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.429,
+                0.573,
+                0.455,
+                0.621
+              ],
+              "view_key": "work-front-left"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0404",
+          "key": "plate1",
+          "label": "food plate",
+          "primitive": null,
+          "support_key": "table1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.495,
+                0.602,
+                0.53,
+                0.634
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.52,
+                0.588,
+                0.545,
+                0.621
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.512,
+                0.588,
+                0.545,
+                0.621
+              ],
+              "view_key": "work-back-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.497,
+                0.604,
+                0.532,
+                0.633
+              ],
+              "view_key": "work-top-front"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0325",
+          "key": "bowl1",
+          "label": "small bowl",
+          "primitive": null,
+          "support_key": "table1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.515,
+                0.594,
+                0.547,
+                0.639
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.536,
+                0.553,
+                0.566,
+                0.596
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.531,
+                0.593,
+                0.558,
+                0.639
+              ],
+              "view_key": "work-back-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.46,
+                0.6,
+                0.491,
+                0.641
+              ],
+              "view_key": "work-front-left"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0078",
+          "key": "bottle1",
+          "label": "small bottle",
+          "primitive": null,
+          "support_key": "table1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.484,
+                0.583,
+                0.495,
+                0.636
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.532,
+                0.596,
+                0.542,
+                0.641
+              ],
+              "view_key": "work-back-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.475,
+                0.584,
+                0.484,
+                0.626
+              ],
+              "view_key": "work-front-left"
+            },
+            {
+              "bbox_xyxy": [
+                0.517,
+                0.607,
+                0.526,
+                0.642
+              ],
+              "view_key": "work-top-back"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0204",
+          "key": "mat1",
+          "label": "table mat",
+          "primitive": null,
+          "support_key": "table1",
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.463,
+                0.596,
+                0.548,
+                0.646
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.48,
+                0.573,
+                0.555,
+                0.635
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.472,
+                0.568,
+                0.556,
+                0.633
+              ],
+              "view_key": "work-top-front"
+            }
+          ]
+        },
+        {
+          "asset_id": "asset-0135",
+          "key": "floor1",
+          "label": "wooden floor",
+          "primitive": null,
+          "support_key": null,
+          "view_boxes": [
+            {
+              "bbox_xyxy": [
+                0.316,
+                0.539,
+                0.698,
+                0.834
+              ],
+              "view_key": "work-front"
+            },
+            {
+              "bbox_xyxy": [
+                0.285,
+                0.504,
+                0.72,
+                0.875
+              ],
+              "view_key": "work-front-right"
+            },
+            {
+              "bbox_xyxy": [
+                0.316,
+                0.546,
+                0.725,
+                0.835
+              ],
+              "view_key": "work-back"
+            },
+            {
+              "bbox_xyxy": [
+                0.344,
+                0.516,
+                0.652,
+                0.829
+              ],
+              "view_key": "work-top-front"
+            }
+          ]
+        }
+      ],
+      "summary": "Small lit vignette with wardrobe, coffee table, barstool and bin on wood floor plus pot plate bowl bottle and mat."
+    },
+    "catalogue_sha256": "da633e008b350070d9f00e9def8c2524d378f5cf843d681824d03ca02e8e6077",
+    "pose_geometry_hash": "d7376c2badd232f0a6cacba805853892bc36833e5bb98f44386d7f2b9d0869a8"
+  },
+  "catalogue_file": ".hdrp-agent/reconstructions/de8919eabdab49d78d38c0ec81384b65/catalogue.json",
+  "artifact_root": ".hdrp-agent/artifacts",
+  "evaluation_inputs": "separate; never read by inference"
+}
