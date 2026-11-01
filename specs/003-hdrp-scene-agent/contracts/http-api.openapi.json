@@ -6474,7 +6474,11 @@
                     "bathroom",
                     "dining",
                     "storage",
-                    "custom"
+                    "custom",
+                    "library",
+                    "reading",
+                    "lounge",
+                    "plant"
                   ]
                 },
                 "priority": {

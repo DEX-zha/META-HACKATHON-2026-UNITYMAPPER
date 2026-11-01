@@ -754,3 +754,7 @@ Avancement House v1 du 2026-11-01 : T224 livre un atlas d'observations natif, pa
 
 
 Avancement exécution House v1 : admission `generate_house` connectée de bout en bout (T228), migration Go préservant actions/outbox, programme par pièce, recettes à taille native et inventaire persistant. Assemblage isolé avec sols/plafonds, contrôle capsule sur maillages, captures cardinales et rapprochées, SAM réel et revue Muse exhaustive par lots. Décoration sur supports qualifiés et overlay SAM ajoutés. Ces éléments ne ferment pas T229–T253 : topologie multi-étages, débattements, correction native locale/rollback, reprise réconciliée, ambiance bake et recette artistique restent ouverts. Détails et preuves : `house-implementation-tests.md`.
+
+### Extension — pièces habitées
+
+- [x] T254 Faire inférer des usages complémentaires selon le brief (bibliothèque, livres, plantes, lecture/accueil), respecter les exclusions et placer les besoins obligatoires avant les compléments ; qualifier les nouveaux prefabs et vérifier un bureau enrichi sur un essai natif. Les cadres, tapis, éclairage et autres familles restent dans T239–T242.

@@ -9,7 +9,8 @@ from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
 from .store import utc_now
 from .house_store import HouseStore
-from .house_planning import building_from_outline, place_groups, RECIPES
+from .house_planning import building_from_outline, place_groups
+from .house_briefing import room_prompt
 from .budget import Budget
 from .budget_cli import load_pricing
 from .providers.meta_responses import MetaResponses, spark_request, sam_request
@@ -167,7 +168,7 @@ class HouseService:
             building=building_from_outline(outline);assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
             for room in outline['rooms']:
                 self.guard(row);self.save(row,'furnishing','Aménagement de '+room['purpose'],current_scope=room['id'])
-                design=self.ask(row,'room-'+room['id'],'Plan every functional group for this room, without arbitrary object quotas. Use several groups when the brief needs them. Recipes: '+canonical({k:[s[1] for s in v] for k,v in RECIPES.items()})+'. custom keeps an unsupported need visible. Detail asset names must come from catalogue; select purposeful tabletop props. Do not repeat the same group unnecessarily. Room and global brief: '+canonical(dict(room=room,brief=params['brief'],available_assets=list(assets))),'ModelHouseRoom',images)
+                design=self.ask(row,'room-'+room['id'],room_prompt(room,params['brief'],assets),'ModelHouseRoom',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
                 placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
@@ -187,7 +188,7 @@ class HouseService:
                 else:unresolved.append(r['id'])
             self.houses.reconcile_batch(run,[r['id'] for r in requirements],resolved,unresolved)
             for i,item in enumerate(missing+proof.get('defects',[])):
-                self.houses.defect(run,dict(id='native-'+str(i),scope_id='house',severity='warning' if isinstance(item,dict) and item.get('priority')=='preferred' else 'blocking',gate='completeness',message=canonical(item),evidence_ids=[receipt['details_artifact_hash']]))
+                self.houses.defect(run,dict(id='native-'+str(i),scope_id='house',severity='warning' if isinstance(item,dict) and item.get('priority') in {'preferred','optional'} else 'blocking',gate='completeness',message=canonical(item),evidence_ids=[receipt['details_artifact_hash']]))
             # Geometry, visual evidence and artistic acceptance are distinct gates.
             for gate,passed in [('traversal',proof.get('traversal_qualified') and proof.get('portal_qualified')),('lighting',proof.get('lighting_qualified')),('coverage',all(c.get('coverage_qualified') for c in proof.get('captures',[])) and bool(proof.get('captures')))]:
                 if not passed:self.houses.defect(run,dict(id='gate-'+gate,scope_id='house',severity='blocking',gate=gate,message='Native qualification pending: '+gate,evidence_ids=[receipt['details_artifact_hash']]))

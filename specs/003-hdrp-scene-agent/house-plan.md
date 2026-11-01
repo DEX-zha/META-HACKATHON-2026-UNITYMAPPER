@@ -150,3 +150,9 @@ Dépendances détaillées : T216–T223 restent les épiques ; T224–T253 de [t
 ## Artefacts de conception
 
 [Recherche](house-research.md) · [Modèle de données](house-data-model.md) · [Contrats](contracts/house-generation.md) · [Guide de validation](house-quickstart.md) · [Tâches](tasks.md).
+
+## Pièces habitées — complément demandé le 1 novembre 2026
+
+Une fonction de pièce déclenche un programme d'usages, sans exiger que l'utilisateur énumère chaque objet. Un bureau meublé peut proposer travail, bibliothèque/livres, plantes et coin lecture ou accueil ; un lit répond à un usage mixte explicite ou suggéré par le brief. Les exclusions et demandes minimalistes priment. Muse choisit un sous-ensemble adapté à la surface ; le solveur place les groupes obligatoires avant les compléments, conserve les dimensions natives et signale les extras qui ne tiennent pas.
+
+Recettes ajoutées : `library`, `reading`, `lounge`, `plant`. Les livres privilégient les supports de bibliothèque qualifiés ; contrôle de hauteur entre tablettes et séparation des objets. Le catalogue distingue assets qualifiés et non qualifiés dans le contexte modèle. Cette extension ne qualifie pas encore les cadres muraux, tapis ou luminaires.

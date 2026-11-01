@@ -45,3 +45,32 @@ def test_details_use_support_pivot_and_keep_equipment_clear():
     assert 10<a['center'][0]<12 and a['position'][1]==1
     assert a['support_id']=='desk' and a['scale']==[1,1,1]
     assert not overlap(box(prop,a['center'][0],a['center'][2],0),box(prop,b['center'][0],b['center'][2],0),.025)
+
+
+def test_optional_decor_never_displaces_primary_function():
+    from hdrp_agent.house_planning import RECIPES
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    names={s[1] for key in ['office','library','plant'] for s in RECIPES[key]}
+    assets={name:dict(prefab_guid=name,dependency_hash='a'*32,bounds_center=[0,.5,0],bounds_size=[1,1,1],front_status='qualified',surfaces=[],support_regions=[]) for name in names}
+    assets['Bookshelf']['bounds_size']=[8,3,8]  # Must be omitted, never shrunk.
+    groups=[dict(id='extra',recipe='library',priority='preferred',description='storage'),dict(id='primary',recipe='office',priority='mandatory',description='work'),dict(id='green',recipe='plant',priority='optional',description='greenery')]
+    placed=place_groups(building,dict(room_id='office',groups=groups,detail_assets=[]),assets)
+    assert placed['instances'][0]['group_id']=='primary'
+    assert any(i['role']=='plant' for i in placed['instances'])
+    assert not any(i['prefab_guid']=='Bookshelf' for i in placed['instances'])
+    assert next(m for m in placed['missing'] if m['id']=='office-extra-bookshelf')['priority']=='preferred'
+    assert all(i['scale']==[1,1,1] for i in placed['instances'])
+
+
+def test_books_prefer_library_and_cannot_intersect_shelf_above():
+    from hdrp_agent.house_planning import place_details
+    triangles=lambda y:[[[0,y,0],[1,y,0],[1,y,1]],[[0,y,0],[1,y,1],[0,y,1]]]
+    shelf=dict(prefab_guid='shelf',bounds_center=[.5,.5,.5],bounds_size=[1,1,1],surfaces=[dict(id='s',triangles=triangles(.2)),dict(id='ceiling',triangles=triangles(.5))],support_regions=[dict(surface_id='s',rectangle_xz=[0,0,1,1],roles=['books'])])
+    prop=dict(prefab_guid='books',dependency_hash='a'*32,front_status='qualified',bounds_center=[0,.2,0],bounds_size=[.2,.4,.2])
+    instance=dict(id='shelf',room_id='office',group_id='library',role='bookshelf',prefab_guid='shelf',position=[0,0,0],center=[.5,.5,.5],bounds_size=[1,1,1],yaw=0)
+    instances=[instance];requirements=[];missing=[]
+    place_details('office',['Book_set_A'],{'Bookshelf':shelf,'Book_set_A':prop},instances,requirements,missing)
+    assert len(instances)==1 and len(missing)==1
+    prop['bounds_size'][1]=.2;prop['bounds_center'][1]=.1
+    place_details('office',['Book_set_A'],{'Bookshelf':shelf,'Book_set_A':prop},instances,[],[])
+    assert len(instances)==2 and instances[-1]['support_id']=='shelf'

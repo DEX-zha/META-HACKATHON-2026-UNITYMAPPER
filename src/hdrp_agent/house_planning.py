@@ -14,6 +14,10 @@ RECIPES = {
  'living': [('sofa','Sofa_3seat',0,0,0,None),('table','Table_coffee',0,1.25,0,None),('tv-stand','Dresser_C',0,2.8,180,None),('tv','TV_off',0,0,0,'tv-stand')],
  'bathroom': [('sink','Bathroom_sink',0,0,0,None),('toilet','Toilet',1.3,0,0,None)],
  'dining': [('table','Table_A',0,0,0,None),('chair-a','Chair_kitchen',0,.9,180,None),('chair-b','Chair_kitchen',0,-.9,0,None)],
+ 'library': [('bookshelf','Bookshelf',0,0,0,None)],
+ 'reading': [('seat','Sofa_1seat',0,0,0,None),('side-table','Side_table_E',1,0,0,None)],
+ 'lounge': [('sofa','Sofa_3seat',0,0,0,None),('table','Table_coffee',0,1.25,0,None)],
+ 'plant': [('plant','Interior_plant_A',0,0,0,None)],
  'storage': [('wardrobe','Wardrobe',0,0,0,None)],
 }
 
@@ -107,7 +111,7 @@ def place_groups(building,design,assets):
     room=next(r for r in building['rooms'] if r['id']==design['room_id']);rect=room_bounds(room)
     reservations,entry=door_reservations(building,room)
     instances=[];missing=[];occupied=[];uses=list(entry);requirements=[]
-    for group in design['groups']:
+    for group in sorted(design['groups'],key=lambda g:{'mandatory':0,'preferred':1,'optional':2}[g['priority']]):
         recipe=RECIPES.get(group['recipe'])
         if recipe is None:
             missing.append(dict(id=group['id'],reason='No qualified recipe for '+group['description']));continue
@@ -117,7 +121,7 @@ def place_groups(building,design,assets):
             requirements.append(dict(id=key,scope_id=room['id'],role=name,quantity=1,priority=group['priority'],provenance='inferred'))
             asset=assets.get(name)
             if asset is None or asset['front_status'] not in {'qualified','not_applicable'}:
-                missing.append(dict(id=key,reason='Prefab or functional semantics unavailable: '+name));continue
+                missing.append(dict(id=key,reason='Prefab or functional semantics unavailable: '+name,priority=group['priority']));continue
             slots.append(dict(id=key,role=role,asset=asset,x=x,z=z,yaw=yaw,support=support))
         ground=[s for s in slots if s['support'] is None]
         if not ground:continue
@@ -138,7 +142,7 @@ def place_groups(building,design,assets):
                 if any(overlap(b,o) for i,b in enumerate(footprints) for o in footprints[i+1:]):continue
                 access=[]
                 for s,b in zip(ground,footprints):
-                    if s['role']=='chair':continue
+                    if s['role'] in {'chair','plant'}:continue
                     candidates=[]
                     for side in (0,-1,1):
                         x,z=rotate(side*(s['asset']['bounds_size'][0]/2+.5),s['asset']['bounds_size'][2]/2+.65,s['yaw']+yaw)
@@ -152,7 +156,7 @@ def place_groups(building,design,assets):
                         if best is None or score<best[0]:best=(score,yaw,anchor,footprints,access)
                 continue
         if best is None:
-            missing.extend(dict(id=s['id'],reason='No arrangement preserves access at native size') for s in slots);continue
+            missing.extend(dict(id=s['id'],reason='No arrangement preserves access at native size',priority=group['priority']) for s in slots);continue
         _,yaw,anchor,footprints,access=best;occupied.extend(footprints);uses.extend(access)
         placed={}
         for s in slots:
@@ -191,9 +195,11 @@ def place_details(room_id,names,assets,instances,requirements,missing):
         requirements.append(dict(id=key,scope_id=room_id,role=name,quantity=1,priority='preferred',provenance='creative'))
         asset=assets.get(name);placed=False
         if asset and asset['front_status'] in {'qualified','not_applicable'}:
-            for parent in supports:
+            candidates=sorted(supports,key=lambda i:0 if name.startswith('Book_') and i['role']=='bookshelf' else 1)
+            for parent in candidates:
                 support=by_guid[parent['prefab_guid']]
                 for region in support.get('support_regions',[]):
+                    if region.get('roles')==['books'] and not name.startswith('Book_'):continue
                     surface=next(s for s in support['surfaces'] if s['id']==region['surface_id'])
                     triangles=surface['triangles']
                     x0,z0,x1,z1=region['rectangle_xz']
@@ -203,7 +209,17 @@ def place_details(room_id,names,assets,instances,requirements,missing):
                             local=box(asset,x,z,0)
                             if local[0]-.015<x0 or local[1]-.015<z0 or local[2]+.015>x1 or local[3]+.015>z1:continue
                             if not footprint_supported(triangles,[local[0]-.015,local[1]-.015,local[2]+.015,local[3]+.015]):continue
-                            y=parent['position'][1]+sum(v[1] for t in triangles for v in t)/(3*len(triangles))
+                            surface_y=sum(v[1] for t in triangles for v in t)/(3*len(triangles))
+                            # Reject props that would intersect an upper shelf. Raw measured
+                            # patches supply a conservative overhead check, not semantic approval.
+                            blocked=False
+                            for other in support['surfaces']:
+                                for triangle in other.get('triangles',[]):
+                                    low=min(v[1] for v in triangle)
+                                    if surface_y+.02<low<surface_y+asset['bounds_size'][1]+.04 and overlap(local,[min(v[0] for v in triangle),min(v[2] for v in triangle),max(v[0] for v in triangle),max(v[2] for v in triangle)]):blocked=True;break
+                                if blocked:break
+                            if blocked:continue
+                            y=parent['position'][1]+surface_y
                             dx,dz=rotate(x,z,parent['yaw']);wx=parent['position'][0]+dx;wz=parent['position'][2]+dz
                             bounds=box(asset,wx,wz,parent['yaw'])
                             sy=asset['bounds_size'][1]

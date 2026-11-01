@@ -33,3 +33,11 @@ Run `2c5fdafacee64bbcad634eaffc075692` : huit besoins satisfaits (bureau, chaise
 Suite finale : **337 tests Python passent**, toutes les suites Go passent, syntaxe JavaScript valide, compilation Unity réussie. Cinq cas de régression géométrique native passent. Les tests d'inspection couvrent 25 captures traitées en trois lots 12/12/1 et conservées dans la progression. L'annulation avant exécution et l'échec avant commande native libèrent l'éditeur dans les tests.
 
 Le plan reste partiellement implémenté. Les tâches non cochées ne sont pas remplacées par ces résultats de tests.
+
+## Extension pièces habitées
+
+Demande d'essai : « Crée un bureau agréable et habité dans une pièce de 6 mètres par 6 mètres. » Run `6b33d78f6ad94f00bebd632851bd767c`. Sans inventaire imposé, Muse choisit `office`, `library`, `lounge`, `plant`, puis Book_set_A, Book_set_I, Notebook et Pencil_holder. Treize instances sont présentes : connexions prefab, échelles et appuis passent ; parcours natif intérieur sans défaut ; scène source conservée. Quatorze vues enregistrées. Reçu natif : `f8575363bfe9f894ec5ae5cccf42088b9b4ca24841e968159e4e9d32026af967`.
+
+Les captures de ce run sont surexposées : aucune qualification artistique, d'éclairage ou de couverture n'en est déduite. L'extension ne modifie pas les paramètres d'éclairage. Elle ajoute une politique d'usages, quatre recettes, cinq revues de prefabs et six régions d'étagères. Les livres privilégient les bibliothèques ; les surfaces supérieures empêchent le placement d'un livre trop haut. La politique rappelle que le descriptif généré d'une pièce n'est pas une demande explicite de l'utilisateur.
+
+Validation : **339 tests Python passent**, dont priorité du mobilier principal sur une bibliothèque trop grande, refus de redimensionner, conservation des passages avec plante, et refus d'un livre traversant une tablette supérieure. Les familles non prises en charge (cadres muraux, tapis, luminaires) ne sont pas présentées comme disponibles par cette extension.

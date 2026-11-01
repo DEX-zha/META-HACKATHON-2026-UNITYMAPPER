@@ -252,6 +252,129 @@
       "image_sha256": "2a7f5a4f7783bd9b1e72c54c3db248e739726d62777571b92ac4796676bc7bfb",
       "note": "Flat symmetric pad; no required functional front.",
       "front_status": "not_applicable"
+    },
+    {
+      "prefab_guid": "4297916ff856508418d05fd334ecb127",
+      "dependency_hash": "40bed7e57918135d94063587c14eaa77",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "491e84ba8bb003c67f2f8ea9033b9f874f855892430add4fc7eaf15ff4d29aa4",
+      "note": "Shelf openings and cupboard handles face +Z; shelf clearances measured separately.",
+      "support_regions": [
+        {
+          "surface_id": "surface-3",
+          "rectangle_xz": [
+            -0.93,
+            -0.15,
+            -0.04,
+            0.09
+          ],
+          "roles": [
+            "books"
+          ]
+        },
+        {
+          "surface_id": "surface-3",
+          "rectangle_xz": [
+            0.04,
+            -0.15,
+            0.93,
+            0.09
+          ],
+          "roles": [
+            "books"
+          ]
+        },
+        {
+          "surface_id": "surface-2",
+          "rectangle_xz": [
+            -0.93,
+            -0.15,
+            -0.04,
+            0.09
+          ],
+          "roles": [
+            "books"
+          ]
+        },
+        {
+          "surface_id": "surface-2",
+          "rectangle_xz": [
+            0.04,
+            -0.15,
+            0.93,
+            0.09
+          ],
+          "roles": [
+            "books"
+          ]
+        },
+        {
+          "surface_id": "surface-4",
+          "rectangle_xz": [
+            -0.93,
+            -0.15,
+            -0.04,
+            0.09
+          ],
+          "roles": [
+            "books"
+          ]
+        },
+        {
+          "surface_id": "surface-4",
+          "rectangle_xz": [
+            0.04,
+            -0.15,
+            0.93,
+            0.09
+          ],
+          "roles": [
+            "books"
+          ]
+        }
+      ]
+    },
+    {
+      "prefab_guid": "9e18487d4f889d940a703ba5e9894e08",
+      "dependency_hash": "4c61e3928ef6d6ec2997c0afb2089d07",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "dcae816d84bab2d36a0facdd8530f74ddc357b5e1d4d1b79310fbb26457f7631",
+      "note": "Seat access faces +Z, upholstered closed back faces -Z."
+    },
+    {
+      "prefab_guid": "2591a571534d65f4d9d5dc65bc2ddf46",
+      "dependency_hash": "6e0f6be3d05e9796d58b5607a1e563d7",
+      "forward": null,
+      "image_sha256": "7bc03ed3e058df821769a6b4dae6f395013f3c913ceea3a0b51b2fae9f73cba9",
+      "note": "Upright floor pot and foliage; no required functional front.",
+      "front_status": "not_applicable"
+    },
+    {
+      "prefab_guid": "32dcbaaa101c3994fb8fd0451ab2c5a7",
+      "dependency_hash": "9371bb889c14f9cd29ac908bf83ce103",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "a05b967ec530b8e0501319c2846bbd87caa3dcc54402a5e02ae7e8cb26049f73",
+      "note": "Standing books: spines face +Z, page edges face -Z."
+    },
+    {
+      "prefab_guid": "74ff08b39e2d95a4ba3024f7541b7059",
+      "dependency_hash": "732db8ed4c746d474e3af95926119248",
+      "forward": null,
+      "image_sha256": "02cdc1d7a4bcda4877bb65fb0865a9bcf5bb2f45265d4ea2c0d258a6aaa7d9c2",
+      "note": "Flat stack of books; no required approach direction.",
+      "front_status": "not_applicable"
     }
   ]
 }
