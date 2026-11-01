@@ -700,3 +700,15 @@ Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est r
 - [x] T212 Exposer les preuves visuelles du run par des routes authentifiées liées à l'action : référence, zones SAM, planches de prefabs, captures Unity et erreurs détaillées.
 - [x] T213 Ajouter un inspecteur visuel actualisé dans le chat avec étape, horodatage, image sélectionnée, objets détectés et diagnostics ; distinguer captures périodiques et flux vidéo.
 - [x] T214 Tester les contrats, l'isolation des médias et les états d'erreur ; relancer localement avec une session authentifiée.
+
+### Qualité de composition — référence House_worn_night
+
+- [x] T215 Auditer en lecture seule la scène sérialisée, ses groupes de pièces, familles de prefabs, matériaux d'usure et dispositifs d'éclairage ; documenter les limites du comptage et l'écart avec le générateur actuel. Voir `house-quality-reference.md` et `scripts/audit_house_reference.py`.
+- [ ] T216 Après libération de l'éditeur, analyser la référence dans une preview isolée : instances résolues, niveaux, dimensions, supports, orientations, vues HDRP de chaque pièce, escalier/palier et détails ; produire un atlas annoté sans modifier la scène source.
+- [ ] T217 Remplacer l'inventaire global tronqué à 20 objets par un programme bâtiment/étages/pièces/ensembles/surfaces avec complétude persistante et requêtes découpées ; aucune catégorie demandée ne doit disparaître silencieusement.
+- [ ] T218 Qualifier dans le catalogue les faces avant, contacts, surfaces utilisables et dégagements des prefabs ; construire des ensembles fonctionnels complets et tester notamment cuisine, bureau et lit-chevets.
+- [ ] T219 Ajouter topologie multi-niveaux, ouvertures partagées et assemblages escalier-trémie-palier ; vérifier dimensions plausibles, collisions et parcours réellement traversables avant décoration.
+- [ ] T220 Planifier la décoration par activité et support, avec variations contextuelles, finitions par pièce, accessoires muraux et usure ; préserver connexions prefab et proportions natives.
+- [ ] T221 Ajouter une passe d'ambiance fondée sur les sources physiques, indirect, reflets et exposition ; qualifier un rendu intérieur nuit distinct du rendu technique neutre.
+- [ ] T222 Faire corriger les défauts d'inventaire, orientation, ouverture, support et composition après inspection ; rejeter et recadrer les vues bouchées ; ne pas présenter un candidat incomplet comme une création validée.
+- [ ] T223 Qualifier une pièce entièrement aménagée, deux pièces reliées, puis une maison avec étage, avec comparaison à la référence de qualité et recette utilisateur ; aucune équivalence artistique anticipée.
