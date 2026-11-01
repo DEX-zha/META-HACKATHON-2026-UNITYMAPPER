@@ -758,3 +758,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 ### Extension — pièces habitées
 
 - [x] T254 Faire inférer des usages complémentaires selon le brief (bibliothèque, livres, plantes, lecture/accueil), respecter les exclusions et placer les besoins obligatoires avant les compléments ; qualifier les nouveaux prefabs et vérifier un bureau enrichi sur un essai natif. Les cadres, tapis, éclairage et autres familles restent dans T239–T242.
+
+### Boucle après constat de défauts
+
+- [x] T255 Relier inspection, corrections de groupes/exposition et compléments de pièce dans une boucle sans quota d'essais ; conserver le meilleur candidat et l'inventaire, réinspecter chaque candidat, rejeter les régressions et exposer passes/motifs d'arrêt. Tester au-delà de six passes, rollback, enrichissement avec mobilier existant et un essai Unity.

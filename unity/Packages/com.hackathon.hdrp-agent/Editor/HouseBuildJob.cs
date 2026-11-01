@@ -39,7 +39,7 @@ namespace HdrpAgent.Editor {
     var previous=RenderTexture.active;var image=new Texture2D(1280,720,TextureFormat.RGB24,false);byte[] bytes;float mean;
     try{RenderTexture.active=target;image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();mean=image.GetPixels32().Average(p=>(p.r+p.g+p.b)/765f);bytes=image.EncodeToPNG();}finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
     string file="view-"+viewIndex+".png";File.WriteAllBytes(Path.Combine(directory,file),bytes);waiting=true;
-    BridgeClient.PutArtifact(bytes,"image/png",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House image not acknowledged","unknown");return;}hashes.Add(hash);((JArray)proof["captures"]).Add(new JObject{["room_id"]=view.Item1,["key"]=Path.GetFileNameWithoutExtension(file),["artifact_hash"]=hash,["file"]=file,["position_m"]=A(view.Item2),["rotation_deg"]=A(view.Item3.eulerAngles),["usable"]=mean>.008f&&mean<.98f,["mean_rgb"]=mean,["coverage_qualified"]=false});viewIndex++;warm=0;Publish("Vue intérieure "+viewIndex+" / "+views.Count);});return;
+    BridgeClient.PutArtifact(bytes,"image/png",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House image not acknowledged","unknown");return;}hashes.Add(hash);((JArray)proof["captures"]).Add(new JObject{["room_id"]=view.Item1,["key"]=Path.GetFileNameWithoutExtension(file),["artifact_hash"]=hash,["file"]=((string)command.payload["manifest_hash"]).Substring(0,12)+"/"+file,["position_m"]=A(view.Item2),["rotation_deg"]=A(view.Item3.eulerAngles),["usable"]=mean>.008f&&mean<.98f,["mean_rgb"]=mean,["coverage_qualified"]=false});viewIndex++;warm=0;Publish("Vue intérieure "+viewIndex+" / "+views.Count);});return;
    }
    proof["source_scene_unchanged"]=SceneManager.GetActiveScene()==userScene&&SceneInspector.Version()==before&&userScene.isDirty==userDirty;
    Publish("Captures terminées ; enregistrement du reçu");Cleanup();waiting=true;
@@ -47,10 +47,10 @@ namespace HdrpAgent.Editor {
   }catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}
  }
  void Build(){
-  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs");
+  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev");
   if((string)manifest["schema_version"]!="house-manifest.v1"||(string)manifest["run_id"]!=(string)command.payload["run_id"])throw new InvalidDataException("House manifest identity differs");
   string run=(string)manifest["run_id"];if(run.Length!=32||run.Any(c=>!Uri.IsHexDigit(c)))throw new InvalidDataException("Invalid run ID");
-  directory=Path.Combine(BridgeClient.ResolveWorkspace(),".hdrp-agent/house/runs",run);Directory.CreateDirectory(directory);
+  directory=Path.Combine(BridgeClient.ResolveWorkspace(),".hdrp-agent/house/runs",run,((string)command.payload["manifest_hash"]).Substring(0,12));Directory.CreateDirectory(directory);
   scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);SceneManager.SetActiveScene(scene);
   root=new GameObject("House v1 "+run);SceneManager.MoveGameObjectToScene(root,scene);
   var building=(JObject)manifest["building"];var walls=new JArray();var surfaces=new JArray();
@@ -99,7 +99,7 @@ namespace HdrpAgent.Editor {
   }
   var traversal=HouseTraversal.Check(root,manifest);foreach(var defect in (JArray)traversal["defects"])defects.Add(defect.DeepClone());
   foreach(var collider in colliders)if(collider)UnityEngine.Object.DestroyImmediate(collider);colliders.Clear();
-  var volumeObject=new GameObject("House lighting profile");volumeObject.transform.SetParent(root.transform,false);volumeObject.layer=30;var volume=volumeObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=10000;profile=ScriptableObject.CreateInstance<VolumeProfile>();var exposure=profile.Add<Exposure>(true);exposure.mode.Override(ExposureMode.Fixed);exposure.fixedExposure.Override(6);var tone=profile.Add<Tonemapping>(true);tone.mode.Override(TonemappingMode.ACES);volume.sharedProfile=profile;
+  var volumeObject=new GameObject("House lighting profile");volumeObject.transform.SetParent(root.transform,false);volumeObject.layer=30;var volume=volumeObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=10000;profile=ScriptableObject.CreateInstance<VolumeProfile>();var exposure=profile.Add<Exposure>(true);exposure.mode.Override(ExposureMode.Fixed);exposure.fixedExposure.Override(Mathf.Clamp((float?)manifest["exposure_ev"]??6,-4,16));var tone=profile.Add<Tonemapping>(true);tone.mode.Override(TonemappingMode.ACES);volume.sharedProfile=profile;
   string folder="Assets/AgentWorkspace/HouseRuns/"+run;Directory.CreateDirectory(folder);AssetDatabase.Refresh();string profilePath=folder+"/Lighting.asset";AssetDatabase.CreateAsset(profile,AssetDatabase.GenerateUniqueAssetPath(profilePath));scenePath=AssetDatabase.GenerateUniqueAssetPath(folder+"/House.unity");
   if(!EditorSceneManager.SaveScene(scene,scenePath))throw new IOException("Generated scene could not be saved");
   proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false};

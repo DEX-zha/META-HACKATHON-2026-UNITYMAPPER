@@ -29,6 +29,19 @@ def propose(manifest,observations,attempted):
             footprints=[box(i,i['center'][0],i['center'][2],i['yaw']) for i in ground]
             if any(b[0]<bounds[0]+.08 or b[1]<bounds[1]+.08 or b[2]>bounds[2]-.08 or b[3]>bounds[3]-.08 or any(overlap(b,r,.05) for r in reservations) for b in footprints):valid=False;break
             if any(overlap(b,c) for n,b in enumerate(footprints) for c in footprints[n+1:]):valid=False;break
-            if not access_check(bounds,footprints,points):valid=False;break
+            for item,b in zip(ground,footprints):
+                if item.get('role') in {'chair','plant'}:continue
+                choices=[]
+                for side in (0,-1,1):
+                    dx,dz=rotate(side*(item['bounds_size'][0]/2+.5),item['bounds_size'][2]/2+.65,item['yaw'])
+                    p=[item['center'][0]+dx,item['center'][2]+dz]
+                    if bounds[0]+.4<p[0]<bounds[2]-.4 and bounds[1]+.4<p[1]<bounds[3]-.4 and not any(overlap([p[0]-.4,p[1]-.4,p[0]+.4,p[1]+.4],o) for o in footprints):choices.append(p)
+                if not choices:valid=False;break
+                points.append(choices[0])
+            if not valid or not access_check(bounds,footprints,points):valid=False;break
+            entries=result.setdefault('access',[])
+            entry=next((a for a in entries if a['room_id']==room_id),None)
+            if entry is None:entries.append(dict(room_id=room_id,points=points))
+            else:entry['points']=points
         if valid:return result,dict(kind='transform_group',scope_id=target['room_id'],group_id=target['group_id'],translation_m=delta,yaw_delta=angle,reason=observation['message'],signature=signature)
     return None

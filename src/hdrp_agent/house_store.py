@@ -47,6 +47,22 @@ class HouseStore:
             self.store.event(c,p.run_id,'house.program_created',dict(requirements=len(p.requirements),rooms=len(p.rooms)))
         return body
 
+    def extend_requirements(self,run,requirements):
+        parsed=[Requirement.model_validate(r) for r in requirements]
+        with self.store.tx() as c:
+            program=json.loads(self._program(c,run)['body']);rooms={r['id'] for r in program['rooms']}
+            for item in parsed:
+                if item.scope_id not in rooms:raise AgentError('INVALID_INPUT','Unknown enrichment room')
+                body=canonical(item.model_dump(mode='json'))
+                old=c.execute('SELECT body FROM house_requirements WHERE run_id=? AND id=?',(run,item.id)).fetchone()
+                if old:
+                    original=json.loads(old[0])
+                    if any(original[k]!=getattr(item,k) for k in ('scope_id','role','priority')):raise AgentError('IDEMPOTENCY_CONFLICT','Enrichment changed requirement identity')
+                    continue
+                c.execute('INSERT INTO house_requirements VALUES(?,?,?,?,?)',(run,item.id,item.scope_id,item.status,body))
+                program['requirements'].append(item.model_dump(mode='json'))
+            c.execute('UPDATE house_programs SET body=? WHERE run_id=?',(canonical(program),run))
+
     def _program(self,c,run):
         row=c.execute('SELECT * FROM house_programs WHERE run_id=?',(run,)).fetchone()
         if not row:raise AgentError('NOT_FOUND','House run not found',404)

@@ -68,3 +68,29 @@ def test_failure_before_native_command_does_not_hold_editor(tmp_path,monkeypatch
     assert h.get(r['action_id'])['state']=='failed'
     other=deepcopy(r);other.update(action_id='next-house',idempotency_key='next-house')
     assert h.admit(other)['state']=='queued'
+
+
+def test_house_run_rebuilds_reinspects_and_persists_selected_candidate(tmp_path,monkeypatch):
+    from hdrp_agent.domain import fingerprint
+    h,r=house_setup(tmp_path);h.admit(r)
+    room=dict(id='office',purpose='office',floor_index=0,width_m=6,depth_m=6,brief='work')
+    def ask(row,key,*args):
+        if key=='outline':return dict(title='office',rooms=[room],unresolved=[])
+        return dict(room_id='office',groups=[dict(id='storage',recipe='storage',priority='mandatory',description='storage')],detail_assets=[],unresolved=[])
+    monkeypatch.setattr(h,'ask',ask)
+    asset=dict(prefab_guid='a'*32,dependency_hash='b'*32,bounds_center=[0,.5,0],bounds_size=[1,1,1],front_status='qualified',surfaces=[],support_regions=[])
+    monkeypatch.setattr(h,'catalogue',lambda:{'Wardrobe':asset})
+    builds=[]
+    def native(row,manifest):
+        builds.append(manifest['exposure_ev']);digest=h.artifacts.put(str(manifest['exposure_ev']).encode())
+        receipt=dict(details_artifact_hash=digest,artifact_hashes=[digest])
+        proof=dict(manifest_hash=fingerprint(manifest),scene_path='House-'+str(manifest['exposure_ev']),scene_version=digest,source_scene_unchanged=True,instances=[dict(i,connected=True,native_scale=True,support_passed=True) for i in manifest['instances']],defects=[],captures=[dict(mean_rgb=.95 if manifest['exposure_ev']==6 else .5)])
+        return receipt,proof
+    monkeypatch.setattr(h,'native',native);monkeypatch.setattr(h,'inspect',lambda *a,**k:[]);monkeypatch.setattr(h,'enrich',lambda *a:None)
+    h.run(r['action_id']);result=h.progress(r['action_id'])
+    assert result['state']=='completed' and builds==[6,7]
+    assert result['scene_path']=='House-7'
+    assert [i['status'] for i in result['iterations']]==['proposed','accepted']
+    assert result['house']['requirements'][0]['status']=='satisfied'
+    # Gate evidence is not fabricated just because a correction improved exposure.
+    assert result['quality_state']=='incomplete' and result['execution_state']=='stalled'

@@ -74,3 +74,28 @@ def test_books_prefer_library_and_cannot_intersect_shelf_above():
     prop['bounds_size'][1]=.2;prop['bounds_center'][1]=.1
     place_details('office',['Book_set_A'],{'Bookshelf':shelf,'Book_set_A':prop},instances,[],[])
     assert len(instances)==2 and instances[-1]['support_id']=='shelf'
+
+
+def test_enrichment_preserves_existing_poses_and_avoids_overlap():
+    from copy import deepcopy
+    from hdrp_agent.house_planning import box,overlap
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    old=dict(id='existing',room_id='office',group_id='work',role='desk',prefab_guid='desk',center=[3,.5,3],position=[3,0,3],bounds_size=[1,1,1],yaw=0,support_id=None)
+    before=deepcopy(old)
+    plant=dict(prefab_guid='plant',dependency_hash='a'*32,bounds_center=[0,.5,0],bounds_size=[.4,1,.4],front_status='not_applicable',surfaces=[],support_regions=[])
+    design=dict(room_id='office',groups=[dict(id='extra',recipe='plant',priority='preferred',description='greenery')],detail_assets=[])
+    result=place_groups(building,design,{'Interior_plant_A':plant},existing=[old],access_points=[[3,4.2]])
+    assert old==before and len(result['instances'])==1
+    new=result['instances'][0]
+    assert new['id']!='existing'
+    assert not overlap(box(old,3,3,0),box(new,new['center'][0],new['center'][2],new['yaw']))
+
+
+def test_books_spread_across_free_shelf_compartments():
+    from hdrp_agent.house_planning import place_details
+    triangles=lambda y:[[[0,y,0],[1,y,0],[1,y,1]],[[0,y,0],[1,y,1],[0,y,1]]]
+    shelf=dict(prefab_guid='shelf',bounds_center=[.5,.5,.5],bounds_size=[1,1,1],surfaces=[dict(id='low',triangles=triangles(.2)),dict(id='high',triangles=triangles(.8))],support_regions=[dict(surface_id=s,rectangle_xz=[0,0,1,1],roles=['books']) for s in ['low','high']])
+    book=dict(prefab_guid='books',dependency_hash='a'*32,front_status='qualified',bounds_center=[0,.1,0],bounds_size=[.2,.2,.2])
+    instances=[dict(id='shelf',room_id='office',group_id='library',role='bookshelf',prefab_guid='shelf',position=[0,0,0],center=[.5,.5,.5],bounds_size=[1,1,1],yaw=0)]
+    place_details('office',['Book_set_A','Book_set_A'],{'Bookshelf':shelf,'Book_set_A':book},instances,[],[])
+    assert [round(i['position'][1],2) for i in instances[1:]]==[.2,.8]

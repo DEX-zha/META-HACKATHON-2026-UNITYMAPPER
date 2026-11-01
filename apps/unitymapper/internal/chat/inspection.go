@@ -98,14 +98,14 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 		}
 		rel, _ := filepath.Rel(root, path)
 		if d.IsDir() {
-			if rel != "." && !visualDirectory.MatchString(rel) {
+			if rel != "." && !visualDirectory.MatchString(filepath.ToSlash(rel)) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 		allowed := visualFile.MatchString(filepath.ToSlash(rel))
 		if house {
-			allowed = regexp.MustCompile(`^view-[0-9]+\.png$`).MatchString(rel)
+			allowed = regexp.MustCompile(`^([a-f0-9]{12}/)?view-[0-9]+\.png$`).MatchString(filepath.ToSlash(rel))
 		}
 		if !allowed || !safeEvidence(root, path, 32<<20) {
 			return nil

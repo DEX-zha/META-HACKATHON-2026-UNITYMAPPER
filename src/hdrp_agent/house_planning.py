@@ -107,10 +107,11 @@ def door_reservations(building,room):
     return boxes,points
 
 
-def place_groups(building,design,assets):
+def place_groups(building,design,assets,*,existing=(),access_points=(),detail_offset=0):
     room=next(r for r in building['rooms'] if r['id']==design['room_id']);rect=room_bounds(room)
     reservations,entry=door_reservations(building,room)
-    instances=[];missing=[];occupied=[];uses=list(entry);requirements=[]
+    instances=[dict(i) for i in existing if i['room_id']==room['id']];initial=len(instances)
+    missing=[];occupied=[box(i,i['center'][0],i['center'][2],i['yaw']) for i in instances if i['support_id'] is None];uses=list(entry)+list(access_points);requirements=[]
     for group in sorted(design['groups'],key=lambda g:{'mandatory':0,'preferred':1,'optional':2}[g['priority']]):
         recipe=RECIPES.get(group['recipe'])
         if recipe is None:
@@ -178,11 +179,11 @@ def place_groups(building,design,assets):
             cx,cy,cz=a['bounds_center'];sx,sy,sz=a['bounds_size'];rx,rz=rotate(cx,cz,angle)
             value=dict(id=s['id'],room_id=room['id'],group_id=group['id'],prefab_guid=a['prefab_guid'],dependency_hash=a['dependency_hash'],position=[x-rx,local_y-cy+sy/2,z-rz],yaw=angle,scale=[1,1,1],center=[x,local_y+sy/2,z],bounds_size=[sx,sy,sz],support_id=placed[s['support']]['id'] if s['support'] else None,role=s['role'])
             instances.append(value);placed[s['role']]=value
-    place_details(room['id'],design.get('detail_assets',[]),assets,instances,requirements,missing)
-    return dict(instances=instances,requirements=requirements,missing=missing,access_points=uses,door_reservations=reservations)
+    place_details(room['id'],design.get('detail_assets',[]),assets,instances,requirements,missing,offset=detail_offset)
+    return dict(instances=instances[initial:],requirements=requirements,missing=missing,access_points=uses,door_reservations=reservations)
 
 
-def place_details(room_id,names,assets,instances,requirements,missing):
+def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0):
     """Pack native-sized props on qualified mesh patches, retaining every need.
 
     Work in support prefab coordinates (not renderer-centre coordinates). Check
@@ -190,7 +191,7 @@ def place_details(room_id,names,assets,instances,requirements,missing):
     """
     by_guid={a['prefab_guid']:a for a in assets.values()}
     supports=list(instances)
-    for index,name in enumerate(names):
+    for index,name in enumerate(names,offset):
         key=f'{room_id}-detail-{index}'
         requirements.append(dict(id=key,scope_id=room_id,role=name,quantity=1,priority='preferred',provenance='creative'))
         asset=assets.get(name);placed=False
@@ -198,7 +199,16 @@ def place_details(room_id,names,assets,instances,requirements,missing):
             candidates=sorted(supports,key=lambda i:0 if name.startswith('Book_') and i['role']=='bookshelf' else 1)
             for parent in candidates:
                 support=by_guid[parent['prefab_guid']]
-                for region in support.get('support_regions',[]):
+                def occupancy(region):
+                    surface=next(s for s in support['surfaces'] if s['id']==region['surface_id'])
+                    ts=surface['triangles'];height=parent['position'][1]+sum(v[1] for t in ts for v in t)/(3*len(ts))
+                    x0,z0,x1,z1=region['rectangle_xz'];count=0
+                    for child in instances:
+                        if child.get('support_id')!=parent['id']:continue
+                        x,z=rotate(child['center'][0]-parent['position'][0],child['center'][2]-parent['position'][2],-parent['yaw'])
+                        if x0<=x<=x1 and z0<=z<=z1 and abs(child['center'][1]-child['bounds_size'][1]/2-height)<.03:count+=1
+                    return count
+                for region in sorted(support.get('support_regions',[]),key=occupancy):
                     if region.get('roles')==['books'] and not name.startswith('Book_'):continue
                     surface=next(s for s in support['surfaces'] if s['id']==region['surface_id'])
                     triangles=surface['triangles']
