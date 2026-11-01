@@ -1,0 +1,215 @@
+{
+  "$defs": {
+    "Requirement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "scope_id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "role": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "quantity": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "priority": {
+          "default": "mandatory",
+          "enum": [
+            "mandatory",
+            "preferred",
+            "optional"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "provenance": {
+          "enum": [
+            "user",
+            "observed",
+            "inferred",
+            "creative"
+          ],
+          "title": "Provenance",
+          "type": "string"
+        },
+        "status": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "satisfied",
+            "unavailable",
+            "waived"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "fulfilled_by": {
+          "items": {
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+            "type": "string"
+          },
+          "title": "Fulfilled By",
+          "type": "array"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "id",
+        "scope_id",
+        "role",
+        "provenance"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    },
+    "RoomProgram": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "floor_id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Floor Id",
+          "type": "string"
+        },
+        "purpose": {
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "style": {
+          "default": "",
+          "title": "Style",
+          "type": "string"
+        },
+        "occupancy": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Occupancy",
+          "type": "integer"
+        },
+        "group_ids": {
+          "items": {
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+            "type": "string"
+          },
+          "title": "Group Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "floor_id",
+        "purpose"
+      ],
+      "title": "RoomProgram",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "house.v1",
+      "default": "house.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "project_id": {
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "run_id": {
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "brief": {
+      "maxLength": 16000,
+      "minLength": 1,
+      "title": "Brief",
+      "type": "string"
+    },
+    "creative_policy": {
+      "default": "brief_guided",
+      "enum": [
+        "brief_guided",
+        "reference_guided"
+      ],
+      "title": "Creative Policy",
+      "type": "string"
+    },
+    "reference_hashes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reference Hashes",
+      "type": "array"
+    },
+    "rooms": {
+      "items": {
+        "$ref": "#/$defs/RoomProgram"
+      },
+      "minItems": 1,
+      "title": "Rooms",
+      "type": "array"
+    },
+    "requirements": {
+      "items": {
+        "$ref": "#/$defs/Requirement"
+      },
+      "minItems": 1,
+      "title": "Requirements",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "project_id",
+    "run_id",
+    "brief",
+    "rooms",
+    "requirements"
+  ],
+  "title": "HouseProgram",
+  "type": "object"
+}

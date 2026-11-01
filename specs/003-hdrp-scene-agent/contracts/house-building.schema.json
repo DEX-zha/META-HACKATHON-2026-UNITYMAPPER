@@ -1,0 +1,363 @@
+{
+  "$defs": {
+    "Boundary": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "floor_id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Floor Id",
+          "type": "string"
+        },
+        "start": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Start",
+          "type": "array"
+        },
+        "end": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "End",
+          "type": "array"
+        },
+        "room_ids": {
+          "items": {
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "title": "Room Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "floor_id",
+        "start",
+        "end",
+        "room_ids"
+      ],
+      "title": "Boundary",
+      "type": "object"
+    },
+    "Floor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "elevation_m": {
+          "title": "Elevation M",
+          "type": "number"
+        },
+        "ceiling_height_m": {
+          "exclusiveMinimum": 0,
+          "title": "Ceiling Height M",
+          "type": "number"
+        },
+        "slab_thickness_m": {
+          "exclusiveMinimum": 0,
+          "title": "Slab Thickness M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "elevation_m",
+        "ceiling_height_m",
+        "slab_thickness_m"
+      ],
+      "title": "Floor",
+      "type": "object"
+    },
+    "Portal": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "boundary_id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Boundary Id",
+          "type": "string"
+        },
+        "spaces": {
+          "items": {
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Spaces",
+          "type": "array"
+        },
+        "interval_m": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Interval M",
+          "type": "array"
+        },
+        "height_m": {
+          "exclusiveMinimum": 0,
+          "title": "Height M",
+          "type": "number"
+        },
+        "kind": {
+          "default": "door",
+          "enum": [
+            "door",
+            "window",
+            "passage"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "boundary_id",
+        "spaces",
+        "interval_m",
+        "height_m"
+      ],
+      "title": "Portal",
+      "type": "object"
+    },
+    "RoomGeometry": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "floor_id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Floor Id",
+          "type": "string"
+        },
+        "polygon": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "minItems": 4,
+          "title": "Polygon",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "floor_id",
+        "polygon"
+      ],
+      "title": "RoomGeometry",
+      "type": "object"
+    },
+    "VerticalConnection": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "from_floor": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "From Floor",
+          "type": "string"
+        },
+        "to_floor": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "To Floor",
+          "type": "string"
+        },
+        "stair_prefab_guid": {
+          "title": "Stair Prefab Guid",
+          "type": "string"
+        },
+        "landing_start": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Landing Start",
+          "type": "array"
+        },
+        "landing_end": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Landing End",
+          "type": "array"
+        },
+        "void_min": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Void Min",
+          "type": "array"
+        },
+        "void_max": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Void Max",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "from_floor",
+        "to_floor",
+        "stair_prefab_guid",
+        "landing_start",
+        "landing_end",
+        "void_min",
+        "void_max"
+      ],
+      "title": "VerticalConnection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "building.v1",
+      "default": "building.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "floors": {
+      "items": {
+        "$ref": "#/$defs/Floor"
+      },
+      "minItems": 1,
+      "title": "Floors",
+      "type": "array"
+    },
+    "rooms": {
+      "items": {
+        "$ref": "#/$defs/RoomGeometry"
+      },
+      "minItems": 1,
+      "title": "Rooms",
+      "type": "array"
+    },
+    "boundaries": {
+      "items": {
+        "$ref": "#/$defs/Boundary"
+      },
+      "title": "Boundaries",
+      "type": "array"
+    },
+    "portals": {
+      "items": {
+        "$ref": "#/$defs/Portal"
+      },
+      "title": "Portals",
+      "type": "array"
+    },
+    "vertical_connections": {
+      "items": {
+        "$ref": "#/$defs/VerticalConnection"
+      },
+      "title": "Vertical Connections",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "floors",
+    "rooms"
+  ],
+  "title": "BuildingIR",
+  "type": "object"
+}

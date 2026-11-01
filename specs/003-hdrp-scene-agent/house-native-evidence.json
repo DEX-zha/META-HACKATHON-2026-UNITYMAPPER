@@ -1,0 +1,21 @@
+{
+  "schema_version": "house-atlas.v1",
+  "source_scene": "Assets/AtmosphericHouse/Scenes/House_worn_night.unity",
+  "source_sha256": "45f2bb5e2b30142cec9746a0a94a43a8f3192f17a3d867e2913d38748952cbca",
+  "status": "complete",
+  "source_unchanged": true,
+  "active_scene_before": "Assets/AtmosphericHouse/Scenes/House_worn_night.unity",
+  "active_scene_after": "Assets/AtmosphericHouse/Scenes/House_worn_night.unity",
+  "active_scene_dirty_before": true,
+  "active_scene_dirty_after": true,
+  "capture_protocol": "isolated_preview_hdrp_original_scene_volumes_unqualified",
+  "resolved_prefab_roots": 2018,
+  "room_groups": 15,
+  "captures": 78,
+  "materials": 92,
+  "lights_including_inactive": 130,
+  "visual_qualified": false,
+  "atlas_path": ".hdrp-agent/reports/house-worn-night/native/index.html",
+  "catalogue_prefabs": 1035,
+  "functional_fronts_reviewed": 13
+}

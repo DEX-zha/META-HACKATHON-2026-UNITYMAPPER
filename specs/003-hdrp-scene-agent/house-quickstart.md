@@ -61,3 +61,18 @@ Attendu : structure/franchissements validés, besoins satisfaits, ensembles/dét
 Par run : programme, ledger des besoins, catalogue/hashes, IR métrique, jobs/reçus, variantes rejetées, défauts/corrections, parcours, captures versionnées, couverture par pièce, coûts réconciliés et verdicts séparés. La UI doit permettre de retrouver la pièce et la preuve d’un défaut.
 
 Succès : gates techniques et complétude passées, revue artistique enregistrée pour le palier revendiqué. `finished + incomplete` est un essai conservé, pas une réussite. Les temps, coût et performance sont rapportés pour calibrer les paliers ; aucune cible non mesurée n’est présentée comme acquise.
+
+
+## Commandes disponibles depuis le premier lot d'implémentation
+
+Dans Unity, éditeur sans génération en cours : menus `Tools > HDRP Agent > House > Inspect reference house`, `Measure prefab catalogue`, `Render functional prefab views`. L'inspection ouvre une preview séparée ; elle ne sauvegarde pas la scène utilisateur.
+
+```sh
+.venv/bin/hdrp-agent house atlas .hdrp-agent/reports/house-worn-night/native
+.venv/bin/hdrp-agent house import-catalogue .hdrp-agent/house/catalogue-native.json
+.venv/bin/hdrp-agent house import-reviews specs/003-hdrp-scene-agent/house-functional-reviews.json --views .hdrp-agent/house/functional-views
+.venv/bin/hdrp-agent house store-program /chemin/programme.json
+.venv/bin/hdrp-agent house status identifiant-run
+```
+
+`store-program` conserve un programme validé ; il ne déclenche pas encore la génération Unity. Une nouvelle version de prefab ou un rendu de preview différent exige une nouvelle revue : les annotations ne sont pas transférées aveuglément. Les images natives restent locales, hors Git. L'atlas HTML est dans `.hdrp-agent/reports/house-worn-night/native/index.html`.

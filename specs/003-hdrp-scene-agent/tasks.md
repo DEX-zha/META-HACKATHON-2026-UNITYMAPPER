@@ -718,13 +718,13 @@ Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est r
 
 T216–T223 ci-dessus sont les épiques de qualité et restent ouvertes jusqu’à preuve native. Les tâches ci-dessous les détaillent sans déclarer leur implémentation. Ordre de livraison et contrats : `house-plan.md`.
 
-- [ ] T224 (J0, épique T216) Produire l’atlas natif isolé de House_worn_night : instances résolues, niveaux, pièces, vues intérieures et transitions ; source inchangée. Dépend : éditeur disponible.
+- [x] T224 (J0, épique T216) Produire l’atlas natif isolé de House_worn_night : instances résolues, niveaux, pièces, vues intérieures et transitions ; source inchangée. Dépend : éditeur disponible.
 - [ ] T225 (J0, T218) Implémenter export/stockage versionné `AssetSemantics` dans `house_catalogue.py` et un inspecteur C# ; bounds, faces, supports, sockets et dégagements. Dépend : T224.
 - [ ] T226 (J0, T218) Qualifier les assets des premières recettes cuisine/bureau/chambre/salon/sanitaires, avec contre-exemples d’orientation et d’appui. Dépend : T225.
-- [ ] T227 (J1, T217) Ajouter contrats HouseProgram/Requirement/BuildingIR et migrations de jobs/défauts/gates ; préserver données legacy. Dépend : conception `house-data-model.md`.
+- [x] T227 (J1, T217) Ajouter contrats HouseProgram/Requirement/BuildingIR et migrations de jobs/défauts/gates ; préserver données legacy. Dépend : conception `house-data-model.md`.
 - [ ] T228 (J1, T217) Relier `generate_house`/mode `house_v1` à l’admission Python et au chat Go ; conserver idempotence, budget et contrôle de version. Dépend : T227.
 - [ ] T229 (J1, T217) Implémenter analyse hiérarchique et lots exhaustifs avec réconciliation ; tester inventaire >20 rôles, doublons, sortie tronquée et asset absent. Dépend : T227–T228.
-- [ ] T230 (J1/J6, T222) Persister obligations/défauts/essais rejetés et sélection de contexte par scope, sans oublier un défaut ancien. Dépend : T227.
+- [x] T230 (J1/J6, T222) Persister obligations/défauts/essais rejetés et sélection de contexte par scope, sans oublier un défaut ancien. Dépend : T227.
 - [ ] T231 (J2, T219) Implémenter solveur métrique par étage, dimensions locales et frontières partagées ; préserver l’adaptateur d’observations image. Dépend : T226–T229.
 - [ ] T232 (J2, T219) Compiler l’enveloppe et les portails en modules natifs, avec débattement/cadres/seuils et reçus de provenance. Dépend : T231.
 - [ ] T233 (J2, T219) Vérifier chemin entrée/pièces/usages sur géométrie réelle, avec largeur/hauteur paramétrées ; tester porte dans mur plein, collider absent et parcours sans appui ; capsule, marche et pente paramétrées. Dépend : T232.
@@ -748,3 +748,6 @@ T216–T223 ci-dessus sont les épiques de qualité et restent ouvertes jusqu’
 - [ ] T251 (palier D, T223) Qualifier maison atmosphérique avec sous-sol, variantes de briefs et plan inédit ; comparer aux catégories de l’atlas, sans copier les poses source. Dépend : T246, T248–T250.
 - [ ] T252 (recette, T223) Exécuter campagne non-régression : orientations 180°, porte bouchée, support absent, trémie fermée, caméra occultée, budget, interruption/reprise et changement utilisateur. Dépend : T251.
 - [ ] T253 (livraison, T223) Publier preuves par palier, coûts/performance et limites, puis enregistrer recette artistique ; aucun statut qualifié sans gates et complétude. Dépend : T252.
+
+
+Avancement House v1 du 2026-11-01 : T224 livre un atlas d'observations natif, pas une certification des cadrages ni du parcours (T237/T241 restent ouverts). T227 couvre contrats et migration ; admission/exécution chat relèvent de T228. T230 couvre l'archive et le contexte persistant, sans prétendre exécuter les patches de T238. T225/T226 sont partiels : 1 035 mesures, 13 faces revues et un support de bureau validé ; sockets, dégagements et recettes complètes restent à qualifier. Preuves : `house-native-evidence.json`, `house-functional-reviews.json`, `implementation-status.md`.

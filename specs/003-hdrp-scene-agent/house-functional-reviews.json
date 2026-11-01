@@ -1,0 +1,164 @@
+{
+  "schema_version": "house-functional-reviews.v1",
+  "reviewer": "codex-visual-review-2026-11-01",
+  "scope": "Functional orientations only; no artistic or traversal qualification",
+  "reviews": [
+    {
+      "prefab_guid": "2365af3534100904fbbab73002d0c5c6",
+      "dependency_hash": "7f775e6bb023b7c1157506d894cbf4f6",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "db666913b611b82b7c29594cd7ba7ba946872466fe32513496a628bf3f47155c",
+      "note": "Palm/logo side on +Z, button edge opposite; forward denotes user-facing approach."
+    },
+    {
+      "prefab_guid": "33d6fd049e3267740825c5c800797efe",
+      "dependency_hash": "bab2fc62cb59b8c834e66d7cdb831282",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "49f951a8a0b0bf19692059c27f9fb6adf3b4347e7f70e65c4189a339ee8e619a",
+      "note": "Display on +Z; rear housing in opposite view."
+    },
+    {
+      "prefab_guid": "48504d60314f8af43a16bfd340b52575",
+      "dependency_hash": "c1cc35ad96ae944ba41c87ba4ac69970",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "8ace23d08a0822280c779616454ad4ef9dd6cfc3f5a76d7c1a3020f9c2f19204",
+      "note": "Cushions and seated approach on +Z; rear back on -Z."
+    },
+    {
+      "prefab_guid": "53c1515acfc132d4c97e797f214b64b7",
+      "dependency_hash": "d49e3171b6e68ab22ad4f28117bb2a68",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "dcaec0c04e7ae6edc72bee9aec442b467eb1ff6931fa90728dbf5d102595f0d4",
+      "note": "Cabinet front and wash approach on +Z; basin excluded from support."
+    },
+    {
+      "prefab_guid": "67bc7776abb716749b6b77a46766ffbd",
+      "dependency_hash": "0ae8c87fd0f883afd000d58b5bb9d473",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "edd67647a9949287c3c917ec4354fa1726eec96278ee2aa6fe26b9e040139068",
+      "note": "Cabinet handles and doors on +Z."
+    },
+    {
+      "prefab_guid": "68ddc2075150d9d4a8160f07af1e7871",
+      "dependency_hash": "1309a01875344b76f205349cbf78d5d2",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "aea0fcce69fabe455e95326a329881ca04dcbe47dddf79689aa7c521c19f4cf0",
+      "note": "Door handles and opening approach on +Z."
+    },
+    {
+      "prefab_guid": "819cea96f36b98543948f4e047d0f6a1",
+      "dependency_hash": "9a4ccba5712d9bed7c579daa3490f5d7",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "7dc3187c3c4e0b262ef2205f181322b3bdb99acc0bb8c2941098a4d3e1d4965a",
+      "note": "Footboard toward +Z; pillow/headboard on -Z. Lateral access still requires separate clearance."
+    },
+    {
+      "prefab_guid": "8ecc689b945a37146837b24399a17dec",
+      "dependency_hash": "d13615b0fe459d460bf82b8388105860",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "46cb3d7e25844d6f6f0ffeea0e0e616a55e6b2698620d902beb15c66969b1a3d",
+      "note": "Spacebar/user edge on +Z; raised rear edge opposite."
+    },
+    {
+      "prefab_guid": "af3434cf6a8586d4da679ed6a70a3efb",
+      "dependency_hash": "2fe7c385a7facda6c6cb15fc19da9895",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "43022431aaeb79bee8666bdeac0dd9cf8a5c87a7c39312fa38a5c1c8c7f7a127",
+      "note": "Bowl and approach on +Z; tank behind."
+    },
+    {
+      "prefab_guid": "b96c5d7e27a687c4bac204a16c67bf12",
+      "dependency_hash": "1e927a777a28861ce81c4ebb73b269ec",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "547064e8a3571faed10088a2063bcaa9355de430d447cb3eeb8fef505e5df84c",
+      "note": "Oven controls and door on +Z. Prefab includes hood: whole assembly must retain native proportions."
+    },
+    {
+      "prefab_guid": "c09204094ef486b4cb845e12a7507e80",
+      "dependency_hash": "1b0b29e74575adc250a94b5e79316f03",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "dba6e490c27a627563da9a20aac1cad9b30fb2579b4d761d845556ec702ab3ce",
+      "note": "Seat entry on +Z; backrest behind seat on -Z."
+    },
+    {
+      "prefab_guid": "c64715f018568924cbb304343889d52f",
+      "dependency_hash": "c34132e2164bf228f5dd96164da2aeda",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "df1fbc53addc80b17e8c839519e7291731a1e5e261658c7f4f8232728ceeec65",
+      "note": "Drawers and knee opening on +Z; rear panel in opposite view.",
+      "support_regions": [
+        {
+          "surface_id": "surface-1",
+          "rectangle_xz": [
+            -0.8,
+            -0.3,
+            0.8,
+            0.3
+          ],
+          "roles": [
+            "desktop"
+          ]
+        }
+      ]
+    },
+    {
+      "prefab_guid": "d2c5214204d6940439812ca7ef67d50c",
+      "dependency_hash": "5d0acf9099bed8cbe6da98105e563388",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "8f4988f4b571a0b53d4a9278e3476e25b07b98042cb10acc2c5c4cfee97c5786",
+      "note": "Cabinet doors on +Z; sink basin is not a support surface."
+    }
+  ]
+}

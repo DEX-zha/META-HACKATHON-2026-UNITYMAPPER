@@ -234,3 +234,15 @@ L'agencement compact précédent a été rejeté par l'utilisateur : télé deva
 - Aucun appel fournisseur payant pour cette correction : extraction et catalogue existants réutilisés.
 
 Limites : circulation conservatrice par empreintes 2D, pas certification de toutes les collisions 3D ni de l'animation des portes. Dimensions adaptées au pack ; harmonie artistique, fidélité photométrique et identité parfaite des meubles non certifiées. T192–T199 restent ouverts selon leur périmètre global.
+
+
+## 2026-11-01 — Fondations House v1 (T224, T227, T230)
+
+- Atlas natif en preview isolée : 2 018 racines prefab, 15 groupes de pièces, 78 captures, 92 matériaux et 130 lumières incluant les inactives. Scène source inchangée, scène active et état dirty préservés. L'ancien run en pause a reçu son arrêt natif avant ces inspections.
+- Deux menus d'inspection C# mesurent 1 035 prefabs et rendent leurs vues fonctionnelles. Les propriétés géométriques ne qualifient pas automatiquement la face d'utilisation. Treize orientations sont revues et liées aux hashes prefab/image ; `Stove` contient aussi sa hotte. Les données revues sont reproductibles via `house-functional-reviews.json`.
+- Appuis : couverture exacte d'un rectangle par les triangles d'une surface, rejet des trous, débordements et doubles triangles. Surface du bureau qualifiée avec marge. Cette preuve ne certifie ni la charge mécanique ni l'espace libre au-dessus.
+- Contrats HouseProgram/Requirement/BuildingIR/AssetSemantics, validation des scopes, polygones, pièces en intersection, murs physiquement dupliqués, ouvertures et hauteurs d'étages. Aucun plafond de 20 rôles. Migration SQLite transactionnelle avec sauvegarde, sans réinitialiser le ledger ou les données legacy.
+- Jobs dépendants persistants, refus des cycles et reçus obsolètes, réconciliation exhaustive des lots. Défauts et corrections rejetées gardés après réouverture de la base, contexte par maison/étage/pièce/groupe. Un run terminé ne devient pas automatiquement qualifié.
+- Vérification : suite Python complète passée (323 tests à ce point), puis tests ciblés additionnels pour preuve image, support, scopes et topologie. Compilation Unity réussie et menus natifs exécutés ; pas de nouvel appel fournisseur payant.
+
+Limites actuelles : ce socle n'est pas encore branché à la génération du chat (T228), et ne corrige donc pas encore ses scènes produites. T225/T226 restent partiels. Les vues d'escalier comprennent des cadrages sous la volée ou vers un mur ; elles sont conservées comme observations non qualifiées. L'atlas ne certifie ni traversabilité, ni qualité HDRP nocturne, ni équivalence artistique. Les supports fonctionnels, dégagements, recettes et contrôles natifs doivent être complétés avant les paliers de génération. Aucune nouvelle maison n'est déclarée réussie.

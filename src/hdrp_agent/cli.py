@@ -26,11 +26,33 @@ def main(argv=None):
     reports=commands.add_parser('reports',help='Export durable operator evidence')
     reports_sub=reports.add_subparsers(dest='reports_command',required=True)
     report_export=reports_sub.add_parser('export');report_export.add_argument('session_id');report_export.add_argument('--output',type=Path,required=True)
+    house=commands.add_parser('house',help='House v1 reference evidence and durable design tools')
+    hs=house.add_subparsers(dest='house_command',required=True)
+    atlas=hs.add_parser('atlas');atlas.add_argument('directory',type=Path)
+    catalogue=hs.add_parser('import-catalogue');catalogue.add_argument('file',type=Path)
+    review=hs.add_parser('import-reviews');review.add_argument('file',type=Path);review.add_argument('--views',type=Path,required=True)
+    create=hs.add_parser('store-program');create.add_argument('file',type=Path)
+    status=hs.add_parser('status');status.add_argument('run_id')
     budget_cli.add_commands(commands)
     args=parser.parse_args(argv)
     try:
         settings=Settings.load(args.workspace,getattr(args,'provider_mode','live' if args.command=='probe' else 'offline'),args.env_file)
         store=Store(settings.db_path)
+        if args.command=='house':
+            from .house_store import HouseStore
+            from .house_catalogue import Catalogue
+            from .house_atlas import inspect_atlas
+            houses=HouseStore(store)
+            if args.house_command=='atlas':
+                result=inspect_atlas(args.directory)
+                print(json.dumps({k:result[k] for k in ('status','resolved_prefab_roots','source_unchanged','visual_qualified')}));return 0
+            if args.house_command=='import-catalogue':
+                print(json.dumps(dict(imported=Catalogue(houses).import_measurements(json.loads(args.file.read_text())))));return 0
+            if args.house_command=='import-reviews':
+                count=Catalogue(houses).import_reviews(json.loads(args.file.read_text()),args.views);print(json.dumps(dict(reviewed=count)));return 0
+            if args.house_command=='store-program':
+                program=houses.create(json.loads(args.file.read_text()));print(json.dumps(dict(run_id=program['run_id'],requirements=len(program['requirements']))));return 0
+            print(json.dumps(houses.snapshot(args.run_id),indent=2));return 0
         if args.command=='doctor':
             report=diagnose(settings);print(json.dumps(report,indent=2));return 0 if report['status']=='ready' else 2
         if args.command=='validate-local':

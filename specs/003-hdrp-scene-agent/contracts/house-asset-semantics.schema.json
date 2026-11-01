@@ -1,0 +1,240 @@
+{
+  "$defs": {
+    "SupportRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "surface_id": {
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$",
+          "title": "Surface Id",
+          "type": "string"
+        },
+        "rectangle_xz": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rectangle Xz",
+          "type": "array"
+        },
+        "roles": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Roles",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "surface_id",
+        "rectangle_xz",
+        "roles",
+        "evidence"
+      ],
+      "title": "SupportRegion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "asset-semantics.v1",
+      "default": "asset-semantics.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "prefab_guid": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Prefab Guid",
+      "type": "string"
+    },
+    "dependency_hash": {
+      "minLength": 16,
+      "title": "Dependency Hash",
+      "type": "string"
+    },
+    "prefab_path": {
+      "pattern": "^Assets/.+\\.prefab$",
+      "title": "Prefab Path",
+      "type": "string"
+    },
+    "bounds_center": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Bounds Center",
+      "type": "array"
+    },
+    "bounds_size": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Bounds Size",
+      "type": "array"
+    },
+    "forward": {
+      "anyOf": [
+        {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Forward"
+    },
+    "up": {
+      "default": [
+        0,
+        1,
+        0
+      ],
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Up",
+      "type": "array"
+    },
+    "front_status": {
+      "default": "unknown",
+      "enum": [
+        "unknown",
+        "hypothesis",
+        "qualified",
+        "not_applicable"
+      ],
+      "title": "Front Status",
+      "type": "string"
+    },
+    "front_evidence": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Front Evidence",
+      "type": "array"
+    },
+    "surfaces": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Surfaces",
+      "type": "array"
+    },
+    "support_regions": {
+      "items": {
+        "$ref": "#/$defs/SupportRegion"
+      },
+      "title": "Support Regions",
+      "type": "array"
+    },
+    "use_volumes": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Use Volumes",
+      "type": "array"
+    },
+    "sockets": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Sockets",
+      "type": "array"
+    },
+    "style_tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Style Tags",
+      "type": "array"
+    },
+    "measurement_evidence": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Measurement Evidence"
+    }
+  },
+  "required": [
+    "prefab_guid",
+    "dependency_hash",
+    "prefab_path",
+    "bounds_center",
+    "bounds_size"
+  ],
+  "title": "AssetSemantics",
+  "type": "object"
+}
