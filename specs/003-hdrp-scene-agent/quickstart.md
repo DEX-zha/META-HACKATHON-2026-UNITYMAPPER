@@ -1,5 +1,8 @@
 # Quickstart de réalisation et de recette
 
+> Extension active 2026-11-01 — maisons créatives : [house-quickstart.md](house-quickstart.md). Les sections historiques ci-dessous restent applicables au socle legacy.
+
+
 > **Mise à jour utilisateur du 2026-10-28** : plafond de consommation API de **150 USD encore disponibles**, suivi directement en micro-USD ; modèle `muse-spark-1.3-contributor` autorisé explicitement. La confirmation du solde restant est enregistrée une seule fois, sans recharge lors d’une nouvelle session. Cette instruction remplace les anciennes règles Standard/EUR et le blocage faute d’antériorité/changement/frais ; la clé reste dans `.env`, côté Python.
 
 **État vérifié : T001–T044 réalisées, J0/J1 et première boucle J2 réels exécutés.** Le premier candidat passe les métriques techniques, mais reste provisoire faute d’avis artistique ; la référence a été restaurée et recapturée. Les campagnes de valeur et la création de pièce restent à livrer. Voir [état détaillé](implementation-status.md).

@@ -10,6 +10,8 @@
 
 **Input**: Direction validée : construire et corriger des scènes Unity HDRP en inspectant leur rendu depuis plusieurs vues et de courtes vidéos, avec Muse et SAM 3.1. Le problème utilisateur est le nombre de reprises nécessaires pour l’éclairage indirect, les lumières volumétriques et la cohérence des environnements. Description : [hdrp-scene-agent-specs.md](../../hdrp-scene-agent-specs.md).
 
+> **Priorité active du 2026-11-01 — maisons créatives :** la prochaine livraison vise une maison explorable et détaillée, avec étages, ensembles fonctionnels, décoration contextuelle et ambiance, selon l’amendement HQ ci-dessous. Le parcours de correction d’éclairage demeure une capacité du socle ; il ne définit plus à lui seul la cible produit. Plan actif : [house-plan.md](house-plan.md).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Corriger l’éclairage d’une scène existante (Priority: P1)
@@ -244,3 +246,20 @@ Le chat montre ce que fait l’agent, ses vues et contours SAM, le run actif, la
 - CA-10 : commits lisibles et synchronisation Git SSH ; secrets, caches, états financiers et assets tiers volumineux hors historique initial.
 
 Hors première livraison : hébergement cloud, utilisateurs distants, collaboration simultanée, wrapper desktop natif, exécution de projets Unity arbitraires hors workspace enregistré, migration de tout Python vers Go, exécution autonome de code généré. Ces limites sont des choix de périmètre, pas des fonctionnalités déjà livrées.
+
+## Amendement HQ — Maison de jeu complète et créative (2026-11-01)
+
+La référence de qualité est `Assets/AtmosphericHouse/Scenes/House_worn_night.unity`, analysée dans [house-quality-reference.md](house-quality-reference.md). La capacité attendue est de concevoir une maison nouvelle avec les assets autorisés, à partir d’un brief et éventuellement de références. Un lancement déclenche les sous-étapes et corrections internes ; plusieurs appels modèle sont permis et comptabilisés.
+
+- **HQ-01 — Programme complet :** conserver tous les besoins imposés et l’inventaire par étage/pièce/ensemble/surface ; aucune troncature sémantique à 20 objets. Les limites techniques de requêtes provoquent un découpage du travail.
+- **HQ-02 — Créativité explicite :** distinguer observé, demandé, inféré et inventé ; les compléments créatifs suivent les usages, le style et les contraintes du brief. Une image n’est pas obligatoire.
+- **HQ-03 — Architecture :** pièces à dimensions plausibles, portails partagés réellement ouverts, plafonds/toiture et connexions multi-niveaux avec trémies, paliers et dégagements vérifiés.
+- **HQ-04 — Assets natifs :** assembler des prefabs complets, connectés et à échelle native ; qualifier face avant, supports, surfaces et volumes d’usage ; ne pas copier/modifier des meshes pour masquer les erreurs.
+- **HQ-05 — Aménagement :** fournir des ensembles fonctionnels complets et orientés, avec accès, supports et parcours ; ne pas valider une cuisine représentée par un meuble isolé.
+- **HQ-06 — Détails :** objets sur surfaces et murs, équipements, rangements, matériaux et usure contextualisés, avec zones de repos visuel ; la quantité seule ne qualifie pas la composition.
+- **HQ-07 — Ambiance :** rendu livré distinct de l’éclairage de diagnostic ; sources motivées, indirect/reflets/exposition et ombres inspectés dans Unity HDRP.
+- **HQ-08 — Observation/correction :** inspection utile de toutes les pièces et transitions, recadrage automatique des vues occultées, défauts persistants et patches locaux avec non-régression.
+- **HQ-09 — Exécution :** jobs durables, reprise réconciliée, budget global conservé, aucune relance d’appel inconnu, protection des modifications utilisateur. Les anciennes limites fixes d’essais/temps ne qualifient pas la réussite d’une maison ; elles sont remplacées dans `house_v1` par ordonnancement selon besoins, progrès et coûts admissibles.
+- **HQ-10 — Verdict :** séparation exécution/qualité ; besoin obligatoire absent, passage bloqué, support invalide ou preuve manquante interdit un résultat qualifié. La qualité artistique exige une recette explicite du palier, pas seulement un score modèle.
+
+Validation progressive : pièce riche → deux pièces reliées → maison avec étage → maison complète atmosphérique. Chaque palier doit généraliser à des briefs et plans différents de la référence ; copier la scène exemple ne satisfait pas l’exigence. Les données natives de la référence servent à qualifier des recettes et contrôles, pas à prétendre reconstruire une scène nouvelle depuis son image.

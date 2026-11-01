@@ -1,5 +1,8 @@
 # Modèle de données
 
+> Extension active 2026-11-01 — maisons créatives : [house-data-model.md](house-data-model.md). Les sections historiques ci-dessous restent applicables au socle legacy.
+
+
 > **Mise à jour utilisateur du 2026-10-28** : plafond de consommation API de **150 USD encore disponibles**, suivi directement en micro-USD ; modèle `muse-spark-1.3-contributor` autorisé explicitement. La confirmation du solde restant est enregistrée une seule fois, sans recharge lors d’une nouvelle session. Cette instruction remplace les anciennes règles Standard/EUR et le blocage faute d’antériorité/changement/frais ; la clé reste dans `.env`, côté Python.
 
 **Statut** : conception. [Schémas de transport](contracts/domain.schema.json) et [API](contracts/http-api.openapi.json). Les contraintes relationnelles ci-dessous complètent JSON Schema ; une réponse syntaxiquement valide ne suffit pas.

@@ -8,13 +8,15 @@
 
 **Input**: `specs/003-hdrp-scene-agent/spec.md` — 21 exigences, quatre parcours, huit critères de réussite.
 
+> **Plan actif — 2026-11-01 : [Maisons créatives et mapping détaillé](house-plan.md).** Il gouverne la prochaine livraison et remplace le périmètre « petite pièce d’abord puis forêt » comme direction produit. Les sections historiques ci-dessous documentent le socle ; leurs anciennes limites globales ne s’appliquent pas comme plafonds sémantiques à `house_v1`.
+
 ## Summary
 
 Construire un outil Unity qui inspecte le rendu réel d’une scène HDRP, diagnostique un défaut à partir de vues et de données du moteur, applique une correction limitée puis conserve uniquement les versions admissibles. Première preuve : une petite pièce existante, avant la création de pièces et l’extension forêt.
 
 Architecture retenue : fenêtre d’éditeur C# et adaptateur de commandes typées, reliés à un orchestrateur Python local. Muse Spark analyse les images et les courtes séquences ; SAM 3.1 intervient sur les surfaces ciblées, en complément des identités du moteur. L’orchestrateur conserve versions, preuves et budget dans SQLite et des fichiers locaux. Le modèle propose des données validées ; l’adaptateur applique une liste fermée d’opérations.
 
-Le socle est désormais implémenté ; les sections initiales conservent la conception historique du pilote. L’amendement actif du 2026-10-31 et `chat-plan.md` gouvernent la prochaine livraison. Les résultats réellement vérifiés sont dans `implementation-status.md` ; le chat Go reste à réaliser.
+Le socle est désormais implémenté ; les sections initiales conservent la conception historique du pilote. Le chat Go et son inspecteur visuel sont implémentés ; les résultats historiques sont consignés dans `implementation-status.md`. Le plan actif `house-plan.md` gouverne désormais la prochaine livraison, encore non implémentée.
 
 ## Technical Context
 

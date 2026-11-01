@@ -712,3 +712,39 @@ Les tâches ci-dessus restent ouvertes : aucun passage global de recette n'est r
 - [ ] T221 Ajouter une passe d'ambiance fondée sur les sources physiques, indirect, reflets et exposition ; qualifier un rendu intérieur nuit distinct du rendu technique neutre.
 - [ ] T222 Faire corriger les défauts d'inventaire, orientation, ouverture, support et composition après inspection ; rejeter et recadrer les vues bouchées ; ne pas présenter un candidat incomplet comme une création validée.
 - [ ] T223 Qualifier une pièce entièrement aménagée, deux pièces reliées, puis une maison avec étage, avec comparaison à la référence de qualité et recette utilisateur ; aucune équivalence artistique anticipée.
+
+
+### Décomposition exécutable du plan House v1 — 2026-11-01
+
+T216–T223 ci-dessus sont les épiques de qualité et restent ouvertes jusqu’à preuve native. Les tâches ci-dessous les détaillent sans déclarer leur implémentation. Ordre de livraison et contrats : `house-plan.md`.
+
+- [ ] T224 (J0, épique T216) Produire l’atlas natif isolé de House_worn_night : instances résolues, niveaux, pièces, vues intérieures et transitions ; source inchangée. Dépend : éditeur disponible.
+- [ ] T225 (J0, T218) Implémenter export/stockage versionné `AssetSemantics` dans `house_catalogue.py` et un inspecteur C# ; bounds, faces, supports, sockets et dégagements. Dépend : T224.
+- [ ] T226 (J0, T218) Qualifier les assets des premières recettes cuisine/bureau/chambre/salon/sanitaires, avec contre-exemples d’orientation et d’appui. Dépend : T225.
+- [ ] T227 (J1, T217) Ajouter contrats HouseProgram/Requirement/BuildingIR et migrations de jobs/défauts/gates ; préserver données legacy. Dépend : conception `house-data-model.md`.
+- [ ] T228 (J1, T217) Relier `generate_house`/mode `house_v1` à l’admission Python et au chat Go ; conserver idempotence, budget et contrôle de version. Dépend : T227.
+- [ ] T229 (J1, T217) Implémenter analyse hiérarchique et lots exhaustifs avec réconciliation ; tester inventaire >20 rôles, doublons, sortie tronquée et asset absent. Dépend : T227–T228.
+- [ ] T230 (J1/J6, T222) Persister obligations/défauts/essais rejetés et sélection de contexte par scope, sans oublier un défaut ancien. Dépend : T227.
+- [ ] T231 (J2, T219) Implémenter solveur métrique par étage, dimensions locales et frontières partagées ; préserver l’adaptateur d’observations image. Dépend : T226–T229.
+- [ ] T232 (J2, T219) Compiler l’enveloppe et les portails en modules natifs, avec débattement/cadres/seuils et reçus de provenance. Dépend : T231.
+- [ ] T233 (J2, T219) Vérifier chemin entrée/pièces/usages sur géométrie réelle, avec largeur/hauteur paramétrées ; tester porte dans mur plein, collider absent et parcours sans appui ; capsule, marche et pente paramétrées. Dépend : T232.
+- [ ] T234 (J3, T218) Implémenter recettes et solveur de groupes fonctionnels, faces qualifiées et supports ; généraliser au-delà du seul trio canapé/table/TV. Dépend : T226, T231.
+- [ ] T235 (J3, T218) Comparer alternatives locales d’aménagement avant agrandissement ; tester accès, cohérence des ensembles et dimensions de pièces. Dépend : T233–T234.
+- [ ] T236 (J6, T222) Relier constats natifs et Muse/SAM au registre de défauts dans `house_inspection.py`, y compris pour les entrées plan/image. Dépend : T230, T232.
+- [ ] T237 (J6, T222) Qualifier/rejeter les vues occultées, recadrer automatiquement et mesurer couverture des pièces/portails. Dépend : T236.
+- [ ] T238 (J6, T222) Implémenter patches typés locaux, invalidation des dépendances et rollback/non-régression dans `house_repairs.py` et C#. Dépend : T233–T237.
+- [ ] T239 (J4, T220) Planifier les détails par support/activité, densité relative et zones calmes ; tester contacts, intersections et répétitions. Dépend : T234–T238.
+- [ ] T240 (J4, T220) Appliquer palettes/finitions/usure et accessoires muraux, overrides propres au run et connexions prefab préservées. Dépend : T239.
+- [ ] T241 (J5, T221) Qualifier capture HDRP nocturne isolée sur Metal et protocole reproductible ; documenter repli en copie dédiée si nécessaire. Dépend : T224, T237.
+- [ ] T242 (J5, T221) Implémenter design lumière motivé par sources, indirect/reflets/exposition et reçus de bake ; comparaison technique/artistique distincte. Dépend : T240–T241.
+- [ ] T247 (J7, T222) Séparer execution_state/quality_state dans Python, contrats Go et UI ; besoins manquants et preuves insuffisantes visibles même après fin d’exécution ; soumission authentifiée de revue artistique liée aux preuves et à la version, invalidée par mutation. Dépend : T227–T228, T230.
+- [ ] T248 (J7, T222) Reprendre les jobs après redémarrage via reçus/idempotence, version/epoch/catalogue et coûts ; protéger les modifications utilisateur. Dépend : T228, T230, T238.
+- [ ] T249 (J7, T222) Remplacer les plafonds sémantiques d’essais par ordonnancement besoins/progrès/budget ; profiler coûts par job, détecter stagnation et appels inconnus. Dépend : T229, T238, T248.
+- [ ] T250 (J7, T222) Étendre le chat à la progression bâtiment/étage/pièce, défauts, avant/après et couverture native ; conserver médias authentifiés et horodatages. Dépend : T236–T237, T247.
+- [ ] T243 (palier A, T223) Qualifier une pièce riche sur trois briefs/variantes (bureau/cuisine/chambre), avec défauts injectés et recette artistique. Dépend : T235, T238–T242, T247–T250.
+- [ ] T244 (palier B, T223) Qualifier deux pièces connectées, besoins complets, détails et passages ; plans différents de la référence. Dépend : T243.
+- [ ] T245 (J2 multi-niveaux, T219) Ajouter étage, trémie, palier et module escalier au solveur/compilateur ; tester continuité et hauteur libre. Dépend : T226, T231–T233, T244.
+- [ ] T246 (palier C, T223) Qualifier maison à deux niveaux et traversée native complète, avec mobilier/détails et preuves de toutes les transitions. Dépend : T245, T238–T242.
+- [ ] T251 (palier D, T223) Qualifier maison atmosphérique avec sous-sol, variantes de briefs et plan inédit ; comparer aux catégories de l’atlas, sans copier les poses source. Dépend : T246, T248–T250.
+- [ ] T252 (recette, T223) Exécuter campagne non-régression : orientations 180°, porte bouchée, support absent, trémie fermée, caméra occultée, budget, interruption/reprise et changement utilisateur. Dépend : T251.
+- [ ] T253 (livraison, T223) Publier preuves par palier, coûts/performance et limites, puis enregistrer recette artistique ; aucun statut qualifié sans gates et complétude. Dépend : T252.

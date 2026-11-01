@@ -1,5 +1,8 @@
 # Recherche et décisions — Agent HDRP
 
+> Extension active 2026-11-01 — maisons créatives : [house-research.md](house-research.md). Les sections historiques ci-dessous restent applicables au socle legacy.
+
+
 **Date de consultation : 2026-10-28.** Sources primaires officielles ; inspection locale en lecture seule. Aucun accès modèle, bake ni capture de projet exécuté. Les choix d’ingénierie ci-dessous sont distingués des capacités documentées.
 
 ## R1 — Versions et capacité de la machine
