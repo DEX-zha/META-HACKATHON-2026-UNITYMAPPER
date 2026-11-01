@@ -159,6 +159,99 @@
       ],
       "image_sha256": "8f4988f4b571a0b53d4a9278e3476e25b07b98042cb10acc2c5c4cfee97c5786",
       "note": "Cabinet doors on +Z; sink basin is not a support surface."
+    },
+    {
+      "prefab_guid": "6102059d7e6313c4ca9b694e7178d0c0",
+      "dependency_hash": "55ddf5f4cb0e0756d0da5014f945b628",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "c7848b5221a2246efd57c29812744305d7a35c67b7999b203a00288c39234e25",
+      "note": "Display and logo face +Z; rear enclosure visible in opposite view."
+    },
+    {
+      "prefab_guid": "cf40c2c5669323e49900d579040023ff",
+      "dependency_hash": "4ea37ec07d12a31c17cf8e2c47b5c03e",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "3f5c9a8bd95fbeb7a0c6aad8153968e0802982820f935a59494ea149baf735e9",
+      "note": "Drawers and handles face +Z; continuous upper slab observed.",
+      "support_regions": [
+        {
+          "surface_id": "surface-5",
+          "rectangle_xz": [
+            -1.07457741,
+            -0.2216624,
+            1.06834956,
+            0.22175352899999998
+          ],
+          "roles": [
+            "tabletop_prop"
+          ]
+        }
+      ]
+    },
+    {
+      "prefab_guid": "97ffc7cd759d89f40b00ec63ad2990c7",
+      "dependency_hash": "8fe5c17970bcd2bce8751edf78559612",
+      "forward": [
+        0,
+        0,
+        1
+      ],
+      "image_sha256": "860714ae0d6e0b278300729c804138fc9c0d27b37d081fecd83da3c7480f2277",
+      "note": "Door handles and lower drawers face +Z."
+    },
+    {
+      "prefab_guid": "2b4caeb621658e145910e5d4912efcbe",
+      "dependency_hash": "cbf2ceeae655f589614a394b8ab71cac",
+      "forward": null,
+      "image_sha256": "e4b640a41a4c3f41ca63e4282476c860bed45168b672621de7bcbc3a47f715a7",
+      "note": "Open rectangular table accessible from either long side; no unique functional front.",
+      "front_status": "not_applicable",
+      "support_regions": [
+        {
+          "surface_id": "surface-0",
+          "rectangle_xz": [
+            -0.49724587000000003,
+            -0.2541333,
+            0.4972459000000001,
+            0.254133455
+          ],
+          "roles": [
+            "tabletop_prop"
+          ]
+        }
+      ]
+    },
+    {
+      "prefab_guid": "33f37ff2dfc8eef4881506f5cf6026bf",
+      "dependency_hash": "050b0f9f7301c0630ea69b99859c1951",
+      "forward": null,
+      "image_sha256": "3e0de6a0e68df7fc8c5373d9b78079babd7882c60baf939071dccc70c388d519",
+      "note": "Upright cylindrical holder, accessible from every side.",
+      "front_status": "not_applicable"
+    },
+    {
+      "prefab_guid": "34856f7e86188654abb4f0ba91da09c7",
+      "dependency_hash": "cab0d724ac27a418a9e29e2c953bab33",
+      "forward": null,
+      "image_sha256": "e855de7578990b72aca85dacab98922dc7046f3e1b8397cf510d2f07240916e6",
+      "note": "Closed notebook; no required approach direction for placement as tabletop detail.",
+      "front_status": "not_applicable"
+    },
+    {
+      "prefab_guid": "f70d9393a9629594789a442e47a124d4",
+      "dependency_hash": "385b0ee4b3f2636a0d0966f7e9a712c9",
+      "forward": null,
+      "image_sha256": "2a7f5a4f7783bd9b1e72c54c3db248e739726d62777571b92ac4796676bc7bfb",
+      "note": "Flat symmetric pad; no required functional front.",
+      "front_status": "not_applicable"
     }
   ]
 }

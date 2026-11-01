@@ -125,3 +125,25 @@ func TestActionConflictDoesNotEnqueueTwice(t *testing.T) {
 		t.Fatal(n, e)
 	}
 }
+
+func TestHouseActionDispatchIsDurable(t *testing.T) {
+	s, path := fixture(t)
+	ctx := context.Background()
+	_, err := s.SaveMessage(ctx, Message{ID: "house-message", ConversationID: "cp1", ProjectID: "p1", Role: "user", Text: "Create house", IdempotencyKey: "house-message"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	action := Action{ID: "house-action", ProjectID: "p1", ConversationID: "cp1", MessageID: "house-message", Kind: "generate_house", Args: json.RawMessage(`{"schema_version":"house.v1"}`), IdempotencyKey: "house-action"}
+	if _, err = s.QueueAction(ctx, action); err != nil {
+		t.Fatal(err)
+	}
+	s.Close()
+	s, err = Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if ok, err := s.ClaimDispatch(ctx, action.ID); err != nil || !ok {
+		t.Fatal(ok, err)
+	}
+}

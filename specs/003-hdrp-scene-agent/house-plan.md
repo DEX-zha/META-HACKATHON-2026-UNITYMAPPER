@@ -1,7 +1,7 @@
 # Plan d’implémentation — agent de maisons et de mapping créatif
 
 Date : 2026-11-01. Branche Git : `main`. Feature Spec Kit : `003-hdrp-scene-agent`.
-Statut : conception, non implémentée. Référence de qualité : [House_worn_night](house-quality-reference.md). Exigences actives : amendement HQ de [spec.md](spec.md).
+Statut : implémentation partielle et premiers essais natifs exécutés ; voir `house-implementation-tests.md`. Référence de qualité : [House_worn_night](house-quality-reference.md). Exigences actives : amendement HQ de [spec.md](spec.md).
 
 ## Résultat attendu
 

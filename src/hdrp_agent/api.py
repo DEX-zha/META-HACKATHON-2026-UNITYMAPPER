@@ -23,6 +23,7 @@ from . import reporting
 from .reference_worker import ReferenceWorker
 from .reference_commands import ReferenceCommands
 from .chat_turns import ChatTurns
+from .house_service import HouseService
 from .chat_api import attach as attach_chat
 
 
@@ -37,6 +38,7 @@ def create_app(settings=None):
     reference_worker=ReferenceWorker(settings,store,artifacts,orchestrator)
     app_commands=ReferenceCommands(settings,store,queue,artifacts)
     chat_turns=ChatTurns(settings,store,artifacts)
+    house_service=HouseService(settings,store,queue,artifacts,orchestrator.shutdown)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -49,6 +51,7 @@ def create_app(settings=None):
         reference_worker.recover_startup()
         app_commands.recover_startup()
         chat_turns.recover_startup()
+        house_service.recover_startup()
         async def monitor():
             while True:
                 await asyncio.sleep(1)
@@ -56,6 +59,10 @@ def create_app(settings=None):
                 await asyncio.to_thread(app_commands.reconcile)
         async def worker():
             while not orchestrator.shutdown.is_set():
+                house=await asyncio.to_thread(house_service.next_ready)
+                if house:
+                    await asyncio.to_thread(house_service.run,house)
+                    continue
                 reference=await asyncio.to_thread(reference_worker.next_ready)
                 if reference:
                     await asyncio.to_thread(reference_worker.run,reference)
@@ -78,6 +85,7 @@ def create_app(settings=None):
     app.state.orchestrator=orchestrator
     app.state.reference_worker=reference_worker
     app.state.app_commands=app_commands
+    app.state.house_service=house_service
     attach_chat(app,settings,store,artifacts,chat_turns)
 
     @app.middleware('http')
@@ -143,14 +151,20 @@ def create_app(settings=None):
 
     @app.post('/v1/app/actions',status_code=202)
     async def admit_action(request: Request):
-        return await asyncio.to_thread(app_commands.admit,await body(request,'AppActionRequest'))
+        data=await body(request,'AppActionRequest')
+        service=house_service if data['kind']=='generate_house' else app_commands
+        return await asyncio.to_thread(service.admit,data)
 
     @app.post('/v1/app/actions/{action_id}/stop',status_code=202)
     async def stop_action(action_id: str,request: Request):
-        return await asyncio.to_thread(app_commands.stop,action_id,await body(request,'StopRequest'))
+        service=house_service if house_service.owns(action_id) else app_commands
+        return await asyncio.to_thread(service.stop,action_id,await body(request,'StopRequest'))
 
     @app.get('/v1/app/actions/{action_id}')
-    def get_action(action_id: str):return app_commands.get(action_id)
+    def get_action(action_id: str):return (house_service if house_service.owns(action_id) else app_commands).get(action_id)
+
+    @app.get('/v1/app/actions/{action_id}/house')
+    def house_progress(action_id: str):return house_service.progress(action_id)
 
     @app.get('/v1/budget')
     def get_budget(): return payload('Budget',budget.state())

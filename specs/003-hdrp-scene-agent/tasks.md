@@ -722,7 +722,7 @@ T216–T223 ci-dessus sont les épiques de qualité et restent ouvertes jusqu’
 - [ ] T225 (J0, T218) Implémenter export/stockage versionné `AssetSemantics` dans `house_catalogue.py` et un inspecteur C# ; bounds, faces, supports, sockets et dégagements. Dépend : T224.
 - [ ] T226 (J0, T218) Qualifier les assets des premières recettes cuisine/bureau/chambre/salon/sanitaires, avec contre-exemples d’orientation et d’appui. Dépend : T225.
 - [x] T227 (J1, T217) Ajouter contrats HouseProgram/Requirement/BuildingIR et migrations de jobs/défauts/gates ; préserver données legacy. Dépend : conception `house-data-model.md`.
-- [ ] T228 (J1, T217) Relier `generate_house`/mode `house_v1` à l’admission Python et au chat Go ; conserver idempotence, budget et contrôle de version. Dépend : T227.
+- [x] T228 (J1, T217) Relier `generate_house`/mode `house_v1` à l’admission Python et au chat Go ; conserver idempotence, budget et contrôle de version. Dépend : T227.
 - [ ] T229 (J1, T217) Implémenter analyse hiérarchique et lots exhaustifs avec réconciliation ; tester inventaire >20 rôles, doublons, sortie tronquée et asset absent. Dépend : T227–T228.
 - [x] T230 (J1/J6, T222) Persister obligations/défauts/essais rejetés et sélection de contexte par scope, sans oublier un défaut ancien. Dépend : T227.
 - [ ] T231 (J2, T219) Implémenter solveur métrique par étage, dimensions locales et frontières partagées ; préserver l’adaptateur d’observations image. Dépend : T226–T229.
@@ -751,3 +751,6 @@ T216–T223 ci-dessus sont les épiques de qualité et restent ouvertes jusqu’
 
 
 Avancement House v1 du 2026-11-01 : T224 livre un atlas d'observations natif, pas une certification des cadrages ni du parcours (T237/T241 restent ouverts). T227 couvre contrats et migration ; admission/exécution chat relèvent de T228. T230 couvre l'archive et le contexte persistant, sans prétendre exécuter les patches de T238. T225/T226 sont partiels : 1 035 mesures, 13 faces revues et un support de bureau validé ; sockets, dégagements et recettes complètes restent à qualifier. Preuves : `house-native-evidence.json`, `house-functional-reviews.json`, `implementation-status.md`.
+
+
+Avancement exécution House v1 : admission `generate_house` connectée de bout en bout (T228), migration Go préservant actions/outbox, programme par pièce, recettes à taille native et inventaire persistant. Assemblage isolé avec sols/plafonds, contrôle capsule sur maillages, captures cardinales et rapprochées, SAM réel et revue Muse exhaustive par lots. Décoration sur supports qualifiés et overlay SAM ajoutés. Ces éléments ne ferment pas T229–T253 : topologie multi-étages, débattements, correction native locale/rollback, reprise réconciliée, ambiance bake et recette artistique restent ouverts. Détails et preuves : `house-implementation-tests.md`.

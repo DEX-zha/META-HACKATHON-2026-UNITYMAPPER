@@ -38,4 +38,5 @@ def test_chat_provider_schema_is_expandable_and_closed():
     schema=strict_schema('ModelChatResponse')
     assert schema['additionalProperties'] is False
     assert '$ref' not in str(schema)
-    assert len(DOMAIN['$defs']['ChatToolProposal']['anyOf'])==6
+    assert {'$ref':'#/$defs/ChatToolGenerateHouse'} in DOMAIN['$defs']['ChatToolProposal']['anyOf']
+    assert len(DOMAIN['$defs']['ChatToolProposal']['anyOf'])==7

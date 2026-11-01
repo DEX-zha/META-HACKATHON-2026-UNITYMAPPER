@@ -32,12 +32,13 @@ class Catalogue:
         if not row:raise AgentError('SEMANTICS_UNQUALIFIED','Prefab dependency hash is not measured')
         return json.loads(row[0])
 
-    def qualify_front(self,guid,dependency_hash,forward,evidence):
+    def qualify_front(self,guid,dependency_hash,forward,evidence,*,status="qualified"):
+        if status not in {"qualified","not_applicable"} or (status=="not_applicable" and forward is not None):raise AgentError("SEMANTICS_UNQUALIFIED","Invalid reviewed orientation status")
         if not evidence or any(not isinstance(e,dict) or e.get('kind') not in {'reviewed_multiview','trusted_annotation','qualified_recipe'} or not e.get('reference') or not e.get('reviewer') for e in evidence):raise AgentError('SEMANTICS_UNQUALIFIED','Functional front needs reviewed evidence, not an implicit prefab axis')
         with self.store.tx() as c:
             row=c.execute('SELECT body FROM asset_semantics WHERE prefab_guid=? AND dependency_hash=?',(guid,dependency_hash)).fetchone()
             if not row:raise AgentError('SEMANTICS_UNQUALIFIED','Prefab must be measured first')
-            data=json.loads(row[0]);data.update(forward=forward,front_status='qualified',front_evidence=[canonical(e) for e in evidence]);a=AssetSemantics.model_validate(data)
+            data=json.loads(row[0]);data.update(forward=forward,front_status=status,front_evidence=[canonical(e) for e in evidence]);a=AssetSemantics.model_validate(data)
             c.execute('UPDATE asset_semantics SET body=? WHERE prefab_guid=? AND dependency_hash=?',(canonical(a.model_dump(mode='json')),guid,dependency_hash))
             self.store.event(c,guid,'house.front_qualified',dict(dependency_hash=dependency_hash,forward=forward,evidence=evidence))
         return a.model_dump(mode='json')
@@ -87,7 +88,7 @@ class Catalogue:
                 raise AgentError('STALE_EVIDENCE','Reviewed preview image changed')
             data=self.get(guid,row['dependency_hash'])
             evidence=dict(kind='reviewed_multiview',reference=row['image_sha256'],reviewer=document['reviewer'],note=row['note'])
-            data.update(forward=row['forward'],front_status='qualified',front_evidence=[canonical(evidence)])
+            data.update(forward=row['forward'],front_status=row.get('front_status','qualified'),front_evidence=[canonical(evidence)])
             AssetSemantics.model_validate(data)
             from .house_supports import footprint_supported
             from .house_domain import SupportRegion
@@ -98,7 +99,7 @@ class Catalogue:
                     raise AgentError('SEMANTICS_UNQUALIFIED','Reviewed support is outside actual mesh surface')
             prepared.append((row,evidence))
         for row,evidence in prepared:
-            self.qualify_front(row['prefab_guid'],row['dependency_hash'],row['forward'],[evidence])
+            self.qualify_front(row['prefab_guid'],row['dependency_hash'],row['forward'],[evidence],status=row.get('front_status','qualified'))
             for region in row.get('support_regions',[]):
                 self.qualify_support(row['prefab_guid'],row['dependency_hash'],region['surface_id'],region['rectangle_xz'],region['roles'],[evidence])
         return len(prepared)

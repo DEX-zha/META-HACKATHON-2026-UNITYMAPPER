@@ -55,8 +55,10 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 		return out, e
 	}
 	id := ""
+	house := false
 	for _, a := range actions {
 		if a.ID == action {
+			house = a.Kind == "generate_house"
 			var r struct {
 				Run string `json:"run_id"`
 			}
@@ -68,8 +70,26 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 		return out, errors.New("run unavailable")
 	}
 	root := filepath.Join(s.Config.Workspace, ".hdrp-agent", "reconstructions", id)
+	if house {
+		root = filepath.Join(s.Config.Workspace, ".hdrp-agent", "house", "runs", id)
+		var progress json.RawMessage
+		if s.Agent.Do(ctx, "GET", "/v1/app/actions/"+action+"/house", nil, &progress) == nil {
+			out.Observations = progress
+			var p struct {
+				State   string `json:"state"`
+				Message string `json:"message"`
+			}
+			if json.Unmarshal(progress, &p) == nil {
+				out.State = p.State
+				out.Message = p.Message
+			}
+		}
+	}
 	resolved, e := filepath.EvalSymlinks(root)
 	if e != nil || resolved != root {
+		if house {
+			return out, nil
+		}
 		return out, errors.New("evidence unavailable")
 	}
 	filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
@@ -83,14 +103,21 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 			}
 			return nil
 		}
-		if !visualFile.MatchString(filepath.ToSlash(rel)) || !safeEvidence(root, path, 32<<20) {
+		allowed := visualFile.MatchString(filepath.ToSlash(rel))
+		if house {
+			allowed = regexp.MustCompile(`^view-[0-9]+\.png$`).MatchString(rel)
+		}
+		if !allowed || !safeEvidence(root, path, 32<<20) {
 			return nil
 		}
 		st, _ := os.Stat(path)
 		sum := sha256.Sum256([]byte(rel))
 		kind := "prefab"
+		if house {
+			kind = "unity"
+		}
 		switch {
-		case rel[:6] == "input-":
+		case len(rel) >= 6 && rel[:6] == "input-":
 			kind = "reference"
 		case len(rel) > 14 && rel[:14] == "asset-matching":
 			kind = "comparison"

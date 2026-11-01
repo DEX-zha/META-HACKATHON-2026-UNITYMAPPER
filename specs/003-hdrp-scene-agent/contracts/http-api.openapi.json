@@ -3,7 +3,7 @@
   "info": {
     "title": "HDRP Agent loopback API",
     "version": "1.0.0",
-    "description": "Conception non implémentée. Contraintes métier : editor-bridge.md et data-model.md."
+    "description": "Conception non impl\u00e9ment\u00e9e. Contraintes m\u00e9tier : editor-bridge.md et data-model.md."
   },
   "servers": [
     {
@@ -19,7 +19,7 @@
     "/health": {
       "get": {
         "operationId": "health",
-        "summary": "État local, sans appel fournisseur",
+        "summary": "\u00c9tat local, sans appel fournisseur",
         "responses": {
           "200": {
             "description": "Success",
@@ -97,7 +97,7 @@
     "/v1/projects/register": {
       "post": {
         "operationId": "registerProject",
-        "summary": "Inscription locale et capacités",
+        "summary": "Inscription locale et capacit\u00e9s",
         "responses": {
           "200": {
             "description": "Success",
@@ -197,7 +197,7 @@
     "/v1/sessions": {
       "post": {
         "operationId": "createSession",
-        "summary": "Figer brief, critères et limites",
+        "summary": "Figer brief, crit\u00e8res et limites",
         "responses": {
           "202": {
             "description": "Success",
@@ -297,7 +297,7 @@
     "/v1/sessions/{session_id}": {
       "get": {
         "operationId": "getSession",
-        "summary": "État et meilleure version",
+        "summary": "\u00c9tat et meilleure version",
         "responses": {
           "200": {
             "description": "Success",
@@ -385,7 +385,7 @@
     "/v1/sessions/{session_id}/stop": {
       "post": {
         "operationId": "stopSession",
-        "summary": "Arrêt et annulation sûrs",
+        "summary": "Arr\u00eat et annulation s\u00fbrs",
         "responses": {
           "202": {
             "description": "Success",
@@ -601,7 +601,7 @@
     "/v1/sessions/{session_id}/report": {
       "get": {
         "operationId": "getReport",
-        "summary": "Rapport opérateur, jamais contexte planificateur",
+        "summary": "Rapport op\u00e9rateur, jamais contexte planificateur",
         "responses": {
           "200": {
             "description": "Success",
@@ -689,7 +689,7 @@
     "/v1/budget": {
       "get": {
         "operationId": "getBudget",
-        "summary": "Grand livre global ; inconnus inclus dans réservations actives",
+        "summary": "Grand livre global ; inconnus inclus dans r\u00e9servations actives",
         "responses": {
           "200": {
             "description": "Success",
@@ -955,7 +955,7 @@
     "/v1/bridge/commands/{command_id}/progress": {
       "post": {
         "operationId": "commandProgress",
-        "summary": "Battement et réception de demande d’annulation",
+        "summary": "Battement et r\u00e9ception de demande d\u2019annulation",
         "responses": {
           "200": {
             "description": "Success",
@@ -1053,7 +1053,7 @@
     "/v1/bridge/commands/{command_id}/result": {
       "post": {
         "operationId": "commandResult",
-        "summary": "Reçu durable idempotent, contrôlé par hash",
+        "summary": "Re\u00e7u durable idempotent, contr\u00f4l\u00e9 par hash",
         "responses": {
           "200": {
             "description": "Success",
@@ -1151,7 +1151,7 @@
     "/v1/artifacts/{sha256}": {
       "put": {
         "operationId": "putArtifact",
-        "summary": "Dépôt immuable, hash et taille contrôlés",
+        "summary": "D\u00e9p\u00f4t immuable, hash et taille contr\u00f4l\u00e9s",
         "responses": {
           "201": {
             "description": "Success",
@@ -1248,7 +1248,7 @@
       },
       "get": {
         "operationId": "getArtifact",
-        "summary": "Lire un artefact autorisé",
+        "summary": "Lire un artefact autoris\u00e9",
         "responses": {
           "200": {
             "description": "Artifact bytes",
@@ -2896,6 +2896,9 @@
           },
           {
             "$ref": "#/components/schemas/PrepareReferenceCommand"
+          },
+          {
+            "$ref": "#/components/schemas/BuildHouseCommand"
           }
         ]
       },
@@ -5133,6 +5136,115 @@
                 "pattern": "^[A-Za-z0-9_.:-]+$"
               }
             }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schema_version",
+              "action_id",
+              "project_id",
+              "conversation_id",
+              "message_id",
+              "kind",
+              "expected_scene_version",
+              "artifact_hashes",
+              "parameters",
+              "idempotency_key"
+            ],
+            "properties": {
+              "schema_version": {
+                "const": "1.0"
+              },
+              "action_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "project_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "conversation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "message_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "kind": {
+                "const": "generate_house"
+              },
+              "expected_scene_version": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 128
+              },
+              "artifact_hashes": {
+                "type": "array",
+                "maxItems": 12,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "schema_version": {
+                    "const": "house.v1"
+                  },
+                  "brief": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16000
+                  },
+                  "reference_hashes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Hash"
+                    }
+                  },
+                  "interior_style": {
+                    "enum": [
+                      "A",
+                      "B",
+                      "C"
+                    ]
+                  },
+                  "creative_policy": {
+                    "enum": [
+                      "brief_guided",
+                      "reference_guided"
+                    ]
+                  }
+                },
+                "required": [
+                  "schema_version",
+                  "brief",
+                  "reference_hashes",
+                  "interior_style",
+                  "creative_policy"
+                ]
+              },
+              "idempotency_key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              }
+            }
           }
         ]
       },
@@ -5578,6 +5690,9 @@
           },
           {
             "$ref": "#/components/schemas/ChatToolStopRun"
+          },
+          {
+            "$ref": "#/components/schemas/ChatToolGenerateHouse"
           }
         ]
       },
@@ -6217,6 +6332,322 @@
           "openings",
           "objects",
           "limits"
+        ],
+        "additionalProperties": false
+      },
+      "ChatToolGenerateHouse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "generate_house"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "schema_version": {
+                "const": "house.v1"
+              },
+              "brief": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16000
+              },
+              "reference_hashes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Hash"
+                }
+              },
+              "interior_style": {
+                "enum": [
+                  "A",
+                  "B",
+                  "C"
+                ]
+              },
+              "creative_policy": {
+                "enum": [
+                  "brief_guided",
+                  "reference_guided"
+                ]
+              }
+            },
+            "required": [
+              "schema_version",
+              "brief",
+              "reference_hashes",
+              "interior_style",
+              "creative_policy"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "parameters"
+        ]
+      },
+      "ModelHouseOutline": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "purpose": {
+                  "type": "string"
+                },
+                "floor_index": {
+                  "type": "integer",
+                  "minimum": -2,
+                  "maximum": 5
+                },
+                "width_m": {
+                  "type": "number",
+                  "minimum": 3,
+                  "maximum": 30
+                },
+                "depth_m": {
+                  "type": "number",
+                  "minimum": 3,
+                  "maximum": 30
+                },
+                "brief": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "purpose",
+                "floor_index",
+                "width_m",
+                "depth_m",
+                "brief"
+              ]
+            }
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "rooms",
+          "unresolved"
+        ]
+      },
+      "ModelHouseRoom": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "room_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/Id"
+                },
+                "recipe": {
+                  "enum": [
+                    "office",
+                    "kitchen",
+                    "bedroom",
+                    "living",
+                    "bathroom",
+                    "dining",
+                    "storage",
+                    "custom"
+                  ]
+                },
+                "priority": {
+                  "enum": [
+                    "mandatory",
+                    "preferred",
+                    "optional"
+                  ]
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "recipe",
+                "priority",
+                "description"
+              ]
+            }
+          },
+          "detail_assets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "room_id",
+          "groups",
+          "detail_assets",
+          "unresolved"
+        ]
+      },
+      "ModelHouseInspection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "room_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "instance_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "orientation",
+                    "support",
+                    "collision",
+                    "passage",
+                    "missing",
+                    "lighting",
+                    "composition",
+                    "occlusion"
+                  ]
+                },
+                "severity": {
+                  "enum": [
+                    "blocking",
+                    "warning"
+                  ]
+                },
+                "message": {
+                  "type": "string"
+                },
+                "suggested_action": {
+                  "enum": [
+                    "move",
+                    "rotate",
+                    "replace",
+                    "reframe",
+                    "measure",
+                    "none"
+                  ]
+                },
+                "translation_m": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "yaw_delta": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "instance_id",
+                "kind",
+                "severity",
+                "message",
+                "suggested_action",
+                "translation_m",
+                "yaw_delta"
+              ]
+            }
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "room_id",
+          "observations",
+          "summary"
+        ]
+      },
+      "BuildHousePayload": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "manifest_hash": {
+            "$ref": "#/components/schemas/Hash"
+          }
+        },
+        "required": [
+          "run_id",
+          "manifest_hash"
+        ]
+      },
+      "BuildHouseCommand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "session_id": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "kind": {
+            "const": "build_house"
+          },
+          "expected_version": {
+            "$ref": "#/components/schemas/Id"
+          },
+          "payload_hash": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/BuildHousePayload"
+          },
+          "deadline_utc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bridge_epoch": {
+            "$ref": "#/components/schemas/Id"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "kind",
+          "expected_version",
+          "payload_hash",
+          "payload",
+          "deadline_utc",
+          "bridge_epoch"
         ],
         "additionalProperties": false
       }

@@ -246,3 +246,7 @@ Limites : circulation conservatrice par empreintes 2D, pas certification de tout
 - Vérification : suite Python complète passée (323 tests à ce point), puis tests ciblés additionnels pour preuve image, support, scopes et topologie. Compilation Unity réussie et menus natifs exécutés ; pas de nouvel appel fournisseur payant.
 
 Limites actuelles : ce socle n'est pas encore branché à la génération du chat (T228), et ne corrige donc pas encore ses scènes produites. T225/T226 restent partiels. Les vues d'escalier comprennent des cadrages sous la volée ou vers un mur ; elles sont conservées comme observations non qualifiées. L'atlas ne certifie ni traversabilité, ni qualité HDRP nocturne, ni équivalence artistique. Les supports fonctionnels, dégagements, recettes et contrôles natifs doivent être complétés avant les paliers de génération. Aucune nouvelle maison n'est déclarée réussie.
+
+## House v1 — jalon exécutable du 1 novembre 2026
+
+Admission chat et assemblage isolé reliés, contrôles natifs de supports/parcours, inspection SAM/Muse et premiers détails sur supports qualifiés. **337 tests Python**, suites Go et cinq cas natifs de parcours passent. Le bureau avec huit équipements/accessoires a été exécuté dans Unity ; source préservée. La génération de maison complète, la boucle native de corrections, les étages et l'ambiance finale restent ouverts. État détaillé : [house-implementation-tests.md](house-implementation-tests.md) ; tâches T228 cochée, autres tâches seulement selon leurs preuves existantes.

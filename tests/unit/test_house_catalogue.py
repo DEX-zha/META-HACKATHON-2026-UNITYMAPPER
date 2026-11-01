@@ -55,3 +55,11 @@ def test_review_import_is_bound_to_exact_preview(tmp_path):
     assert c.get('a'*32,'b'*32)['front_status']=='unknown'
     (tmp_path/'preview.png').write_bytes(b'reviewed-image')
     assert c.import_reviews(review,tmp_path)==1
+
+
+def test_symmetric_front_still_requires_explicit_review(tmp_path):
+    c=Catalogue(HouseStore(Store(tmp_path/'s.db')));c.import_measurements([measured()])
+    with pytest.raises(AgentError):c.qualify_front('a'*32,'b'*32,None,[],status='not_applicable')
+    evidence=[dict(kind='reviewed_multiview',reference='symmetric-table',reviewer='operator')]
+    result=c.qualify_front('a'*32,'b'*32,None,evidence,status='not_applicable')
+    assert result['forward'] is None and result['front_status']=='not_applicable'

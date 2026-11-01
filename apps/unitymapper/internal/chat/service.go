@@ -195,13 +195,14 @@ func (s *Service) accept(ctx context.Context, c store.Conversation, m store.Chat
 		aid := fmt.Sprintf("%s-tool-%d", m.ID, i)
 		_, e := s.DB.QueueAction(ctx, store.Action{ID: aid, ProjectID: c.ProjectID, ConversationID: c.ID, MessageID: m.ID, Kind: tool.Kind, Args: tool.Parameters, ExpectedSceneVersion: p.Version, IdempotencyKey: aid})
 		if e != nil {
-			continue
+			s.DB.MessageStatus(ctx, m.ID, "failed")
+			return
 		}
 		ok, e := s.DB.ClaimDispatch(ctx, aid)
 		if e != nil || !ok {
 			continue
 		}
-		if tool.Kind != "reconstruct_reference" {
+		if tool.Kind != "reconstruct_reference" && tool.Kind != "generate_house" {
 			s.DB.RecordAction(ctx, aid, "failed", json.RawMessage(`{"error_code":"CAPABILITY_MISSING"}`), false)
 			continue
 		}

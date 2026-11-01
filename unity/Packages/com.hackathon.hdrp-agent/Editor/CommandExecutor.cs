@@ -31,6 +31,7 @@ namespace HdrpAgent.Editor
             if(DateTimeOffset.Parse(incoming.deadline_utc)<=DateTimeOffset.UtcNow){Finish(Failure("DEADLINE","Deadline expired","cancelled"));return;}
             if(!handlers.TryGetValue(incoming.kind,out var handler)){Finish(Failure("CAPABILITY_MISSING","Command kind is not implemented"));return;}
             if(incoming.kind!="inspect" && incoming.expected_version!=CurrentVersion()){Finish(Failure("STALE_VERSION","Scene version changed"));return;}
+            if(UnityEngine.SceneManagement.SceneManager.GetActiveScene().isDirty&&incoming.kind!="inspect"&&incoming.kind!="build_house"){Finish(Failure("CONCURRENT_EDIT","Unsaved user scene permits isolated house construction and inspection only"));return;}
             try{job=handler(incoming);}catch(Exception){Finish(Failure("COMMAND_FAILED","Command initialization failed"));}
         }
         public static CommandResult Failure(string code,string message,string status="failed") => new CommandResult {

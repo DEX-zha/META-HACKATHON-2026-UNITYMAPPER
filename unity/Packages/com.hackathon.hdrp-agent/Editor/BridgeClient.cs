@@ -107,12 +107,12 @@ namespace HdrpAgent.Editor
         }
         static void Register(){
             var scene=SceneManager.GetActiveScene();
-            if(!scene.IsValid()||string.IsNullOrEmpty(scene.path)||scene.isDirty){Status="Save the working scene before registering";nextPoll=EditorApplication.timeSinceStartup+2;return;}
+            if(!scene.IsValid()||string.IsNullOrEmpty(scene.path)){Status="A named working scene is required before registering";nextPoll=EditorApplication.timeSinceStartup+2;return;}
             if(UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline==null||SystemInfo.graphicsDeviceType!=UnityEngine.Rendering.GraphicsDeviceType.Metal){Status="HDRP/Metal capability missing";return;}
             SceneId="scene-"+AssetDatabase.AssetPathToGUID(scene.path);
             var data=new {project_id=ProjectId,scene_id=SceneId,project_root=Directory.GetParent(Application.dataPath).FullName,working_scene_path=scene.path,
                 editor_version=Application.unityVersion,hdrp_version="17.3.0",graphics_api="Metal",scene_version=CommandExecutor.CurrentVersion(),
-                capabilities=CommandExecutor.Capabilities.Concat(new[]{"bridge-v1","durable-receipts"}).ToArray(),bridge_epoch=Epoch};
+                capabilities=CommandExecutor.Capabilities.Where(k=>!scene.isDirty||k=="inspect"||k=="build_house").Concat(new[]{"bridge-v1","durable-receipts"}).ToArray(),bridge_epoch=Epoch};
             Request("POST","/v1/projects/register",BridgeJson.Write(data),Epoch+"-"+registrationNonce+"-"+SceneId+"-"+data.scene_version,(ok,text)=>{Registered=ok;Status=ok?"Connected (offline capabilities only until qualified)":"Registration failed; inspect local service";});
         }
         static void SendResult(string id){

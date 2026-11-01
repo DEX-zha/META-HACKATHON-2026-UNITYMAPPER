@@ -1429,6 +1429,9 @@
         },
         {
           "$ref": "#/$defs/PrepareReferenceCommand"
+        },
+        {
+          "$ref": "#/$defs/BuildHouseCommand"
         }
       ]
     },
@@ -3666,6 +3669,115 @@
               "pattern": "^[A-Za-z0-9_.:-]+$"
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "action_id",
+            "project_id",
+            "conversation_id",
+            "message_id",
+            "kind",
+            "expected_scene_version",
+            "artifact_hashes",
+            "parameters",
+            "idempotency_key"
+          ],
+          "properties": {
+            "schema_version": {
+              "const": "1.0"
+            },
+            "action_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "project_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "conversation_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "message_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            },
+            "kind": {
+              "const": "generate_house"
+            },
+            "expected_scene_version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 128
+            },
+            "artifact_hashes": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "schema_version": {
+                  "const": "house.v1"
+                },
+                "brief": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16000
+                },
+                "reference_hashes": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Hash"
+                  }
+                },
+                "interior_style": {
+                  "enum": [
+                    "A",
+                    "B",
+                    "C"
+                  ]
+                },
+                "creative_policy": {
+                  "enum": [
+                    "brief_guided",
+                    "reference_guided"
+                  ]
+                }
+              },
+              "required": [
+                "schema_version",
+                "brief",
+                "reference_hashes",
+                "interior_style",
+                "creative_policy"
+              ]
+            },
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_.:-]+$"
+            }
+          }
         }
       ]
     },
@@ -4111,6 +4223,9 @@
         },
         {
           "$ref": "#/$defs/ChatToolStopRun"
+        },
+        {
+          "$ref": "#/$defs/ChatToolGenerateHouse"
         }
       ]
     },
@@ -4750,6 +4865,322 @@
         "openings",
         "objects",
         "limits"
+      ],
+      "additionalProperties": false
+    },
+    "ChatToolGenerateHouse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "generate_house"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema_version": {
+              "const": "house.v1"
+            },
+            "brief": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            },
+            "reference_hashes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Hash"
+              }
+            },
+            "interior_style": {
+              "enum": [
+                "A",
+                "B",
+                "C"
+              ]
+            },
+            "creative_policy": {
+              "enum": [
+                "brief_guided",
+                "reference_guided"
+              ]
+            }
+          },
+          "required": [
+            "schema_version",
+            "brief",
+            "reference_hashes",
+            "interior_style",
+            "creative_policy"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "parameters"
+      ]
+    },
+    "ModelHouseOutline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "rooms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/Id"
+              },
+              "purpose": {
+                "type": "string"
+              },
+              "floor_index": {
+                "type": "integer",
+                "minimum": -2,
+                "maximum": 5
+              },
+              "width_m": {
+                "type": "number",
+                "minimum": 3,
+                "maximum": 30
+              },
+              "depth_m": {
+                "type": "number",
+                "minimum": 3,
+                "maximum": 30
+              },
+              "brief": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "purpose",
+              "floor_index",
+              "width_m",
+              "depth_m",
+              "brief"
+            ]
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "title",
+        "rooms",
+        "unresolved"
+      ]
+    },
+    "ModelHouseRoom": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "room_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/Id"
+              },
+              "recipe": {
+                "enum": [
+                  "office",
+                  "kitchen",
+                  "bedroom",
+                  "living",
+                  "bathroom",
+                  "dining",
+                  "storage",
+                  "custom"
+                ]
+              },
+              "priority": {
+                "enum": [
+                  "mandatory",
+                  "preferred",
+                  "optional"
+                ]
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "recipe",
+              "priority",
+              "description"
+            ]
+          }
+        },
+        "detail_assets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "room_id",
+        "groups",
+        "detail_assets",
+        "unresolved"
+      ]
+    },
+    "ModelHouseInspection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "room_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "instance_id": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "orientation",
+                  "support",
+                  "collision",
+                  "passage",
+                  "missing",
+                  "lighting",
+                  "composition",
+                  "occlusion"
+                ]
+              },
+              "severity": {
+                "enum": [
+                  "blocking",
+                  "warning"
+                ]
+              },
+              "message": {
+                "type": "string"
+              },
+              "suggested_action": {
+                "enum": [
+                  "move",
+                  "rotate",
+                  "replace",
+                  "reframe",
+                  "measure",
+                  "none"
+                ]
+              },
+              "translation_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "yaw_delta": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "instance_id",
+              "kind",
+              "severity",
+              "message",
+              "suggested_action",
+              "translation_m",
+              "yaw_delta"
+            ]
+          }
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "room_id",
+        "observations",
+        "summary"
+      ]
+    },
+    "BuildHousePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "manifest_hash": {
+          "$ref": "#/$defs/Hash"
+        }
+      },
+      "required": [
+        "run_id",
+        "manifest_hash"
+      ]
+    },
+    "BuildHouseCommand": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "kind": {
+          "const": "build_house"
+        },
+        "expected_version": {
+          "$ref": "#/$defs/Id"
+        },
+        "payload_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "payload": {
+          "$ref": "#/$defs/BuildHousePayload"
+        },
+        "deadline_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "bridge_epoch": {
+          "$ref": "#/$defs/Id"
+        }
+      },
+      "required": [
+        "id",
+        "session_id",
+        "kind",
+        "expected_version",
+        "payload_hash",
+        "payload",
+        "deadline_utc",
+        "bridge_epoch"
       ],
       "additionalProperties": false
     }
