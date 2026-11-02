@@ -847,3 +847,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 
 - [x] T314 Remove fixed book/stationery prefab preferences from room policy and select according to the reviewed catalogue, purpose and measured fit. Repeatable visual variety remains T284.
 - [ ] T315 Add typed, visually qualified wall/window attachments for posters and curtains, with native-scale bounds, opening/collision checks, native contact receipts and source preservation; demonstrate them in an autonomous inhabited bedroom.
+
+- [x] T316 Route measured explicit group floor coverings through floor-detail placement, preserving intent and requirements without rejecting independent furniture. Native-size fit, identity/priority, unresolved floor space and spoofed/non-walkable asset tests pass; full Python suite: 428 passed. Offline replay of attempt 5 preflight 3 retains all 19 instances with no missing requirements or internal collisions. Native qualification remains pending.

@@ -1,5 +1,6 @@
 """Metric house layout and prefab recipe placement. No source-scene poses are used."""
 from collections import deque
+from copy import deepcopy
 from math import ceil, cos, sin, radians
 from .domain import AgentError
 from .house_domain import BuildingIR
@@ -133,10 +134,27 @@ def access_offset(asset,yaw,side=0):
 
 
 def place_groups(building,design,assets,*,existing=(),access_points=(),detail_offset=0):
+    design=deepcopy(design);floor_requests={};deferred=[]
+    # A walkable floor layer is not a solid furniture obstacle, regardless of
+    # which valid model field requested it. Keep its exact identity and intent.
+    for group in design['groups']:
+        if 'items' not in group:continue
+        kept=[]
+        for item in group['items']:
+            if item['support_slot'] is None and floor_detail(item['asset'],assets.get(item['asset'])):
+                index=len(design.get('detail_assets',[]))+len(deferred)
+                x,z=rotate(*item['offset_m'],group['yaw_deg'])
+                floor_requests[index]=dict(id=design['room_id']+'-'+group['id']+'-'+item['slot'],
+                    group_id=group['id'],priority=group['priority'],
+                    target=[group['anchor_m'][0]+x,0,group['anchor_m'][1]+z],yaw=group['yaw_deg']+item['yaw_deg'])
+                deferred.append((index,item['asset']))
+            else:kept.append(item)
+        group['items']=kept
+    design['groups']=[g for g in design['groups'] if 'items' not in g or g['items']]
     room=next(r for r in building['rooms'] if r['id']==design['room_id']);rect=room_bounds(room)
     reservations,entry=door_reservations(building,room)
     instances=[dict(i) for i in existing if i['room_id']==room['id']];initial=len(instances)
-    missing=[];occupied=[box(i,i['center'][0],i['center'][2],i['yaw']) for i in instances if i['support_id'] is None];uses=list(entry)+list(access_points);requirements=[]
+    missing=[];occupied=[box(i,i['center'][0],i['center'][2],i['yaw']) for i in instances if i['support_id'] is None and i.get('role')!='floor_covering'];uses=list(entry)+list(access_points);requirements=[]
     for group in sorted(design['groups'],key=lambda g:{'mandatory':0,'preferred':1,'optional':2}[g['priority']]):
         explicit='items' in group
         recipe=[(i['slot'],i['asset'],*i['offset_m'],i['yaw_deg'],i['support_slot']) for i in group['items']] if explicit else RECIPES.get(group['recipe'])
@@ -235,7 +253,7 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
     floors=[(i,n) for i,n in enumerate(details) if isinstance(n,str) and n.startswith(('Carpet_','Decal_papers_'))]
     for i,name in enumerate(details):
         if not isinstance(name,str) or not name.startswith(('Carpet_','Decal_papers_')):place_details(room['id'],[name],assets,instances,requirements,missing,offset=detail_offset+i)
-    place_floor_details(room,floors,assets,instances,requirements,missing,reservations,detail_offset)
+    place_floor_details(room,floors+deferred,assets,instances,requirements,missing,reservations,detail_offset,requests=floor_requests)
     return dict(instances=instances[initial:],requirements=requirements,missing=missing,access_points=uses,door_reservations=reservations)
 
 

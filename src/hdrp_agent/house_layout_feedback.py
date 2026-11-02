@@ -1,11 +1,12 @@
 """Explain rejected native-size layouts before constructing an incomplete room."""
 from .house_planning import box,overlap
+from .house_floor_details import floor_detail
 
 
 def feedback(design,placement,assets):
     collisions=[]
     for group in design['groups']:
-        ground=[i for i in group.get('items',[]) if i['support_slot'] is None and i['asset'] in assets]
+        ground=[i for i in group.get('items',[]) if i['support_slot'] is None and i['asset'] in assets and not floor_detail(i['asset'],assets[i['asset']])]
         for index,item in enumerate(ground):
             a=box(assets[item['asset']],*item['offset_m'],item['yaw_deg'])
             for other in ground[index+1:]:
