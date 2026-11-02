@@ -49,12 +49,35 @@ namespace HdrpAgent.Editor {
    var view=views[index%count];sun.enabled=index<count;
    camera.transform.SetPositionAndRotation(V(view["position_m"]),Quaternion.Euler(V(view["rotation_deg"])));
    RenderPipeline.SubmitRenderRequest(camera,new RenderPipeline.StandardRequest{destination=target});if(++warm<32)return;warm=0;
+   CaptureGiTextures();
    string file=(index<count?"saved-":"sun-off-")+(string)view["key"]+".png";
    var previous=RenderTexture.active;var image=new Texture2D(1280,720,TextureFormat.RGB24,false);
    try{RenderTexture.active=target;image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();File.WriteAllBytes(Path.Combine(directory,file),image.EncodeToPNG());}finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
    ((JArray)report["captures"]).Add(new JObject{["file"]=file,["sun_enabled"]=sun.enabled,["ev100"]=HouseExposure.ReadEv(camera)});index++;
    ReferenceWorkflow.Atomic(Path.Combine(directory,"report.json"),report);
   }catch(Exception e){report["error"]=e.Message;Finish("failed");}
+ }
+ static void CaptureGiTextures(){
+  try{
+   var type=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("UnityEditor.LightmapVisualizationUtility")).FirstOrDefault(t=>t!=null);
+   var method=type?.GetMethods(System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.NonPublic).SingleOrDefault(m=>m.Name=="GetBakedGITexture"&&m.GetParameters().Length==4);
+   if(method==null)throw new InvalidOperationException("GI visualization API unavailable");
+   var parameters=method.GetParameters();var kind=parameters[2].ParameterType;
+   var rows=new JArray();
+   foreach(string name in Enum.GetNames(kind).Where(n=>n.IndexOf("Valid",StringComparison.OrdinalIgnoreCase)>=0||n.IndexOf("Overlap",StringComparison.OrdinalIgnoreCase)>=0||n.IndexOf("Chart",StringComparison.OrdinalIgnoreCase)>=0)){
+    object value=method.Invoke(null,new object[]{0,Activator.CreateInstance(parameters[1].ParameterType),Enum.Parse(kind,name),false});
+    var fields=value.GetType().GetFields(System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.NonPublic);
+    var row=new JObject{["kind"]=name,["fields"]=new JArray(fields.Select(f=>f.Name+":"+f.FieldType.Name))};
+    foreach(var field in fields.Where(f=>f.FieldType.IsEnum))row[field.Name]=field.GetValue(value).ToString();
+    var texture=fields.Where(f=>typeof(Texture).IsAssignableFrom(f.FieldType)).Select(f=>f.GetValue(value) as Texture).FirstOrDefault(t=>t);
+    if(texture){
+     string file="gi-"+name+".png";var previous=RenderTexture.active;var rt=RenderTexture.GetTemporary(texture.width,texture.height,0,RenderTextureFormat.ARGBFloat,RenderTextureReadWrite.Linear);var pixels=new Texture2D(texture.width,texture.height,TextureFormat.RGBA32,false,true);
+     try{Graphics.Blit(texture,rt);RenderTexture.active=rt;pixels.ReadPixels(new Rect(0,0,texture.width,texture.height),0,0);pixels.Apply();File.WriteAllBytes(Path.Combine(directory,file),pixels.EncodeToPNG());row["file"]=file;row["width"]=texture.width;row["height"]=texture.height;}finally{RenderTexture.active=previous;RenderTexture.ReleaseTemporary(rt);UnityEngine.Object.DestroyImmediate(pixels);}
+    }
+    rows.Add(row);
+   }
+   report["gi_visualization"]=rows;
+  }catch(Exception e){report["gi_visualization_error"]=e.Message;}
  }
  static void Finish(string status){
   if(camera)UnityEngine.Object.DestroyImmediate(camera.gameObject);camera=null;if(target){target.Release();UnityEngine.Object.DestroyImmediate(target);}target=null;

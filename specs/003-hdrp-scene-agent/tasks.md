@@ -841,4 +841,4 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 
 - [ ] T311 Route autonomous generation through an explicit model lighting intent: reference daylight bake by default, preserve requested night/practical mood, calibrate candidate exposure, retain unsupported needs and qualify the full chat path.
 
-- [ ] T312 Diagnose blocky post-bake artifacts after detail relocation using read-only UV inspection and isolated reopened-scene/sun-off comparisons, preserving user scenes and mesh imports. Resolve before deploying the reference-bake generation default.
+- [x] T312 Diagnose blocky post-bake artifacts after detail relocation using read-only UV inspection and isolated reopened-scene/sun-off comparisons, preserving user scenes and mesh imports. Resolve before deploying the reference-bake generation default.

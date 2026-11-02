@@ -27,6 +27,7 @@ internal sealed class HouseCandidateBake : IDisposable {
   settings.lightmapper=LightingSettings.Lightmapper.ProgressiveGPU;
   AssetDatabase.CreateAsset(settings,AssetDatabase.GenerateUniqueAssetPath(folder+"/BakeSettings.lighting"));
   Lightmapping.SetLightingSettingsForScene(root.scene,settings);
+  ReferenceWorkflow.Atomic(folder+"/MaterialGI.json",HouseGiMaterials.Apply(root,folder));
   foreach(var renderer in root.GetComponentsInChildren<MeshRenderer>()){
    GameObjectUtility.SetStaticEditorFlags(renderer.gameObject,GameObjectUtility.GetStaticEditorFlags(renderer.gameObject)|StaticEditorFlags.ContributeGI);
    renderer.receiveGI=ReceiveGI.Lightmaps;PrefabUtility.RecordPrefabInstancePropertyModifications(renderer);
@@ -52,6 +53,7 @@ internal sealed class HouseCandidateBake : IDisposable {
   if(!target.path.StartsWith("Assets/AgentWorkspace/HouseRuns/",StringComparison.Ordinal))throw new InvalidOperationException("Candidate-owned scene required");
   scene=target;directory=reportDirectory;deadline=EditorApplication.timeSinceStartup+600;
   Receipt=new JObject{["scene_path"]=scene.path,["status"]="requested",["method"]="scene_scoped_gpu_bake",["events"]=events};
+  string materials=Path.Combine(Path.GetDirectoryName(scene.path),"MaterialGI.json");if(File.Exists(materials))Receipt["material_gi"]=JArray.Parse(File.ReadAllText(materials));
   Lightmapping.bakeStarted+=Started;Lightmapping.bakeCompleted+=Completed;Lightmapping.bakeCancelled+=Cancelled;Application.logMessageReceived+=Log;
   Record("requested");
   try{SceneManager.SetActiveScene(scene);if(!UnityEditor.Experimental.Lightmapping.BakeAsync(scene)){failed=true;error="Scene-scoped GPU bake was refused";}}
