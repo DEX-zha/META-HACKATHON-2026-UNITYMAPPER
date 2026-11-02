@@ -813,3 +813,6 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T290 Observe campaign attempt 2 through actual placement/render/correction, inspect outcomes, and repair remaining composition/lighting defects. This contributes to T284 and does not replace the three-run quality gate.
 
 - [x] T291 Clarify zero-based floor indices and feed invalid-outline validation back to the model before furnishing; stop repeated identical invalid outlines. Qualify the fix in campaign attempt 3; final visual outcome remains T284/T290.
+
+- [x] T292 Bind structured visual choices to exact supplied family/asset identifiers and verify request auditing and wrong-level rejection; live attempt 4 has passed family selection.
+- [x] T293 Parallelize independent SAM concepts with separate budget-accounted clients, deterministic evidence association and joined in-flight calls. Offline integration tests pass; live deployment is pending attempt 4 completion.

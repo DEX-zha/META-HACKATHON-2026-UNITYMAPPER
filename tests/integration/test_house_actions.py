@@ -224,3 +224,24 @@ def test_repeated_invalid_outline_stops_instead_of_replaying_forever(tmp_path,mo
     h.run(r['action_id'])
     assert calls==['outline','outline-repair-1']
     assert h.get(r['action_id'])['error_code']=='VERTICAL_ACCESS_UNQUALIFIED'
+
+
+def test_independent_sam_concepts_run_concurrently_and_keep_evidence_order(tmp_path,monkeypatch):
+    import io
+    from PIL import Image
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id'])
+    stream=io.BytesIO();Image.new('RGB',(16,16)).save(stream,format='PNG')
+    artifact=h.artifacts.put(stream.getvalue(),'image/png')
+    names=['bed','chair','desk','lamp'];barrier=threading.Barrier(4);decoded=[]
+    monkeypatch.setattr('hdrp_agent.house_service.segmentation_concepts',lambda *args:names)
+    def provider(row,key,request,*args):
+        barrier.wait(timeout=5)
+        return request['input'][0]['content'][0]['text']
+    monkeypatch.setattr(h,'provider_call',provider)
+    def decode(text,*args):decoded.append(text);return []
+    monkeypatch.setattr('hdrp_agent.providers.sam_decoder.decode',decode)
+    monkeypatch.setattr(h.houses,'context',lambda *args:{})
+    monkeypatch.setattr(h,'ask',lambda *args:dict(room_id='bedroom',observations=[]))
+    h.inspect(row,dict(rooms=[dict(id='bedroom')]),[],dict(scene_version='v1',captures=[dict(room_id='bedroom',key='front',usable=True,artifact_hash=artifact)]))
+    assert decoded==names
+    assert [s['concept'] for s in h.progress(r['action_id'])['segmentations']]==names

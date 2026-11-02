@@ -24,6 +24,10 @@ def strict_schema(name,bindings=None):
     schema=expand(DOMAIN['$defs'][name])
     if schema.get('type')!='object':raise AgentError('INVALID_SCHEMA','Provider root must be an object',422)
     for field,value in (bindings or {}).items():
+        if field=='selected_ids':
+            if name!='ModelHouseCatalogueChoice' or not isinstance(value,list) or not value or len(set(value))!=len(value) or any(not isinstance(item,str) or not item for item in value):raise AgentError('INVALID_SCHEMA','Visual choices require unique supplied identifiers',422)
+            schema['properties']['selected']['items']['enum']=list(value)
+            continue
         if field=='catalog_asset_ids':
             if name not in {'ModelReferenceAnalysis','ModelReconstructionPlan'} or not isinstance(value,list) or not 1<=len(value)<=1000 or len(set(value))!=len(value) or any(not validator('Id').is_valid(item) for item in value):raise AgentError('INVALID_SCHEMA','A unique bounded asset catalogue is required',422)
             if len(value)>250 and sum(len(item) for item in value)>15000:raise AgentError('INVALID_SCHEMA','Use compact job-local catalogue IDs within the provider enum character limit',422)
@@ -64,6 +68,9 @@ def reviewed_format(name,format_value):
     try:
         properties=format_value['format']['schema']['properties']
         bindings={key:properties[key]['const'] for key in ['scene_version','hypothesis_key'] if key in properties and 'const' in properties[key]}
+        if name=='ModelHouseCatalogueChoice':
+            ids=properties['selected']['items'].get('enum')
+            if ids is not None:bindings['selected_ids']=ids
         if name=='ModelDiagnosis':
             evidence=properties['observations']['items']['properties']['evidence']['items']
             if 'anyOf' in evidence:bindings['evidence_frames']=[{key:branch['properties'][key]['const'] for key in ['capture_id','frame_index']} for branch in evidence['anyOf']]

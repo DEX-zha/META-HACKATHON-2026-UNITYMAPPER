@@ -256,3 +256,10 @@ Attempt 2 (`39272a15ca2c469681b5018825432047`, action `campaign-f56c7ffc2d164fbd
 
 
 Attempt 2 ended before native construction with VERTICAL_ACCESS_UNQUALIFIED: the model assigned floor_index=1 to the sole room. The outline prompt now explicitly defines zero-based floors and the service sends validator feedback back to the model before furnishing. Repeated identical invalid outlines terminate without replaying forever; user-requested floors must not be silently removed. Both behaviors have integration tests (19 house-action tests passed). Attempt 3 (`4b2f10b9604a44e086b0bc4dfae0f9fc`, action `campaign-50407e66068043089eb762c1fcd2fec5`) was admitted after verifying zero active sessions/commands and deploying the fix; admission is in `attempt-3.json`. Track this existing run next.
+
+
+### Typed visual choices and inspection throughput
+
+Attempt 3 failed before construction because family discovery returned individual prefab IDs. `ModelHouseCatalogueChoice` now binds its `selected` enum to the exact family IDs or page asset IDs supplied for that call; the provider request verifier reconstructs the same binding. Contract tests reject wrong-level identifiers. Attempt 4 (`82ecb95b1cf4441eb3fb85ffc34fd90f`, action `campaign-6a7784ef65d24e3cb970b927bf4e8e61`) is running with this fix, archived in `attempt-4.json`. Its first batch selected Bed_twin and child-reachable storage, rejecting the adult bed and oversized shelving. This remains selection evidence only; follow the existing run through assembly.
+
+SAM concept queries for each image now use four independent provider clients/reservations concurrently, preserving deterministic evidence order. Executor shutdown joins in-flight calls on error or stop so paid responses are not abandoned. A barrier-based integration test verifies actual concurrency and stable result association. This throughput change is tested but not loaded in the ongoing attempt 4 backend; deploy only after that run reaches a terminal state. Full suite: 396 passed.

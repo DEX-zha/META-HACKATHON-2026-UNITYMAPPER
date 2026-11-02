@@ -56,7 +56,7 @@ def test_room_browsing_sends_real_image_and_rejects_unseen_choice(tmp_path):
     service.settings=SimpleNamespace(state=tmp_path)
     service.guard=lambda row:None
     calls=[]
-    def ask(row,key,text,schema,images=()):
+    def ask(row,key,text,schema,images=(),bindings=None):
         calls.append((key,images))
         return dict(selected=['Chairs'] if len(calls)==1 else ['Unseen chair'],summary='Choose a chair')
     service.ask=ask
@@ -73,7 +73,7 @@ def test_room_browsing_retains_visual_decisions_and_provenance(tmp_path):
     assets,record=fixture(directory)
     service=HouseService.__new__(HouseService);service.settings=SimpleNamespace(state=tmp_path);service.guard=lambda row:None
     calls=[]
-    def ask(row,key,text,schema,images=()):
+    def ask(row,key,text,schema,images=(),bindings=None):
         calls.append(key)
         return dict(selected=['Chairs'] if len(calls)==1 else ['Chair'],summary='Compact wooden chair matches the desk')
     service.ask=ask

@@ -204,3 +204,14 @@ def test_prefab_and_primitive_are_exclusive_in_provider_schema():
         changed=json.loads(json.dumps(request['text']))
         changed['format']['schema']['properties']['objects']['items']['anyOf'][0]['properties']['primitive']={'type':['string','null']}
         assert not reviewed_format(name,changed)
+
+
+def test_visual_catalogue_choice_is_bound_to_supplied_identifiers():
+    from hdrp_agent.providers.meta_responses import strict_schema,reviewed_format
+    import jsonschema
+    schema=strict_schema('ModelHouseCatalogueChoice',{'selected_ids':['Props/Furniture','Props/Books']})
+    jsonschema.validate(dict(selected=['Props/Books'],summary='Inspect books'),schema)
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(dict(selected=['Bed_twin'],summary='Wrong identifier level'),schema)
+    value={'format':dict(type='json_schema',name='hdrp_modelhousecataloguechoice',strict=True,schema=schema)}
+    assert reviewed_format('ModelHouseCatalogueChoice',value)

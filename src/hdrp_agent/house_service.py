@@ -1,5 +1,6 @@
 """House v1 admission and durable execution, separate from the legacy reconstructor."""
 from contextlib import closing
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import io
 import json
@@ -150,9 +151,9 @@ class HouseService:
             row=c.execute("SELECT * FROM house_actions WHERE state='queued' ORDER BY rowid LIMIT 1").fetchone()
             if not row:return None
             c.execute("UPDATE house_actions SET state='running' WHERE id=?",(row['id'],));return row['id']
-    def ask(self,row,key,text,schema,images=()):
+    def ask(self,row,key,text,schema,images=(),bindings=None):
         self.save(row,json.loads(row['checkpoint'])['stage'],'Muse is reviewing '+key)
-        value=self.provider_call(row,key,spark_request(text,list(images),schema),schema)
+        value=self.provider_call(row,key,spark_request(text,list(images),schema,bindings),schema)
         summary=model_summary(schema,value)
         if summary:
             with self.store.tx() as c:
@@ -200,7 +201,7 @@ class HouseService:
             if '/Building/' not in a['prefab_path'] and '/Doors_drawers/' not in a['prefab_path']:
                 families.setdefault(visual_family(a),[]).append(name)
         prefix='catalogue-'+room['id']
-        choice=self.ask(row,prefix+'-families','Choose resource families to inspect visually for this room. Include the primary function, storage, textiles, lighting, wall details, greenery and small personal objects where appropriate to the brief. Select exact family IDs from the inventory; no arbitrary quota. Explain the intended coherent style and uses. This is resource discovery, not placement. '+canonical(dict(room=room,brief=brief,families=families)),'ModelHouseCatalogueChoice')
+        choice=self.ask(row,prefix+'-families','Choose resource families to inspect visually for this room. Include the primary function, storage, textiles, lighting, wall details, greenery and small personal objects where appropriate to the brief. Select exact family IDs from the inventory; no arbitrary quota. Explain the intended coherent style and uses. This is resource discovery, not placement. '+canonical(dict(room=room,brief=brief,families=families)),'ModelHouseCatalogueChoice',bindings={'selected_ids':sorted(families)})
         if set(choice['selected'])-families.keys():raise AgentError('INVALID_MODEL_OUTPUT','Unknown visual catalogue family')
         names=sorted({n for f in choice['selected'] for n in families[f] if n in ready})
         notes=[];selected=[];evidence=[]
@@ -208,7 +209,7 @@ class HouseService:
             self.guard(row)
             records=[a for page in batch for a in page['assets']]
             allowed={a['asset_id'] for a in records}
-            decision=self.ask(row,prefix+'-page-'+str(index),'Inspect these actual two-angle prefab previews. Select exact asset_id values suitable for the room, including distinctive furnishings and small details that support its purpose. Read the key-to-asset mapping; do not infer a functional front or safe support from appearance alone. Select alternatives when useful, omit unsuitable items, and explain their visual roles/style and uncertainty. Avoid generic adult lounge furniture in a child bedroom unless justified by the brief. '+canonical(dict(room=room,brief=brief,style_intent=choice['summary'],pages=[page['assets'] for page in batch])),'ModelHouseCatalogueChoice',[page['image'] for page in batch])
+            decision=self.ask(row,prefix+'-page-'+str(index),'Inspect these actual two-angle prefab previews. Select exact asset_id values suitable for the room, including distinctive furnishings and small details that support its purpose. Read the key-to-asset mapping; do not infer a functional front or safe support from appearance alone. Select alternatives when useful, omit unsuitable items, and explain their visual roles/style and uncertainty. Avoid generic adult lounge furniture in a child bedroom unless justified by the brief. '+canonical(dict(room=room,brief=brief,style_intent=choice['summary'],pages=[page['assets'] for page in batch])),'ModelHouseCatalogueChoice',[page['image'] for page in batch],bindings={'selected_ids':sorted(allowed)})
             if set(decision['selected'])-allowed:raise AgentError('INVALID_MODEL_OUTPUT','Visual selection leaves inspected page')
             selected.extend(decision['selected']);notes.append(decision['summary'])
             evidence.extend(records)
@@ -373,9 +374,15 @@ class HouseService:
                 binary=self.artifacts.read(c['artifact_hash'])
                 with Image.open(io.BytesIO(binary)) as im:width,height=im.size
                 local=[i for i in instances if i['room_id']==room['id']]
-                for concept in segmentation_concepts(local,assets):
+                concepts=segmentation_concepts(local,assets)
+                def segment(concept):
                     self.guard(row)
-                    text=self.provider_call(row,'sam-'+c['artifact_hash']+'-'+fingerprint(concept)[:12],sam_request(concept,binary))
+                    return self.provider_call(row,'sam-'+c['artifact_hash']+'-'+fingerprint(concept)[:12],sam_request(concept,binary))
+                # Independent concepts share neither provider clients nor reservations.
+                # Join in-flight calls on failure/stop so no paid response is abandoned.
+                with ThreadPoolExecutor(max_workers=4) as pool:
+                    results=list(pool.map(segment,concepts))
+                for concept,text in zip(concepts,results):
                     regions=decode(text,width,height)
                     for region in regions:region['mask_artifact_hash']=self.artifacts.put(region.pop('mask_png'),'image/png')
                     segments.append(dict(capture_hash=c['artifact_hash'],scene_version=proof['scene_version'],room_id=room['id'],concept=concept,regions=regions))
