@@ -106,7 +106,7 @@ def test_detail_report_keeps_object_link_and_selected_preview(tmp_path):
     (root/'preview-result.json').write_text(canonical([dict(asset_id='asset-chair',file='preview.png')]))
     worker.export(job)
     html=(root/'details.html').read_text()
-    assert '<h2>chair</h2>' in html and 'front' in html and 'Variante retainede : Chair' in html
+    assert '<h2>chair</h2>' in html and 'front' in html and 'Retained variant: Chair' in html
     assert 'details.html' in (root/'comparison.html').read_text()
     assert json.loads((root/'report.json').read_text())['fidelity_verified'] is False
 
