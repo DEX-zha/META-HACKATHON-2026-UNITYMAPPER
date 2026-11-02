@@ -199,3 +199,28 @@ def test_late_native_cancellation_releases_stopped_run_but_unknown_does_not(tmp_
     assert h.close_cancelled_build(row)
     assert h.get(row['id'])['state']=='failed'
     assert h.store.get('sessions',row['session_id'])['state']=='interrupted'
+
+
+def test_outline_index_error_is_returned_to_model_before_furnishing(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r)
+    calls=[]
+    def ask(row,key,text,*args):
+        calls.append(key)
+        if key in {'outline','outline-repair-1'}:
+            return dict(title='Bedroom',rooms=[dict(id='bedroom',purpose='bedroom',floor_index=1 if key=='outline' else 0,width_m=6,depth_m=6,brief='Child bedroom')],unresolved=[])
+        return dict(room_id='bedroom',groups=[],detail_assets=[],unresolved=[])
+    monkeypatch.setattr(h,'ask',ask);monkeypatch.setattr(h,'catalogue',lambda:{})
+    h.run(r['action_id'])
+    assert calls==['outline','outline-repair-1','room-bedroom']
+    assert h.get(r['action_id'])['error_code']=='PROGRAM_INCOMPLETE'
+
+
+def test_repeated_invalid_outline_stops_instead_of_replaying_forever(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r);calls=[]
+    def ask(row,key,*args):
+        calls.append(key)
+        return dict(title='Bedroom',rooms=[dict(id='bedroom',purpose='bedroom',floor_index=1,width_m=6,depth_m=6,brief='Child bedroom')],unresolved=[])
+    monkeypatch.setattr(h,'ask',ask)
+    h.run(r['action_id'])
+    assert calls==['outline','outline-repair-1']
+    assert h.get(r['action_id'])['error_code']=='VERTICAL_ACCESS_UNQUALIFIED'

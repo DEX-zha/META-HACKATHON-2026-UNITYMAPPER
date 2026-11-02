@@ -811,3 +811,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T288 Batch all visual catalogue pages within the twelve-image transport contract without discarding candidates; test full pagination coverage.
 - [x] T289 Propose measured support patches, reject holes/overlapping triangles, obtain hash-bound visual reviews for selected assets, retain unknown fronts and reject invented patches before mutation. Validate one live bedside-table review and regression suite.
 - [ ] T290 Observe campaign attempt 2 through actual placement/render/correction, inspect outcomes, and repair remaining composition/lighting defects. This contributes to T284 and does not replace the three-run quality gate.
+
+- [x] T291 Clarify zero-based floor indices and feed invalid-outline validation back to the model before furnishing; stop repeated identical invalid outlines. Qualify the fix in campaign attempt 3; final visual outcome remains T284/T290.

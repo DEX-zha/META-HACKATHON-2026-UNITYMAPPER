@@ -271,8 +271,19 @@ class HouseService:
             for h in params['reference_hashes']:
                 with Image.open(io.BytesIO(self.artifacts.read(h))) as im:
                     im=im.convert('RGB');im.thumbnail((1280,720));buf=io.BytesIO();im.save(buf,format='PNG');images.append(buf.getvalue())
-            outline=self.ask(row,'outline','Design a complete Unity house program from this brief. Preserve every requested room and floor; never omit an unsupported need. Give distinct stable room IDs. Dimensions in metres, prefer multiples of 3 compatible with native tiles. Hidden parts are creative and must follow brief. Native prefab contact checks, circulation inspection and SAM/Muse image review are provided by this pipeline; do not list those inspection requests as unsupported building features. Return unresolved architectural or furnishing requirements explicitly. User reference data: '+canonical(params),'ModelHouseOutline',images)
-            building=building_from_outline(outline);assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
+            outline=self.ask(row,'outline','Design a complete Unity house program from this brief. Preserve every requested room and floor; never omit an unsupported need. Give distinct stable room IDs. floor_index is zero-based: 0 is ground floor; an isolated single room belongs to floor 0 unless the user explicitly requests another level. Do not invent an upstairs location. Dimensions in metres, prefer multiples of 3 compatible with native tiles. Hidden parts are creative and must follow brief. Native prefab contact checks, circulation inspection and SAM/Muse image review are provided by this pipeline; do not list those inspection requests as unsupported building features. Return unresolved architectural or furnishing requirements explicitly. User reference data: '+canonical(params),'ModelHouseOutline',images)
+            seen_outlines=set()
+            while True:
+                try:
+                    building=building_from_outline(outline)
+                    break
+                except AgentError as error:
+                    signature=fingerprint(outline)
+                    if signature in seen_outlines:raise
+                    seen_outlines.add(signature)
+                    self.guard(row)
+                    outline=self.ask(row,'outline-repair-'+str(len(seen_outlines)),'Repair the rejected room outline using this validator feedback. Preserve the original user request, dimensions and explicit floors; do not silently remove requested floors. floor_index is zero-based (ground=0). A single standalone room defaults to 0; do not invent an upper floor. If the requested architecture itself is unsupported, retain that requirement explicitly rather than claiming success. '+canonical(dict(request=params,rejected_outline=outline,validation_error=str(error))),'ModelHouseOutline',images)
+            assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
             for room in outline['rooms']:
                 self.guard(row);self.save(row,'furnishing','Furnishing '+room['purpose'],current_scope=room['id'])
                 visual_selection=self.browse_assets(row,room,params['brief'],assets)
