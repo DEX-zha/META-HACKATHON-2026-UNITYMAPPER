@@ -16,7 +16,7 @@ namespace HdrpAgent.Editor {
     var matrix=prefab.transform.worldToLocalMatrix*mf.transform.localToWorldMatrix;var mesh=mf.sharedMesh;
     var b=mesh.bounds;for(int i=0;i<8;i++){var p=matrix.MultiplyPoint3x4(b.center+Vector3.Scale(b.extents,new Vector3((i&1)==0?-1:1,(i&2)==0?-1:1,(i&4)==0?-1:1)));if(first){bounds=new Bounds(p,Vector3.zero);first=false;}else bounds.Encapsulate(p);}
     try {
-     var verts=mesh.vertices;var tri=mesh.triangles;var patches=new Dictionary<int,JArray>();
+     var measured=MeasuredMesh.Read(mesh);var verts=measured.vertices;var tri=measured.triangles;var patches=new Dictionary<int,JArray>();
      for(int i=0;i<tri.Length;i+=3){var a=matrix.MultiplyPoint3x4(verts[tri[i]]);var c=matrix.MultiplyPoint3x4(verts[tri[i+1]]);var d=matrix.MultiplyPoint3x4(verts[tri[i+2]]);var n=Vector3.Cross(c-a,d-a);if(n.magnitude<1e-8f||n.normalized.y<.985f)continue;int level=Mathf.RoundToInt((a.y+c.y+d.y)/3/.005f);if(!patches.TryGetValue(level,out var triangles)){triangles=new JArray();patches[level]=triangles;}triangles.Add(new JArray(V(a),V(c),V(d)));}
      foreach(var patch in patches)surfaces.Add(new JObject{["id"]="surface-"+surfaces.Count,["height_m"]=patch.Key*.005f,["triangles"]=patch.Value,["qualification"]="geometry_candidate",["supports_items"]=false,["reason"]="Upward mesh triangles; semantic support and stability still require qualification"});
     }catch(Exception e){surfaces.Add(new JObject{["id"]="surface-"+surfaces.Count,["qualification"]="unavailable",["reason"]=e.GetType().Name});}

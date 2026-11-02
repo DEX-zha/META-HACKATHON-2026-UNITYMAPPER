@@ -19,7 +19,7 @@ namespace HdrpAgent.Editor {
  readonly List<Tuple<string,Vector3,Quaternion>> views=new List<Tuple<string,Vector3,Quaternion>>();
  readonly List<MeshCollider> colliders=new List<MeshCollider>();readonly List<string> hashes=new List<string>();
  public CommandResult Result{get;private set;}
- public HouseBuildJob(BridgeCommand c){command=c;before=SceneInspector.Version();userScene=SceneManager.GetActiveScene();userDirty=userScene.isDirty;userSignature=UserSignature(userScene);}
+ public HouseBuildJob(BridgeCommand c){if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("House construction requires Edit Mode");command=c;before=SceneInspector.Version();userScene=SceneManager.GetActiveScene();userDirty=userScene.isDirty;userSignature=UserSignature(userScene);}
  static string UserSignature(Scene s)=>BridgeJson.Hash(System.Text.Encoding.UTF8.GetBytes(string.Join(";",s.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<Component>(true)).Where(c=>c!=null).Select(c=>c.GetInstanceID()+":"+EditorUtility.GetDirtyCount(c)))));
  public void Cancel(){cancelled=true;}
  static Vector3 V(JToken t)=>new Vector3((float)t[0],(float)t[1],(float)t[2]);
@@ -41,12 +41,24 @@ namespace HdrpAgent.Editor {
     var previous=RenderTexture.active;var image=new Texture2D(1280,720,TextureFormat.RGB24,false);byte[] bytes;float mean;
     try{RenderTexture.active=target;image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();mean=image.GetPixels32().Average(p=>(p.r+p.g+p.b)/765f);bytes=image.EncodeToPNG();}finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
     string file="view-"+viewIndex+".png";File.WriteAllBytes(Path.Combine(directory,file),bytes);waiting=true;
-    BridgeClient.PutArtifact(bytes,"image/png",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House image not acknowledged","unknown");return;}hashes.Add(hash);((JArray)proof["captures"]).Add(new JObject{["room_id"]=view.Item1,["key"]=Path.GetFileNameWithoutExtension(file),["artifact_hash"]=hash,["file"]=((string)command.payload["manifest_hash"]).Substring(0,12)+"/"+file,["position_m"]=A(view.Item2),["rotation_deg"]=A(view.Item3.eulerAngles),["usable"]=mean>.008f&&mean<.98f,["mean_rgb"]=mean,["coverage_qualified"]=false});viewIndex++;warm=0;Publish("Interior view "+viewIndex+" / "+views.Count);});return;
+    BridgeClient.PutArtifact(bytes,"image/png",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House image not acknowledged","unknown");return;}hashes.Add(hash);((JArray)proof["captures"]).Add(new JObject{["room_id"]=view.Item1,["key"]=Path.GetFileNameWithoutExtension(file),["artifact_hash"]=hash,["file"]=((string)command.payload["manifest_hash"]).Substring(0,12)+"/"+file,["position_m"]=A(view.Item2),["rotation_deg"]=A(view.Item3.eulerAngles),["usable"]=mean>.008f&&mean<.98f,["mean_rgb"]=mean,["coverage_qualified"]=false,["render_request_state"]=RequestState()});viewIndex++;warm=0;Publish("Interior view "+viewIndex+" / "+views.Count);});return;
    }
    proof["source_scene_unchanged"]=SceneManager.GetActiveScene()==userScene&&SceneInspector.Version()==before&&userScene.isDirty==userDirty;
    Publish("Captures complete; saving receipt");Cleanup();waiting=true;
    BridgeClient.PutArtifact(System.Text.Encoding.UTF8.GetBytes(proof.ToString(Newtonsoft.Json.Formatting.None)),"application/json",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House receipt not acknowledged","unknown");return;}hashes.Add(hash);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status="succeeded",before_version=before,after_version=SceneInspector.Version(),artifact_hashes=hashes.ToArray(),details_artifact_hash=hash,bake_status="pending"};});
   }catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}
+ }
+ JObject RequestState(){
+  // SubmitRenderRequest uses CustomUserHistory0, not GetOrCreate's main-loop stack.
+  var field=typeof(HDCamera).GetField("s_Cameras",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+  var entries=field?.GetValue(null) as System.Collections.IDictionary;
+  if(entries!=null)foreach(System.Collections.DictionaryEntry entry in entries){
+   var key=entry.Key as System.Runtime.CompilerServices.ITuple;
+   if(key==null||key.Length!=3||!ReferenceEquals(key[0],camera)||key[2].ToString()!="CustomUserHistory0")continue;
+   var hd=(HDCamera)entry.Value;var exposure=hd.volumeStack.GetComponent<Exposure>();
+   return new JObject{["status"]="observed",["history_channel"]="CustomUserHistory0",["exposure_mode"]=exposure.mode.value.ToString(),["exposure_ev"]=exposure.fixedExposure.value,["tonemapping"]=hd.volumeStack.GetComponent<Tonemapping>().mode.value.ToString(),["postprocess_enabled"]=hd.frameSettings.IsEnabled(FrameSettingsField.Postprocess),["exposure_enabled"]=hd.frameSettings.IsEnabled(FrameSettingsField.ExposureControl)};
+  }
+  return new JObject{["status"]="unavailable",["reason"]="Render request camera history not found; default stack is not evidence"};
  }
  void PublishLive(){
   double now=EditorApplication.timeSinceStartup;if(now-lastLiveFrame<.2)return;lastLiveFrame=now;

@@ -35,7 +35,7 @@ public static class ReferenceArchitecture {
    if(!name.StartsWith("WallIn_")&&!name.StartsWith("WallOut_"))continue;
    if(renderer.sharedMaterials.Any(m=>m==null||(m.HasProperty("_SurfaceType")&&m.GetFloat("_SurfaceType")>.5f)))throw new InvalidDataException("Wall surface must use opaque materials");
 
-   var mesh=filter.sharedMesh;if(mesh==null)continue;var vertices=mesh.vertices;var indices=mesh.triangles;
+   var mesh=filter.sharedMesh;if(mesh==null)continue;var measured=MeasuredMesh.Read(mesh);var vertices=measured.vertices;var indices=measured.triangles;
    for(int i=0;i<indices.Length;i+=3)triangles.Add(new[]{group.InverseTransformPoint(filter.transform.TransformPoint(vertices[indices[i]])),group.InverseTransformPoint(filter.transform.TransformPoint(vertices[indices[i+1]])),group.InverseTransformPoint(filter.transform.TransformPoint(vertices[indices[i+2]]))});
   }
   int tested=0,missing=0,blocked=0;var defects=new JArray();

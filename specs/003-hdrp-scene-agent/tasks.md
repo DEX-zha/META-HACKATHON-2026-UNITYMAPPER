@@ -821,3 +821,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T295 Revisit layouts after newly reviewed supports and return internal group intersections to the model before construction; retain mandatory planned equipment and stop repeated designs. Offline verification complete; live campaign qualification pending.
 - [x] T296 Convert requested photometric units into Unity-native intensity after configuring light shape; compile and verify point/spot/directional conversions natively.
 - [ ] T297 Complete and view the queued matched-camera photometric comparison once Unity resumes polling, then deploy latest Python planning fixes and resume the bedroom quality campaign. No artistic success is claimed from T296 alone.
+
+- [x] T298 Read imported geometry through the editor read-only mesh API without changing import flags; verify native wall audits and the complete 16-instance diagnostic replay.
+- [x] T299 Observe the render-request HDRP history rather than the default camera history; record exposure/tonemapping/frame settings, preserve invalid diagnostic history and reject construction in Play Mode.
+- [ ] T300 Transfer reference daylight settings into candidate-owned volume components and window/sun lighting, retain provenance and preview/bake distinctions, and inspect a matched full-room comparison before artistic qualification.
