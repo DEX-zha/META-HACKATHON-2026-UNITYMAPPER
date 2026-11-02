@@ -5321,6 +5321,64 @@
         "detail_assets",
         "unresolved"
       ]
+    },
+    "ModelRoomInteractionAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "observe",
+            "move",
+            "undo",
+            "finish"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "position": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "yaw": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360
+        },
+        "look_at": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "fov": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 90
+        }
+      },
+      "required": [
+        "action",
+        "summary",
+        "target_id",
+        "position",
+        "yaw",
+        "look_at",
+        "fov"
+      ]
     }
   }
 }

@@ -30,7 +30,7 @@ namespace HdrpAgent.Editor
             Receipts.Start(incoming);command=incoming;completion=completed;
             // Defer script recompilation until this durable native operation has finished.
             EditorApplication.LockReloadAssemblies();reloadLocked=true;
-            if(LocalValidationRunner.Running){Finish(Failure("EDITOR_BUSY","Local graphical qualification still owns the scene"));return;}
+            if(LocalValidationRunner.Running||DirectRoomExperiment.Running){Finish(Failure("EDITOR_BUSY","Local graphical qualification still owns the scene"));return;}
             if(DateTimeOffset.Parse(incoming.deadline_utc)<=DateTimeOffset.UtcNow){Finish(Failure("DEADLINE","Deadline expired","cancelled"));return;}
             if(!handlers.TryGetValue(incoming.kind,out var handler)){Finish(Failure("CAPABILITY_MISSING","Command kind is not implemented"));return;}
             if(incoming.kind!="inspect" && incoming.expected_version!=CurrentVersion()){Finish(Failure("STALE_VERSION","Scene version changed"));return;}

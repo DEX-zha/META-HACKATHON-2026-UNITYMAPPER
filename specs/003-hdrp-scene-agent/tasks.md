@@ -792,3 +792,9 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T274 Search alternative whole-group placements at native scale (25 cm grid and quarter turns), keep the preferred pose when valid, retain clearance/support constraints, and replay the stopped bedroom's original design offline.
 - [ ] T275 Target close-up inspection cameras at observed defective instances, preserve overview cameras and record focused view provenance. Implementation and Unity compilation verified; qualify camera visibility and corrective convergence in a complete live run.
 - [x] T276 Release a stopped house session when delayed terminal cancellation receipts arrive, preserving scene files and requiring every command to have a known terminal outcome.
+
+- [x] T277 Implement persistent isolated scene interaction for a selected furniture pair: read inventory, explicit camera observations, exact prefab transforms and undo; reject stale/concurrent edits and preserve original scene.
+- [x] T278 Supply exact prefab multi-angle previews and a furnished source-scene example with geometry/provenance to the scoped model experiment.
+- [x] T279 Execute the table/seating experiment with budget-accounted Muse calls, inspect before/after images and publish an honest report; distinguish interaction capability from artistic success.
+
+- [ ] T280 Promote direct interaction to chat only after broader pair/orientation tests, image exposure qualification, full reachability validation and a navigable visual asset catalogue. The scoped experiment is not a replacement for house generation.

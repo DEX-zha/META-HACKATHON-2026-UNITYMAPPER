@@ -64,3 +64,5 @@ go test ./...
 ```
 
 Unity tests use the Test Runner and the package validation bridge. Local evidence is written to `.hdrp-agent/reports/`, which Git ignores. Experimental scenes under `Assets/AgentWorkspace` and Unity caches are also excluded.
+
+The [direct visual interaction experiment](specs/003-hdrp-scene-agent/direct-interaction-experiment.md) tests model-directed camera observations, exact prefab moves and undo on a persistent copy of a generated desk/seating arrangement. It remains separate from normal chat generation.
