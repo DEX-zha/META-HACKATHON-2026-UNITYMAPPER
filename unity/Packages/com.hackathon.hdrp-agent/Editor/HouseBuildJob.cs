@@ -13,14 +13,53 @@ using UnityEditor.SceneManagement;
 namespace HdrpAgent.Editor {
 [InitializeOnLoad] public sealed class HouseBuildJob : ICommandJob {
  static HouseBuildJob(){CommandExecutor.Register("build_house",c=>new HouseBuildJob(c));}
- readonly BridgeCommand command;readonly string before;readonly Scene userScene;readonly bool userDirty;readonly string userSignature;
+ readonly BridgeCommand command;readonly string before;readonly Scene userScene;readonly bool userDirty;string userSignature;readonly JObject userState;readonly string userFileHash;
+ HouseCandidateBake bake;bool bakeSaved,ownedLightingContext;string deferredCode,deferredMessage,deferredStatus;
  Scene scene;GameObject root;Camera camera;RenderTexture target;VolumeProfile profile;
  JObject manifest,proof;string directory,scenePath;bool started,waiting,cancelled,built;int viewIndex,warm;double lastLiveFrame=-1,viewStarted;Quaternion viewRotation;
  readonly List<Tuple<string,Vector3,Quaternion>> views=new List<Tuple<string,Vector3,Quaternion>>();
  readonly List<MeshCollider> colliders=new List<MeshCollider>();readonly List<string> hashes=new List<string>();
  public CommandResult Result{get;private set;}
- public HouseBuildJob(BridgeCommand c){if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("House construction requires Edit Mode");command=c;before=SceneInspector.Version();userScene=SceneManager.GetActiveScene();userDirty=userScene.isDirty;userSignature=UserSignature(userScene);}
- static string UserSignature(Scene s)=>BridgeJson.Hash(System.Text.Encoding.UTF8.GetBytes(string.Join(";",s.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<Component>(true)).Where(c=>c!=null).Select(c=>c.GetInstanceID()+":"+EditorUtility.GetDirtyCount(c)))));
+ public HouseBuildJob(BridgeCommand c){if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("House construction requires Edit Mode");command=c;before=SceneInspector.Version();userScene=SceneManager.GetActiveScene();userDirty=userScene.isDirty;userSignature=UserSignature(userScene);userState=UserState(userScene);userFileHash=File.Exists(userScene.path)?BridgeJson.Hash(File.ReadAllBytes(userScene.path)):null;}
+ static IEnumerable<UnityEngine.Object> UserObjects(Scene scene)=>scene.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<Transform>(true)).SelectMany(t=>t.GetComponents<Component>().Where(c=>c).Cast<UnityEngine.Object>().Concat(new UnityEngine.Object[]{t.gameObject}));
+ static JObject UserState(Scene scene){
+  var state=new JObject();foreach(var component in UserObjects(scene))state[component.GetInstanceID().ToString()]=new JObject{["type"]=component.GetType().FullName,["name"]=component.name,["dirty_count"]=EditorUtility.GetDirtyCount(component),["serialized"]=JObject.Parse(EditorJsonUtility.ToJson(component))};return state;
+ }
+ void RecordConcurrentState(){
+  var current=UserState(userScene);var changes=new JArray();foreach(string key in userState.Properties().Select(p=>p.Name).Union(current.Properties().Select(p=>p.Name)))if(!JToken.DeepEquals(userState[key],current[key]))changes.Add(new JObject{["component_id"]=key,["before"]=userState[key]?.DeepClone(),["after"]=current[key]?.DeepClone()});
+  ReferenceWorkflow.Atomic(Path.Combine(directory,"source-state-conflict.json"),new JObject{["before_scene"]=userScene.path,["active_scene"]=SceneManager.GetActiveScene().path,["before_version"]=before,["current_version"]=SceneInspector.Version(),["before_dirty"]=userDirty,["current_dirty"]=userScene.isDirty,["changes"]=changes});
+ }
+ static string UserSignature(Scene s)=>BridgeJson.Hash(System.Text.Encoding.UTF8.GetBytes(string.Join(";",UserObjects(s).Select(c=>c.GetInstanceID()+":"+EditorUtility.GetDirtyCount(c)))));
+ static bool SameUserContent(JObject left,JObject right){
+  var a=(JObject)left.DeepClone();var b=(JObject)right.DeepClone();
+  foreach(var item in a.Properties())((JObject)item.Value).Remove("dirty_count");
+  foreach(var item in b.Properties())((JObject)item.Value).Remove("dirty_count");
+  return JToken.DeepEquals(a,b);
+ }
+ [MenuItem("Tools/HDRP Agent/House/Test source preservation comparison")]
+ static void TestSourceComparison(){
+  var test=EditorSceneManager.NewPreviewScene();var checks=new JObject();
+  try{
+   var go=GameObject.CreatePrimitive(PrimitiveType.Cube);SceneManager.MoveGameObjectToScene(go,test);var baseline=UserState(test);
+   EditorUtility.SetDirty(go.GetComponent<MeshRenderer>());checks["cache_invalidation_allowed"]=SameUserContent(baseline,UserState(test));
+   go.transform.position=Vector3.one;checks["transform_edit_rejected"]=!SameUserContent(baseline,UserState(test));go.transform.position=Vector3.zero;
+   go.SetActive(false);checks["activation_edit_rejected"]=!SameUserContent(baseline,UserState(test));go.SetActive(true);
+   go.AddComponent<Light>();checks["component_addition_rejected"]=!SameUserContent(baseline,UserState(test));
+   checks["passed"]=checks.Properties().All(p=>(bool)p.Value);
+   ReferenceWorkflow.Atomic(Path.Combine(BridgeClient.ResolveWorkspace(),".hdrp-agent/reports/source-preservation-comparison.json"),checks);
+  }finally{EditorSceneManager.ClosePreviewScene(test);}
+ }
+ bool UserUnchanged(){
+  bool baking=ownedLightingContext;
+  if(SceneManager.GetActiveScene()!=(baking?scene:userScene)||(!baking&&SceneInspector.Version()!=before)||userScene.isDirty!=userDirty)return false;
+  string signature=UserSignature(userScene);if(signature==userSignature)return true;
+  if(!SameUserContent(UserState(userScene),userState))return false;
+  // Lightmapping invalidates renderer caches in every loaded scene. A dirty
+  // counter change with identical serialized objects is not a user edit.
+  userSignature=signature;if(proof!=null)proof["source_cache_invalidations"]=(int?)proof["source_cache_invalidations"]+1??1;
+  return true;
+ }
+
  public void Cancel(){cancelled=true;}
  static Vector3 V(JToken t)=>new Vector3((float)t[0],(float)t[1],(float)t[2]);
  static JArray A(Vector3 v)=>new JArray(v.x,v.y,v.z);
@@ -29,10 +68,29 @@ namespace HdrpAgent.Editor {
  public void Tick(){
   if(Result!=null||waiting||BridgeClient.RequestInProgress)return;
   try{
+   if(deferredCode!=null){bake.Tick();if(!bake.Finished)return;Fail(deferredCode,deferredMessage,deferredStatus);return;}
+   if(cancelled&&bake!=null&&!bake.Finished){bake.Cancel();bake.Tick();if(!bake.Finished)return;}
    if(cancelled){Fail("CANCELLED","House operation cancelled","cancelled");return;}
-   if(SceneManager.GetActiveScene()!=userScene||SceneInspector.Version()!=before||userScene.isDirty!=userDirty||UserSignature(userScene)!=userSignature){Fail("CONCURRENT_EDIT","User scene changed; generated result retained separately");return;}
+   if(!UserUnchanged()){if(directory!=null)RecordConcurrentState();Fail("CONCURRENT_EDIT","User scene changed; generated result retained separately");return;}
    if(!started){started=true;waiting=true;BridgeClient.Request("GET","/v1/artifacts/"+(string)command.payload["manifest_hash"],null,null,(ok,text)=>{waiting=false;if(!ok){Fail("EVIDENCE_MISSING","House manifest unavailable");return;}try{var bytes=System.Text.Encoding.UTF8.GetBytes(text);if(BridgeJson.Hash(bytes)!=(string)command.payload["manifest_hash"])throw new InvalidDataException("Manifest hash differs");manifest=JObject.Parse(text);Build();}catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}});return;}
    if(!built)return;
+   if(bake!=null&&!bakeSaved){
+    bake.Tick();Publish("Calculating candidate-owned indirect lighting");if(!bake.Finished)return;
+    proof["bake"]=bake.Receipt.DeepClone();
+    if(!bake.Succeeded){Fail("HOUSE_BAKE_FAILED",(string)bake.Receipt["error"]??"Candidate-owned baked lighting evidence is missing");return;}
+    // Keep inspection layers transient when saving the baked candidate.
+    int layer=root.layer;
+    foreach(var t in root.GetComponentsInChildren<Transform>(true))t.gameObject.layer=30;
+    foreach(var l in root.GetComponentsInChildren<Light>(true))l.cullingMask=1<<30;
+    if(!EditorSceneManager.SaveScene(scene,scenePath))throw new IOException("Baked candidate could not be saved");
+    foreach(var t in root.GetComponentsInChildren<Transform>(true))t.gameObject.layer=layer;
+    foreach(var l in root.GetComponentsInChildren<Light>(true))l.cullingMask=1<<layer;
+    proof["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath));bake.CloseCreatedLightingWindows();bakeSaved=true;
+   }
+   if(viewIndex==0&&warm==0&&proof["lightmap_bindings"]==null){
+    proof["lightmap_bindings"]=new JArray(root.GetComponentsInChildren<MeshRenderer>().Select(r=>new JObject{["name"]=r.name,["receive_gi"]=r.receiveGI.ToString(),["lightmap_index"]=r.lightmapIndex,["scale_offset"]=new JArray(r.lightmapScaleOffset.x,r.lightmapScaleOffset.y,r.lightmapScaleOffset.z,r.lightmapScaleOffset.w)}));
+    proof["loaded_lightmaps"]=new JArray(LightmapSettings.lightmaps.Select(m=>AssetDatabase.GetAssetPath(m.lightmapColor)));
+   }
    if(viewIndex<views.Count){
     var view=views[viewIndex];if(warm==0){viewStarted=EditorApplication.timeSinceStartup;viewRotation=camera.transform.rotation;}
     double elapsed=EditorApplication.timeSinceStartup-viewStarted;
@@ -43,9 +101,9 @@ namespace HdrpAgent.Editor {
     string file="view-"+viewIndex+".png";File.WriteAllBytes(Path.Combine(directory,file),bytes);waiting=true;
     BridgeClient.PutArtifact(bytes,"image/png",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House image not acknowledged","unknown");return;}hashes.Add(hash);((JArray)proof["captures"]).Add(new JObject{["room_id"]=view.Item1,["key"]=Path.GetFileNameWithoutExtension(file),["artifact_hash"]=hash,["file"]=((string)command.payload["manifest_hash"]).Substring(0,12)+"/"+file,["position_m"]=A(view.Item2),["rotation_deg"]=A(view.Item3.eulerAngles),["usable"]=mean>.008f&&mean<.98f,["mean_rgb"]=mean,["coverage_qualified"]=false,["render_request_state"]=RequestState()});viewIndex++;warm=0;Publish("Interior view "+viewIndex+" / "+views.Count);});return;
    }
-   proof["source_scene_unchanged"]=SceneManager.GetActiveScene()==userScene&&SceneInspector.Version()==before&&userScene.isDirty==userDirty;
+   proof["source_scene_unchanged"]=UserUnchanged()&&(userFileHash==null||File.Exists(userScene.path)&&BridgeJson.Hash(File.ReadAllBytes(userScene.path))==userFileHash);
    Publish("Captures complete; saving receipt");Cleanup();waiting=true;
-   BridgeClient.PutArtifact(System.Text.Encoding.UTF8.GetBytes(proof.ToString(Newtonsoft.Json.Formatting.None)),"application/json",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House receipt not acknowledged","unknown");return;}hashes.Add(hash);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status="succeeded",before_version=before,after_version=SceneInspector.Version(),artifact_hashes=hashes.ToArray(),details_artifact_hash=hash,bake_status="pending"};});
+   BridgeClient.PutArtifact(System.Text.Encoding.UTF8.GetBytes(proof.ToString(Newtonsoft.Json.Formatting.None)),"application/json",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House receipt not acknowledged","unknown");return;}hashes.Add(hash);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status="succeeded",before_version=before,after_version=SceneInspector.Version(),artifact_hashes=hashes.ToArray(),details_artifact_hash=hash,bake_status=bake!=null&&bake.Succeeded?"complete":"pending"};});
   }catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}
  }
  JObject RequestState(){
@@ -141,8 +199,14 @@ namespace HdrpAgent.Editor {
   var traversal=HouseTraversal.Check(root,manifest);foreach(var defect in (JArray)traversal["defects"])defects.Add(defect.DeepClone());
   foreach(var collider in colliders)if(collider)UnityEngine.Object.DestroyImmediate(collider);colliders.Clear();
   var volumeObject=new GameObject("House lighting profile");volumeObject.transform.SetParent(root.transform,false);volumeObject.layer=30;var volume=volumeObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=10000;profile=ScriptableObject.CreateInstance<VolumeProfile>();var exposure=profile.Add<Exposure>(true);exposure.mode.Override(ExposureMode.Fixed);exposure.fixedExposure.Override(Mathf.Clamp((float?)manifest["exposure_ev"]??6,-4,16));var tone=profile.Add<Tonemapping>(true);tone.mode.Override(TonemappingMode.ACES);volume.sharedProfile=profile;
+  JObject daylight=null;
+  if(((string)manifest["lighting"])?.StartsWith("reference_daylight_",StringComparison.Ordinal)==true)daylight=HouseDaylight.Apply(root,profile);
+  if(daylight!=null)foreach(JObject fixture in lighting){fixture["mode"]="daytime_fixture_off";fixture["enabled"]=false;}
   string folder="Assets/AgentWorkspace/HouseRuns/"+run;Directory.CreateDirectory(folder);AssetDatabase.Refresh();string profilePath=folder+"/Lighting.asset";AssetDatabase.CreateAsset(profile,AssetDatabase.GenerateUniqueAssetPath(profilePath));PersistedVolumeProfile.Save(profile);scenePath=AssetDatabase.GenerateUniqueAssetPath(folder+"/House.unity");
   if(!EditorSceneManager.SaveScene(scene,scenePath))throw new IOException("Generated scene could not be saved");
+  if((string)manifest["lighting"]=="reference_daylight_bake"){
+   HouseCandidateBake.Prepare(root,scenePath);if(!EditorSceneManager.SaveScene(scene,scenePath))throw new IOException("Bake preparation could not be saved");
+  }
   // Additive main-stage scenes share a culling mask by default. Merely copying
   // that mask to the camera includes the user's scene in every observation.
   // Allocate an unused bit for inspection only, after saving the normal scene.
@@ -159,12 +223,14 @@ namespace HdrpAgent.Editor {
   if(inspectionLayer<0)throw new InvalidOperationException("No isolated inspection layer available");
   foreach(var t in root.GetComponentsInChildren<Transform>(true))t.gameObject.layer=inspectionLayer;
   foreach(var light in root.GetComponentsInChildren<Light>(true))light.cullingMask=1<<inspectionLayer;
-  proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false,["lighting"]=lighting,["inspection_scene_isolated"]=true,["focused_views"]=focused};
+  proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false,["lighting"]=lighting,["daylight"]=daylight,["inspection_scene_isolated"]=true,["focused_views"]=focused};
   var cameraObject=new GameObject("House inspection camera"){hideFlags=HideFlags.HideAndDontSave};SceneManager.MoveGameObjectToScene(cameraObject,scene);camera=cameraObject.AddComponent<Camera>();camera.enabled=false;camera.nearClipPlane=.05f;camera.farClipPlane=100;camera.fieldOfView=75;camera.aspect=1280f/720;camera.cullingMask=1<<inspectionLayer;camera.overrideSceneCullingMask=EditorSceneManager.GetSceneCullingMask(scene);var hd=cameraObject.AddComponent<HDAdditionalCameraData>();hd.volumeLayerMask=1<<inspectionLayer;hd.allowDynamicResolution=false;hd.antialiasing=HDAdditionalCameraData.AntialiasingMode.None;
   target=new RenderTexture(1280,720,24,RenderTextureFormat.ARGB32,RenderTextureReadWrite.sRGB){hideFlags=HideFlags.HideAndDontSave};target.Create();SceneManager.SetActiveScene(userScene);built=true;Publish("Architecture assembled; interior inspection");
+  if(daylight!=null){ownedLightingContext=true;SceneManager.SetActiveScene(scene);}
+  if((string)manifest["lighting"]=="reference_daylight_bake")bake=new HouseCandidateBake(scene,directory);
  }
  static Vector3 V2(JToken t)=>new Vector3((float)t[0],0,(float)t[1]);
- void Cleanup(){foreach(var c in colliders)if(c)UnityEngine.Object.DestroyImmediate(c);colliders.Clear();if(camera)UnityEngine.Object.DestroyImmediate(camera.gameObject);camera=null;if(target){target.Release();UnityEngine.Object.DestroyImmediate(target);}target=null;if(scene.IsValid())EditorSceneManager.CloseScene(scene,true);if(userScene.IsValid())SceneManager.SetActiveScene(userScene);}
- void Fail(string code,string message,string status="failed"){Cleanup();Publish(message);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status=status,before_version=before,after_version=SceneInspector.Version(),error=new BridgeError{code=code,message=message,command_id=command.id}};}
+ void Cleanup(){if(bake!=null){bake.Dispose();bake.CloseCreatedLightingWindows();}foreach(var c in colliders)if(c)UnityEngine.Object.DestroyImmediate(c);colliders.Clear();if(camera)UnityEngine.Object.DestroyImmediate(camera.gameObject);camera=null;if(target){target.Release();UnityEngine.Object.DestroyImmediate(target);}target=null;if(scene.IsValid())EditorSceneManager.CloseScene(scene,true);if(userScene.IsValid())SceneManager.SetActiveScene(userScene);}
+ void Fail(string code,string message,string status="failed"){if(bake!=null&&!bake.Finished&&Lightmapping.isRunning){deferredCode=code;deferredMessage=message;deferredStatus=status;bake.Cancel();return;}Cleanup();Publish(message);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status=status,before_version=before,after_version=SceneInspector.Version(),error=new BridgeError{code=code,message=message,command_id=command.id}};}
 }
 }

@@ -20,6 +20,15 @@ def load_reference(state,project):
     for light in data['lights']:
         hd=unwrap(light.get('hdrp_serialized'))
         values={k:light.get(k) for k in ['active','type','unit','intensity','range_m','bake_mode','color','temperature_k','use_temperature','shadows','spot_angle','inner_spot_angle']}
+        # Unity 6000.3 serializes intensity in native photometric units. The
+        # Light.lightUnit field selects an inspector display unit, not the unit
+        # of the exported Light.intensity number. Preserve both explicitly.
+        values['display_unit']=values['unit']
+        values['unit']=light.get('native_unit') or {
+            'Directional':'Lux','Box':'Lux','Point':'Candela','Spot':'Candela',
+            'Pyramid':'Candela','Rectangle':'Nits','Disc':'Nits','Tube':'Nits',
+        }.get(values['type'],'unqualified')
+        values['intensity_semantics']='Unity Light.intensity in native units; display_unit is not its numeric unit'
         values['hdrp']={k:hd[k] for k in ['m_AffectDiffuse','m_AffectSpecular','m_VolumetricDimmer','m_ShapeWidth','m_ShapeHeight','m_LightDimmer','m_ShadowDimmer'] if k in hd}
         key=json.dumps(values,sort_keys=True)
         group=groups.setdefault(key,dict(settings=values,instances=[]))
