@@ -73,3 +73,34 @@ def test_occupied_named_shelf_does_not_fall_back_to_free_lower_shelf():
     before=deepcopy(instances);missing=[]
     place_details('bedroom',[target()],assets,instances,[],missing)
     assert instances==before and missing[0]['support_target']==target()
+
+
+def test_enrichment_visually_qualifies_new_details_before_placement(tmp_path,monkeypatch):
+    import json
+    from types import SimpleNamespace
+    import hdrp_agent.house_service as module
+    from hdrp_agent.house_planning import building_from_outline
+    assets,instances=setup_supports()
+    assets['Desk'].update(front_status='qualified',dependency_hash='b'*32)
+    assets['Notebook'].update(front_status='unknown',surfaces=[],support_regions=[])
+    parent=instances[1]
+    room=dict(id='bedroom',floor_index=0,width_m=6,depth_m=6,purpose='bedroom',brief='drawing desk')
+    building=building_from_outline(dict(rooms=[room]))
+    manifest=dict(building=building,instances=[parent],access=[],lighting='daylight')
+    addition=dict(room_id='bedroom',groups=[],detail_assets=[target()],unresolved=[])
+    service=object.__new__(module.HouseService)
+    service.settings=SimpleNamespace(state=tmp_path)
+    service.houses=SimpleNamespace(context=lambda *a:{},extend_requirements=lambda *a:None)
+    monkeypatch.setattr(module,'HouseMemory',lambda *a:SimpleNamespace(compact=lambda *a:{}))
+    service.ask=lambda *a,**k:deepcopy(addition)
+    service.reference_context=lambda *a:{}
+    reviewed=[]
+    def review(row,room,design,catalogue):
+        reviewed.append(deepcopy(design))
+        catalogue['Notebook']['front_status']='not_applicable'
+    service.review_selected_assets=review
+    row=dict(run_id='test',request=json.dumps(dict(parameters=dict(brief='inhabited bedroom'))),checkpoint='{}')
+    result=service.enrich(row,dict(rooms=[room]),assets,manifest,{},[dict(room_id='bedroom',kind='missing')],set())
+    assert reviewed==[addition]
+    assert result is not None
+    assert result[0]['instances'][-1]['support_id']==parent['id']

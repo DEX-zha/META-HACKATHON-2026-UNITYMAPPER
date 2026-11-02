@@ -137,7 +137,17 @@ public static class ReferenceArchitecture {
      var rotation=Quaternion.Euler(0,rotated?90:0,0);
      var tile=Native(wrapper.transform,name,centre-rotation*new Vector3(bounds.center.x,ceiling?bounds.min.y:bounds.max.y,bounds.center.z),rotation);
      foreach(var helper in tile.GetComponentsInChildren<MonoBehaviour>(true).Where(c=>c!=null&&c.GetType().FullName=="FS_Atmo.DisableAtStart")){helper.gameObject.SetActive(false);PrefabUtility.RecordPrefabInstancePropertyModifications(helper.gameObject);}
-     tiles.Add(new JObject{["object_key"]=batch.Key,["prefab"]=AssetDatabase.GetAssetPath(Source(name)),["scale"]=new JArray(1,1,1)});x+=span;
+     tiles.Add(new JObject{["object_key"]=batch.Key,["prefab"]=AssetDatabase.GetAssetPath(Source(name)),["scale"]=new JArray(1,1,1)});
+     if(ceiling){
+      // Ceiling tiles are downward-facing, zero-thickness interior finishes.
+      // Close their reverse face with native floor modules at the same plane.
+      // An upper floor at 3 m leaves the 20 cm ceiling cavity open to grazing light.
+      string capName="Floor_"+span+"x3";var capBounds=LocalBounds(Source(capName));
+      var capCentre=centre;
+      var cap=Native(wrapper.transform,capName,capCentre-rotation*new Vector3(capBounds.center.x,capBounds.max.y,capBounds.center.z),rotation);
+      tiles.Add(new JObject{["object_key"]=batch.Key,["role"]="upper_structural_closure",["prefab"]=AssetDatabase.GetAssetPath(Source(capName)),["height_m"]=centre.y,["scale"]=new JArray(1,1,1)});
+     }
+     x+=span;
     }
    }}catch{UnityEngine.Object.DestroyImmediate(wrapper);throw;}
    UnityEngine.Object.DestroyImmediate(old.gameObject);

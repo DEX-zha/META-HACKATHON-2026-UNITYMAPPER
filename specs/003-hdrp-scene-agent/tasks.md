@@ -834,3 +834,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T307 Give decoration proposals explicit group/slot support targets and optional measured shelf regions, retain target intent through review/replanning and report unavailable targets rather than silently placing work objects on unrelated furniture. Contract, scope, collision and legacy tests pass. A budget-accounted Muse request selected exact work-desk/library targets and offline placement retained every item; native rerender remains pending.
 
 - [ ] T308 Diagnose and qualify directional shadow occlusion behind interior observation cameras; compare matched native renders without changing geometry or photometry, retaining failed evidence.
+
+- [x] T309 Visually qualify newly proposed enrichment assets before supported placement; regression-test an initially unqualified detail becoming placeable on its explicit existing target. Live correction-loop qualification remains T284.

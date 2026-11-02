@@ -341,3 +341,18 @@ Next isolate directional shadow caster culling: the candidate sun inherited view
 
 
 Enrichment namespaces now remap explicit detail support-group references alongside newly added groups, preserving references to existing supports. Duplicate/colliding group identities are rejected. Full Python suite: 417 passed. The first shadow comparison (`02c05fa23f97472b8bae8287d75ecf03`) failed before construction because native closed-field validation mistakenly required the optional calibration flag. Native validation now accepts historical manifests without that flag and checks boolean type when supplied. Replacement comparison `7c1fed13e2ed46098223698bb823e801` is running at the previously measured fixed 2.88786459 EV.
+
+
+### Structural closure diagnostic
+
+Matched runs `63ca30ea970a4d2ab978553b64c16bcf` and `7c1fed13e2ed46098223698bb823e801` show essentially the same broad sun band with caster view-frustum culling disabled (mean per-channel image difference below 0.06/255). Both preserve the user scene. The ineffective override was removed; the daylight receipt now records its observed value.
+
+The catalogue reports Ceiling_6x3 and Ceiling_3x3 as zero-thickness surfaces, with their native centre 0.2 m below the storey origin. The generated shell previously assembled only their downward-facing interior finish, without an upper floor or roof. A native Floor module is now assembled at the pack's 3 m storey level above each ceiling tile, using the same rotation and measured native bounds, without mesh/material edits or scale changes. Receipt tiles label this upper structural closure. Probe `1defa6df9d5a4de7b5959f9eb20de3b4` compares the result at identical photometry and fixed exposure; await terminal evidence before retaining the change as qualified.
+
+
+Probe `1defa6df9d5a4de7b5959f9eb20de3b4` completed with preserved source and native bake. Visual review confirms the large upper-wall direct-light band disappeared after adding native upper closure; a narrow residual stripe remains. Follow-up places the reverse-facing floor finish at the exact interior ceiling plane (2.8 m) rather than leaving a 20 cm cavity between it and the upper-floor level. Compare natively before claiming complete occlusion.
+
+Enrichment now calls the same measured/visual selected-asset qualification used by initial planning before attempting placement. Previously new unqualified props could be proposed during correction but remain unplaceable forever. A regression test exercises a new detail becoming qualified and correctly attaching to the existing target. Preserve unsupported or rejected assets as missing; qualification is not automatic approval.
+
+
+Probe `b854411754b34e5ba25558f9e131db86` completed with the closure at the actual 2.8 m ceiling plane. The mid-wall stripe disappeared; a thin bright seam remains at the ceiling junction. A subsequent diagnostic reduces the candidate sun's normal bias from the copied reference value to at most 0.1, preserving native intensity/direction and recording both values. Await matched native comparison before qualification. Full Python suite after enrichment qualification: 418 passed. Backend restarted after verifying zero active sessions, queued/running commands and current-epoch unknown outcomes; retired-epoch history is preserved.
