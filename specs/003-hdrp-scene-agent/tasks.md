@@ -838,3 +838,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T309 Visually qualify newly proposed enrichment assets before supported placement; regression-test an initially unqualified detail becoming placeable on its explicit existing target. Live correction-loop qualification remains T284.
 
 - [x] T310 Supply actual candidate bake, daylight and exposure receipts to visual inspection/replanning, separate from source-reference settings and artistic qualification; test room-scoped immutable evidence. Live full-loop qualification remains T284.
+
+- [ ] T311 Route autonomous generation through an explicit model lighting intent: reference daylight bake by default, preserve requested night/practical mood, calibrate candidate exposure, retain unsupported needs and qualify the full chat path.
+
+- [ ] T312 Diagnose blocky post-bake artifacts after detail relocation using read-only UV inspection and isolated reopened-scene/sun-off comparisons, preserving user scenes and mesh imports. Resolve before deploying the reference-bake generation default.

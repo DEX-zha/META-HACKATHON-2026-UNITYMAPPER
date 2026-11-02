@@ -6938,6 +6938,34 @@
           "support_slot",
           "surface_id"
         ]
+      },
+      "ModelHouseLightingIntent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "reference_daylight_bake",
+              "warm_interior"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "reason",
+          "unresolved"
+        ]
       }
     }
   }

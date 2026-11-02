@@ -23,7 +23,7 @@ namespace HdrpAgent.Editor {
  public CommandResult Result{get;private set;}
  public HouseBuildJob(BridgeCommand c){if(EditorApplication.isPlayingOrWillChangePlaymode)throw new InvalidOperationException("House construction requires Edit Mode");command=c;before=SceneInspector.Version();userScene=SceneManager.GetActiveScene();userDirty=userScene.isDirty;userSignature=UserSignature(userScene);userState=UserState(userScene);userFileHash=File.Exists(userScene.path)?BridgeJson.Hash(File.ReadAllBytes(userScene.path)):null;}
  static IEnumerable<UnityEngine.Object> UserObjects(Scene scene)=>scene.GetRootGameObjects().SelectMany(g=>g.GetComponentsInChildren<Transform>(true)).SelectMany(t=>t.GetComponents<Component>().Where(c=>c).Cast<UnityEngine.Object>().Concat(new UnityEngine.Object[]{t.gameObject}));
- static JObject UserState(Scene scene){
+ internal static JObject UserState(Scene scene){
   var state=new JObject();foreach(var component in UserObjects(scene))state[component.GetInstanceID().ToString()]=new JObject{["type"]=component.GetType().FullName,["name"]=component.name,["dirty_count"]=EditorUtility.GetDirtyCount(component),["serialized"]=JObject.Parse(EditorJsonUtility.ToJson(component))};return state;
  }
  void RecordConcurrentState(){
@@ -31,7 +31,7 @@ namespace HdrpAgent.Editor {
   ReferenceWorkflow.Atomic(Path.Combine(directory,"source-state-conflict.json"),new JObject{["before_scene"]=userScene.path,["active_scene"]=SceneManager.GetActiveScene().path,["before_version"]=before,["current_version"]=SceneInspector.Version(),["before_dirty"]=userDirty,["current_dirty"]=userScene.isDirty,["changes"]=changes});
  }
  static string UserSignature(Scene s)=>BridgeJson.Hash(System.Text.Encoding.UTF8.GetBytes(string.Join(";",UserObjects(s).Select(c=>c.GetInstanceID()+":"+EditorUtility.GetDirtyCount(c)))));
- static bool SameUserContent(JObject left,JObject right){
+ internal static bool SameUserContent(JObject left,JObject right){
   var a=(JObject)left.DeepClone();var b=(JObject)right.DeepClone();
   foreach(var item in a.Properties())((JObject)item.Value).Remove("dirty_count");
   foreach(var item in b.Properties())((JObject)item.Value).Remove("dirty_count");

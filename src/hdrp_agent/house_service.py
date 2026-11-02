@@ -332,9 +332,14 @@ class HouseService:
                 design,placed=self.place_reviewed_design(row,room,design,assets,building,params['brief']);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
             if not requirements:raise AgentError('PROGRAM_INCOMPLETE','No supported functional requirements')
+            lighting=self.ask(row,'lighting-intent',
+                'Choose the implemented lighting path for the user brief. Default to reference_daylight_bake: candidate-owned clean-day environment, window daylight and scene-scoped indirect bake. Choose warm_interior only when the user explicitly requests night, no daylight or a practical-light mood. That practical mode has no verified indirect bake yet; preserve such unmet requests in unresolved. Do not change night intent into day just to use the better-qualified path. Both modes meter exposure from the actual candidate. A selected mode is not proof of artistic success. '+canonical(dict(brief=params['brief'],outline=outline,reference=self.reference_context(row))),
+                'ModelHouseLightingIntent')
+            missing.extend(lighting['unresolved'])
+            self.save(row,'lighting','Lighting intent: '+lighting['reason'],lighting_intent=lighting)
             program=dict(id='house',project_id=row['project_id'],run_id=run,brief=params['brief'],creative_policy=params['creative_policy'],reference_hashes=params['reference_hashes'],rooms=[dict(id=r['id'],floor_id='ground',purpose=r['purpose']) for r in outline['rooms']],requirements=requirements)
             self.houses.create(program,building)
-            manifest=dict(schema_version='house-manifest.v1',run_id=run,building=building,instances=instances,access=access,interior_style=params['interior_style'],lighting='warm_interior',designs=designs,exposure_ev=6)
+            manifest=dict(schema_version='house-manifest.v1',run_id=run,building=building,instances=instances,access=access,interior_style=params['interior_style'],lighting=lighting['mode'],designs=designs,exposure_ev=6,calibrate_exposure=True)
             self.save(row,'building','Metric plan ready; native assembly',unresolved=missing)
             def zone_inspect(candidate,evidence,room,zone):
                 scoped=dict(outline,rooms=[r for r in outline['rooms'] if r['id']==room])
