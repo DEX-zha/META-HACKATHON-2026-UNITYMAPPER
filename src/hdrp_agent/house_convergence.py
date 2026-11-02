@@ -64,7 +64,7 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
     Each candidate is saved separately by Unity. Rejection keeps the accepted scene
     path and evidence, so a worse proposal never replaces the selected result.
     """
-    attempted={signature(manifest)};attempted_poses={fingerprint(manifest['instances'])};round_index=0;rejections=0;reconsidered=0
+    attempted={signature(manifest)};attempted_poses={fingerprint(manifest['instances'])};round_index=0;rejections=0;reconsidered=set()
     while True:
         guard()
         proposal=exposure_proposal(manifest,proof,attempted)
@@ -73,8 +73,13 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
             if movement and signature(movement[0]) not in attempted:proposal=movement
         if proposal is None:proposal=enrich(manifest,proof,observations,attempted)
         if proposal is None:
-            if reconsider is not None and rejections>reconsidered:
-                observations=reconsider(manifest,proof);reconsidered=rejections;continue
+            reason_key=fingerprint(dict(manifest=signature(manifest),observations=observations,rejections=rejections))
+            if reconsider is not None and (observations or rejections) and reason_key not in reconsidered:
+                reconsidered.add(reason_key)
+                revised=reconsider(manifest,proof)
+                # A planning reply cannot erase defects without a new build and review.
+                if revised and fingerprint(revised)!=fingerprint(observations):
+                    observations=revised;continue
             return manifest,receipt,proof,observations,'NO_SAFE_PROGRESS'
         candidate,patch=proposal;key=signature(candidate)
         if key in attempted:return manifest,receipt,proof,observations,'REPEATED_STATE'

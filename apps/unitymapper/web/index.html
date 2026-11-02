@@ -20,7 +20,7 @@
 </main>
 <aside id="inspector" class="inspector" hidden aria-label="Inspection visuelle">
 <div class="inspector-heading"><div><strong>Ce que l’agent observe</strong><p>Captures actualisées · pas un flux vidéo</p></div><button id="close-inspector" aria-label="Fermer l’inspection">×</button></div>
-<p id="inspection-status" role="status"></p><label for="visual-filter">Éléments observés</label><select id="visual-filter"><option value="all">Tout afficher</option><option value="reference">Références</option><option value="comparison">Comparaison des assets</option><option value="prefab">Aperçus de prefabs</option><option value="unity">Captures Unity</option></select>
+<p id="inspection-status" role="status"></p><label for="visual-filter">Éléments observés</label><select id="visual-filter"><option value="all">Tout afficher</option><option value="reference">Références</option><option value="comparison">Comparaison des assets</option><option value="prefab">Aperçus de prefabs</option><option value="unity">Captures Unity</option><option value="segmentation">Masques SAM</option></select>
 <figure class="visual-stage"><img id="visual-live" hidden alt="Flux de la caméra Unity en direct"><canvas id="visual-canvas" aria-label="Image observée et zones SAM"></canvas><figcaption id="visual-caption"></figcaption></figure>
 <label class="follow-control"><input id="follow-visual" type="checkbox" checked> Suivre le flux Unity en direct</label>
 <div id="visual-gallery" class="visual-gallery"></div><h3>Objets et segmentation</h3><div id="visual-objects"></div>

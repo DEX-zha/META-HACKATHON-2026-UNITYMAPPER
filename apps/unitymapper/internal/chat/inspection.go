@@ -110,7 +110,7 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 		}
 		allowed := visualFile.MatchString(filepath.ToSlash(rel))
 		if house {
-			allowed = regexp.MustCompile(`^([a-f0-9]{12}/)?view-[0-9]+\.png$`).MatchString(filepath.ToSlash(rel))
+			allowed = regexp.MustCompile(`^([a-f0-9]{12}/)?(sam-)?view-[0-9]+\.png$`).MatchString(filepath.ToSlash(rel))
 		}
 		if !allowed || !safeEvidence(root, path, 32<<20) {
 			return nil
@@ -128,6 +128,9 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 			kind = "comparison"
 		case filepath.Dir(rel) != ".":
 			kind = "unity"
+		}
+		if house && regexp.MustCompile(`(^|/)sam-view-`).MatchString(filepath.ToSlash(rel)) {
+			kind = "segmentation"
 		}
 		out.Images = append(out.Images, Visual{hex.EncodeToString(sum[:]), kind, rel, st.ModTime().UTC().Format(time.RFC3339Nano), path})
 		return nil

@@ -6,6 +6,7 @@ import json
 import time
 import uuid
 from copy import deepcopy
+from pathlib import Path
 from .house_convergence import converge, signature
 from .house_media import inspection_batches
 from .house_memory import HouseMemory
@@ -15,6 +16,9 @@ from .store import utc_now
 from .house_store import HouseStore
 from .house_planning import building_from_outline, place_groups
 from .house_briefing import room_prompt, RENDER_REFERENCE_POLICY
+from .house_lighting_reference import load_reference
+from .house_zones import assemble as assemble_zones
+from .house_vision import concepts as segmentation_concepts, overlay as segmentation_overlay
 from .budget import Budget
 from .budget_cli import load_pricing
 from .providers.meta_responses import MetaResponses, spark_request, sam_request
@@ -99,7 +103,7 @@ class HouseService:
         row=self.row(action);cp=json.loads(row['checkpoint']);out=self.get(action)
         try:out['house']=self.houses.snapshot(row['run_id'])
         except AgentError:out['house']=None
-        out.update(current_scope=cp.get('current_scope'),scene_path=cp.get('scene_path'),scene_version=cp.get('scene_version'),last_evidence_at=cp.get('last_evidence_at'),unresolved=cp.get('unresolved',[]),captures=cp.get('captures',[]),iterations=cp.get('iterations',[]),stop_reason=cp.get('stop_reason'),segmentations=cp.get('segmentations',[]),updated_at=cp['updated_at'])
+        out.update(current_scope=cp.get('current_scope'),scene_path=cp.get('scene_path'),scene_version=cp.get('scene_version'),last_evidence_at=cp.get('last_evidence_at'),unresolved=cp.get('unresolved',[]),captures=cp.get('captures',[]),iterations=cp.get('iterations',[]),stop_reason=cp.get('stop_reason'),correction_blockers=cp.get('correction_blockers',[]),zone_history=cp.get('zone_history',[]),segmentations=cp.get('segmentations',[]),updated_at=cp['updated_at'])
         return out
     def guard(self,row):
         if self.shutdown.is_set():raise AgentError('SERVICE_STOPPING','House service is stopping')
@@ -132,6 +136,11 @@ class HouseService:
             with self.store.tx() as c:c.execute('UPDATE house_calls SET value=? WHERE run_id=? AND key=?',(canonical(response['value']),row['run_id'],key))
             return response['value']
         finally:provider.client.close()
+    def reference_context(self,row):
+        with closing(self.store.connect()) as c:
+            project=json.loads(c.execute('SELECT body FROM projects WHERE id=?',(row['project_id'],)).fetchone()[0])
+        return load_reference(self.settings.state,self.settings.project_path(project['project_root']))
+
     def catalogue(self):
         with closing(self.store.connect()) as c:rows=c.execute('SELECT body FROM asset_semantics').fetchall()
         assets={}
@@ -176,7 +185,7 @@ class HouseService:
             building=building_from_outline(outline);assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
             for room in outline['rooms']:
                 self.guard(row);self.save(row,'furnishing','Aménagement de '+room['purpose'],current_scope=room['id'])
-                design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets),'ModelHouseRoomV2',images)
+                design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
                 placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
@@ -185,7 +194,19 @@ class HouseService:
             self.houses.create(program,building)
             manifest=dict(schema_version='house-manifest.v1',run_id=run,building=building,instances=instances,access=access,interior_style=params['interior_style'],lighting='warm_interior',designs=designs,exposure_ev=6)
             self.save(row,'building','Plan métrique prêt ; assemblage natif',unresolved=missing)
-            receipt,proof=self.native(row,manifest)
+            def zone_inspect(candidate,evidence,room,zone):
+                scoped=dict(outline,rooms=[r for r in outline['rooms'] if r['id']==room])
+                return self.inspect(row,scoped,candidate['instances'],evidence,persist=False)
+            def zone_record(room,zone,status,evidence):
+                cp=json.loads(row['checkpoint']);history=cp.get('zone_history',[])
+                history.append(dict(room_id=room,zone_id=zone,status=status,scene_path=(evidence or {}).get('scene_path')))
+                self.save(row,'building','Zone '+zone+' : '+status,current_scope=room,zone_history=history)
+            def zone_repair(candidate,receipt,evidence,observations,room,zone):
+                def audit(index,status,patch,r,p):zone_record(room,zone,'repair_'+status,p)
+                result=converge(candidate,receipt,evidence,observations,build=lambda c:self.native(row,c),inspect=lambda c,p:zone_inspect(c,p,room,zone),enrich=lambda *a:None,record=audit,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p))
+                return result[:4]
+            manifest,receipt,proof=assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
+            instances=manifest['instances']
             self.save(row,'inspection','Contrôle des vues et des équipements',scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],last_evidence_at=utc_now())
             actual={i['id']:i for i in proof.get('instances',[])}
             resolved=[];unresolved=[]
@@ -212,7 +233,13 @@ class HouseService:
                 if status=='accepted':selected.update(receipt=candidate_receipt,proof=candidate_proof)
                 best=selected['proof']
                 self.save(row,'correcting','Correction '+str(index)+' : '+{'proposed':'essai en cours','accepted':'amélioration conservée','rejected':'régression ou absence de progrès ; candidat écarté'}[status],iterations=history,scene_path=best['scene_path'],scene_version=best['scene_version'],captures=best['captures'])
-            manifest,receipt,proof,observations,stop_reason=converge(manifest,receipt,proof,observations,build=lambda candidate:self.native(row,candidate),inspect=inspect_candidate,enrich=lambda m,p,o,a:self.enrich(row,outline,assets,m,p,o,a),record=record,guard=lambda:self.guard(row),reconsider=inspect_candidate)
+            manifest,receipt,proof,observations,stop_reason=converge(manifest,receipt,proof,observations,build=lambda candidate:self.native(row,candidate),inspect=inspect_candidate,enrich=lambda m,p,o,a:self.enrich(row,outline,assets,m,p,o,a),record=record,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p))
+            blockers=[]
+            for observation in observations:
+                action=observation.get('suggested_action','none')
+                reason=('Opération '+action+' non implémentée dans la boucle de correction' if action in {'replace','reframe','measure'} else 'Éclairage/bake non qualifié ; une correction d’exposition seule ne suffit pas' if observation.get('kind')=='lighting' else 'Aucune nouvelle proposition sûre après contrôles et replanification')
+                blockers.append(dict(room_id=observation['room_id'],instance_id=observation.get('instance_id'),defect=observation['message'],reason=reason))
+            self.save(row,'correcting','Bilan des corrections et blocages restants',correction_blockers=blockers)
             self.reconcile_selected(row,receipt,proof,observations)
             segmentation_hash=json.loads(row['checkpoint']).get('segmentation_receipts',{}).get(proof['scene_version'])
             self.save(row,'inspection','Restauration des preuves du candidat retenu',segmentations=json.loads(self.artifacts.read(segmentation_hash)) if segmentation_hash else [])
@@ -232,7 +259,7 @@ class HouseService:
                 self.store.update_session(c,row['session_id'],state='recovery_required' if uncertain else 'interrupted',verdict='inconclusive',stop_reason=code+': '+message)
     def inspect(self,row,outline,instances,proof,*,persist=True):
         from .providers.sam_decoder import decode
-        run=row['run_id'];segments=[];observations=[]
+        run=row['run_id'];segments=[];observations=[];assets=self.catalogue();overlays={}
         for room in outline['rooms']:
             captures=[c for c in proof.get('captures',[]) if c['room_id']==room['id'] and c.get('usable')]
             if not captures:
@@ -242,16 +269,27 @@ class HouseService:
                 self.save(row,'inspection','SAM analyse les objets visibles : '+room['id']+' / '+c['key'],current_scope=room['id'])
                 binary=self.artifacts.read(c['artifact_hash'])
                 with Image.open(io.BytesIO(binary)) as im:width,height=im.size
-                text=self.provider_call(row,'sam-'+c['artifact_hash'],sam_request('furniture',binary))
-                regions=decode(text,width,height)
-                for region in regions:region['mask_artifact_hash']=self.artifacts.put(region.pop('mask_png'),'image/png')
-                segments.append(dict(capture_hash=c['artifact_hash'],scene_version=proof['scene_version'],room_id=room['id'],concept='furniture',regions=regions))
-                self.save(row,'inspection','Segmentation enregistrée : '+room['id'],segmentations=segments,last_evidence_at=utc_now())
+                local=[i for i in instances if i['room_id']==room['id']]
+                for concept in segmentation_concepts(local,assets):
+                    self.guard(row)
+                    text=self.provider_call(row,'sam-'+c['artifact_hash']+'-'+fingerprint(concept)[:12],sam_request(concept,binary))
+                    regions=decode(text,width,height)
+                    for region in regions:region['mask_artifact_hash']=self.artifacts.put(region.pop('mask_png'),'image/png')
+                    segments.append(dict(capture_hash=c['artifact_hash'],scene_version=proof['scene_version'],room_id=room['id'],concept=concept,regions=regions))
+                composite=segmentation_overlay(binary,[r for s in segments if s['capture_hash']==c['artifact_hash'] for r in s['regions']],self.artifacts.read)
+                overlays[c['artifact_hash']]=composite
+                if c.get('file'):
+                    relative=Path(c['file'])
+                    if len(relative.parts)==2 and all(ch in '0123456789abcdef' for ch in relative.parts[0]) and relative.name.startswith('view-') and relative.suffix=='.png':
+                        destination=self.settings.state/'house'/'runs'/run/relative.parent/('sam-'+relative.name)
+                        destination.parent.mkdir(parents=True,exist_ok=True)
+                        temporary=destination.with_suffix('.tmp');temporary.write_bytes(composite);temporary.replace(destination)
+                self.save(row,'inspection','Masques SAM enregistrés : '+room['id'],segmentations=segments,last_evidence_at=utc_now())
             # Twelve is the provider transport maximum, never a semantic truncation.
-            for batch_index,(batch,images) in enumerate(inspection_batches(captures,self.artifacts.read)):
+            for batch_index,(batch,images) in enumerate(inspection_batches(captures,lambda h:overlays.get(h) or self.artifacts.read(h))):
                 hashes=[c['artifact_hash'] for c in batch]
                 context=HouseMemory(self.settings.state,run).compact(room['id'],self.houses.context(run,room['id']))
-                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(context)[:12]+'-'+str(batch_index),RENDER_REFERENCE_POLICY+'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. '+canonical(dict(room=room,instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
+                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(context)[:12]+'-'+str(batch_index),RENDER_REFERENCE_POLICY+'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. Images show translucent raster-mask overlays from SAM. Uncoloured pixels are NOT proof of absence: SAM can miss, merge or occlude objects. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. '+canonical(dict(room=room,lighting_reference=self.reference_context(row),instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Inspection room identity differs')
                 for index,defect in enumerate(review['observations']):
                     observations.append(dict(defect,room_id=room['id'],evidence_ids=hashes))
@@ -261,6 +299,23 @@ class HouseService:
         self.save(row,'inspection','Inspection visuelle enregistrée',segmentation_receipts=saved)
         return observations
 
+    def replan_repairs(self,row,outline,assets,manifest,proof):
+        """Ask for actionable local repairs when the initial observation cannot execute."""
+        observations=[]
+        for room in outline['rooms']:
+            local=[i for i in manifest['instances'] if i['room_id']==room['id']]
+            if not local:continue
+            context=HouseMemory(self.settings.state,row['run_id']).compact(room['id'],self.houses.context(row['run_id'],room['id']))
+            captures=[c for c in proof.get('captures',[]) if c.get('room_id')==room['id'] and c.get('usable')]
+            for index,(batch,images) in enumerate(inspection_batches(captures,self.artifacts.read)):
+                request=dict(room=room,scene_version=proof['scene_version'],lighting_reference=self.reference_context(row),geometry=manifest['building'],instances=local,context=context)
+                self.save(row,'correcting','Replanification ciblée des défauts : '+room['id'],current_scope=room['id'])
+                review=self.ask(row,'repair-'+fingerprint(request)[:24]+'-'+str(index),
+                    'Previous observed defects had no executable repair or regressed. Reinspect the supplied current evidence and propose DIFFERENT concrete corrections. Use exact instance_id from the inventory. Move/rotate controls move the WHOLE functional group with supported children, not just one prop. translation_m is a world-space delta, horizontal only, and yaw_delta rotates about the group anchor. Preserve room boundaries, doors and circulation and account for all other groups. Do not recommend the same rejected pose. Report missing/composition needs for additions; unsupported lighting bake, wall mounting or mesh/material edits must stay unresolved, not claim success. No corrected defect may be dismissed without visual evidence. '+canonical(request),'ModelHouseInspection',images)
+                if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Repair room identity differs')
+                observations.extend(dict(o,room_id=room['id'],evidence_ids=[c['artifact_hash'] for c in batch]) for o in review['observations'])
+        return observations
+
     def enrich(self,row,outline,assets,manifest,proof,observations,attempted):
         for room in outline['rooms']:
             local=[o for o in observations if o['room_id']==room['id'] and o['kind'] in {'missing','composition'}]
@@ -268,20 +323,19 @@ class HouseService:
             context=HouseMemory(self.settings.state,row['run_id']).compact(room['id'],self.houses.context(row['run_id'],room['id']))
             key='enrich-'+room['id']+'-'+fingerprint(dict(manifest=signature(manifest),context=context))[:16]
             supports=[dict(instance_id=i['id'],prefab_name=name,regions=a.get('support_regions',[]),surfaces=[dict(id=s['id'],height_m=s.get('height_m')) for s in a.get('surfaces',[])],children=[child['id'] for child in manifest['instances'] if child['support_id']==i['id']]) for i in manifest['instances'] if i['room_id']==room['id'] for name,a in assets.items() if a['prefab_guid']==i['prefab_guid'] and a.get('support_regions')]
-            addition=self.ask(row,key,'Propose ONLY additions to repair the reported missing equipment or sparse composition. Keep every existing instance. Return empty groups/detail_assets when no qualified safe addition can address these defects; explain unsupported needs in unresolved. Do not substitute random props for missing rugs, lamps or paintings. When storage is too empty, plan a complete coherent enrichment across several shelf compartments in this pass, not a token single book. Repeated book-cluster prefabs are allowed. Use measured support capacity and occupied children; keep some calm/empty space. Return all proposed detail_assets, without a fixed item quota. '+room_prompt(dict(room,geometry=next(r for r in manifest['building']['rooms'] if r['id']==room['id']),portals=manifest['building']['portals']),json.loads(row['request'])['parameters']['brief'],assets)+' Current instances, defects and persistent requirements: '+canonical(dict(instances=[i for i in manifest['instances'] if i['room_id']==room['id']],observations=local,context=context,supports=supports)),'ModelHouseRoomV2')
+            addition=self.ask(row,key,'Propose ONLY additions to repair the reported missing equipment or sparse composition. Keep every existing instance. Return empty groups/detail_assets when no qualified safe addition can address these defects; explain unsupported needs in unresolved. Do not substitute random props for missing rugs, lamps or paintings. When storage is too empty, plan a complete coherent enrichment across several shelf compartments in this pass, not a token single book. Repeated book-cluster prefabs are allowed. Use measured support capacity and occupied children; keep some calm/empty space. Return all proposed detail_assets, without a fixed item quota. '+room_prompt(dict(room,geometry=next(r for r in manifest['building']['rooms'] if r['id']==room['id']),portals=manifest['building']['portals']),json.loads(row['request'])['parameters']['brief'],assets)+' Native lighting reference data: '+canonical(self.reference_context(row))+' Current instances, defects and persistent requirements: '+canonical(dict(instances=[i for i in manifest['instances'] if i['room_id']==room['id']],observations=local,context=context,supports=supports)),'ModelHouseRoomV2')
             if addition['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Enrichment scope differs')
             addition=deepcopy(addition)
             for g in addition['groups']:g['id']='extra-'+signature(manifest)[:8]+'-'+g['id'][:40]
             offset=max([int(i['id'].rsplit('-',1)[1]) for i in manifest['instances'] if i['room_id']==room['id'] and '-detail-' in i['id'] and i['id'].rsplit('-',1)[1].isdigit()]+[-1])+1
-            access=next(a['points'] for a in manifest['access'] if a['room_id']==room['id'])
+            access=next((a['points'] for a in manifest['access'] if a['room_id']==room['id']),[])
             placed=place_groups(manifest['building'],addition,assets,existing=manifest['instances'],access_points=access,detail_offset=offset)
             self.houses.extend_requirements(row['run_id'],placed['requirements'])
             if addition['unresolved'] or placed['missing']:
                 cp=json.loads(row['checkpoint']);self.save(row,'correcting','Compléments évalués ; certains besoins restent indisponibles',unresolved=cp.get('unresolved',[])+addition['unresolved']+placed['missing'])
             if not placed['instances']:continue
             candidate=deepcopy(manifest);candidate['instances'].extend(placed['instances'])
-            for a in candidate['access']:
-                if a['room_id']==room['id']:a['points']=placed['access_points']
+            candidate['access']=[a for a in candidate['access'] if a['room_id']!=room['id']]+[dict(room_id=room['id'],points=placed['access_points'])]
             if signature(candidate) in attempted:continue
             return candidate,dict(kind='enrich_room',scope_id=room['id'],reason='Fill observed missing equipment or sparse composition',added_ids=[i['id'] for i in placed['instances']])
         return None

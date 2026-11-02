@@ -32,8 +32,12 @@ requested; do not replace them with unrelated props. Leave calm areas rather tha
 
 
 def room_prompt(room,brief,assets):
-    catalogue=dict(room=room,brief=brief,
-        room_geometry=room.get('geometry'),asset_catalogue=[dict(id=n,size_m=a['bounds_size'],front_status=a['front_status'],supports=[r.get('roles',[]) for r in a.get('support_regions',[])]) for n,a in assets.items() if not any(k in a.get('prefab_path','') for k in ('/Building/','/Doors_drawers/'))],floor_assets=[dict(name=n,size_m=a['bounds_size']) for n,a in assets.items() if floor_detail(n,a)],
+    families={}
+    for name,a in assets.items():
+        path=a.get('prefab_path','');family=path.split('/Prefabs/')[-1].rsplit('/',1)[0] if '/Prefabs/' in path else 'other'
+        families.setdefault(family,[]).append(name)
+    catalogue=dict(room=room,brief=brief,resource_families=families,
+        room_geometry=room.get('geometry'),asset_catalogue=[dict(id=n,size_m=a['bounds_size'],front_status=a['front_status'],prefab_path=a.get('prefab_path'),style_tags=a.get('style_tags',[]),support_regions=[dict(surface_id=r['surface_id'],rectangle_xz=r['rectangle_xz'],roles=r.get('roles',[])) for r in a.get('support_regions',[])]) for n,a in assets.items() if not any(k in a.get('prefab_path','') for k in ('/Building/','/Doors_drawers/'))],floor_assets=[dict(name=n,size_m=a['bounds_size']) for n,a in assets.items() if floor_detail(n,a)],
         qualified_assets=[n for n,a in assets.items() if a.get('front_status') in {'qualified','not_applicable'}],
         unqualified_assets=[n for n,a in assets.items() if a.get('front_status') not in {'qualified','not_applicable'} and not floor_detail(n,a)])
     return RENDER_REFERENCE_POLICY+ROOM_POLICY+'\nGroup purpose labels: '+canonical(list(RECIPES))+'\nYou choose every item and its placement; purpose labels never inject assets. Native placement checks decide what fits. Room and brief: '+canonical(catalogue)

@@ -57,3 +57,11 @@ def test_rejected_candidate_triggers_fresh_reasoning_once_per_rejection():
     def build(candidate):return {},proof(candidate,[dict(kind='support')])
     result=converge(m,{},proof(m),[],build=build,inspect=lambda *a:[],enrich=lambda *a:None,record=lambda *a:None,guard=lambda:None,reconsider=lambda *a:reviews.append('rethink') or [])
     assert reviews==['rethink'] and result[0]==m
+
+
+def test_unactionable_initial_defect_replans_without_any_prior_rejection():
+    m=dict(instances=[],exposure_ev=14);reviews=[]
+    defect=dict(room_id='house',instance_id='',kind='lighting',severity='blocking',suggested_action='none')
+    result=converge(m,{},proof(m),[defect],build=lambda m:({},proof(m)),inspect=lambda *a:[defect],enrich=lambda *a:None,record=lambda *a:None,guard=lambda:None,reconsider=lambda *a:reviews.append('repair') or [])
+    assert reviews==['repair']
+    assert result[3]==[defect]  # Planning cannot erase evidence.

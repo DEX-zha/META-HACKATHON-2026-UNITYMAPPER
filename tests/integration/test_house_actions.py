@@ -84,7 +84,7 @@ def test_house_run_rebuilds_reinspects_and_persists_selected_candidate(tmp_path,
     def native(row,manifest):
         builds.append(manifest['exposure_ev']);digest=h.artifacts.put(str(manifest['exposure_ev']).encode())
         receipt=dict(details_artifact_hash=digest,artifact_hashes=[digest])
-        proof=dict(manifest_hash=fingerprint(manifest),scene_path='House-'+str(manifest['exposure_ev']),scene_version=digest,source_scene_unchanged=True,instances=[dict(i,connected=True,native_scale=True,support_passed=True) for i in manifest['instances']],defects=[],captures=[dict(mean_rgb=.95 if manifest['exposure_ev']==6 else .5)])
+        proof=dict(manifest_hash=fingerprint(manifest),scene_path='House-'+str(manifest['exposure_ev']),scene_version=digest,source_scene_unchanged=True,instances=[dict(i,connected=True,native_scale=True,support_passed=True) for i in manifest['instances']],defects=[],captures=[dict(room_id='office',mean_rgb=.95 if manifest['exposure_ev']==6 else .5)])
         return receipt,proof
     monkeypatch.setattr(h,'native',native);monkeypatch.setattr(h,'inspect',lambda *a,**k:[]);monkeypatch.setattr(h,'enrich',lambda *a:None)
     h.run(r['action_id']);result=h.progress(r['action_id'])

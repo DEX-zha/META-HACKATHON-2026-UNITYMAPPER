@@ -25,12 +25,12 @@ def propose(manifest,observations,attempted):
         rooms={r['id']:r for r in result['building']['rooms']};valid=True
         for room_id,room in rooms.items():
             bounds=room_bounds(room);reservations,points=door_reservations(result['building'],room)
-            ground=[i for i in result['instances'] if i['room_id']==room_id and i['support_id'] is None]
+            ground=[i for i in result['instances'] if i['room_id']==room_id and i['support_id'] is None and i.get('role')!='floor_covering']
             footprints=[box(i,i['center'][0],i['center'][2],i['yaw']) for i in ground]
             if any(b[0]<bounds[0]+.08 or b[1]<bounds[1]+.08 or b[2]>bounds[2]-.08 or b[3]>bounds[3]-.08 or any(overlap(b,r,.05) for r in reservations) for b in footprints):valid=False;break
             if any(overlap(b,c) for n,b in enumerate(footprints) for c in footprints[n+1:]):valid=False;break
             for item,b in zip(ground,footprints):
-                if item.get('role') in {'chair','plant'}:continue
+                if any(k in item.get('role','').lower() for k in ('chair','plant')):continue
                 choices=[]
                 for side in (0,-1,1):
                     dx,dz=rotate(side*(item['bounds_size'][0]/2+.5),item['bounds_size'][2]/2+.65,item['yaw'])
