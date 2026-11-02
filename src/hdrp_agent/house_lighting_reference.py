@@ -3,6 +3,18 @@ import hashlib
 import json
 from collections import Counter
 from pathlib import Path
+from copy import deepcopy
+
+
+def candidate_evidence(proof,room_id):
+    """Carry actual candidate receipts into visual review, without an art verdict."""
+    return deepcopy(dict(scene_version=proof.get('scene_version'),
+        source_scene_unchanged=proof.get('source_scene_unchanged'),
+        bake=proof.get('bake'),daylight=proof.get('daylight'),
+        exposure_calibration=proof.get('exposure_calibration'),
+        lighting_qualified=proof.get('lighting_qualified',False),
+        captures=[dict(artifact_hash=c.get('artifact_hash'),render_request_state=c.get('render_request_state'))
+            for c in proof.get('captures',[]) if c.get('room_id')==room_id]))
 
 
 def unwrap(value):

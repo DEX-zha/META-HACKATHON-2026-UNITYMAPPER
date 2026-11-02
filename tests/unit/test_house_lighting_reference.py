@@ -22,3 +22,16 @@ def test_inspector_lumens_do_not_relabel_native_candelas_or_nits(tmp_path):
     (directory/'lighting.json').write_text(json.dumps(data))
     settings=[g['settings'] for g in load_reference(tmp_path/'state',project)['light_groups']]
     assert [(s['intensity'],s['unit'],s['display_unit']) for s in settings]==[(64.45775,'Candela','Lumen'),(217.029449,'Nits','Lumen')]
+
+
+def test_candidate_review_receives_native_bake_without_artistic_promotion():
+    from hdrp_agent.house_lighting_reference import candidate_evidence
+    proof=dict(scene_version='v1',source_scene_unchanged=True,bake=dict(status='completed',candidate_owned=True,lightmaps=[dict(sha256='a'*64)]),captures=[dict(room_id='bedroom',artifact_hash='b'*64,render_request_state=dict(exposure_mode='Fixed',exposure_ev=2.8)),dict(room_id='other',artifact_hash='c'*64)])
+    result=candidate_evidence(proof,'bedroom')
+    assert result['bake']==proof['bake']
+    assert result['lighting_qualified'] is False
+    assert result['exposure_calibration'] is None
+    assert len(result['captures'])==1
+    result['bake']['status']='changed'
+    assert proof['bake']['status']=='completed'
+    assert candidate_evidence({},'bedroom')['bake'] is None

@@ -836,3 +836,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T308 Diagnose and qualify directional shadow occlusion behind interior observation cameras; compare matched native renders without changing geometry or photometry, retaining failed evidence.
 
 - [x] T309 Visually qualify newly proposed enrichment assets before supported placement; regression-test an initially unqualified detail becoming placeable on its explicit existing target. Live correction-loop qualification remains T284.
+
+- [x] T310 Supply actual candidate bake, daylight and exposure receipts to visual inspection/replanning, separate from source-reference settings and artistic qualification; test room-scoped immutable evidence. Live full-loop qualification remains T284.
