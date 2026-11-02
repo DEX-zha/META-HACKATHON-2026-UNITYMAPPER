@@ -271,7 +271,7 @@ class HouseService:
             if addition['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Enrichment scope differs')
             addition=deepcopy(addition)
             for g in addition['groups']:g['id']='extra-'+signature(manifest)[:8]+'-'+g['id'][:40]
-            offset=max([int(i['id'].rsplit('-',1)[1]) for i in manifest['instances'] if i['room_id']==room['id'] and i['role']=='detail']+[-1])+1
+            offset=max([int(i['id'].rsplit('-',1)[1]) for i in manifest['instances'] if i['room_id']==room['id'] and '-detail-' in i['id'] and i['id'].rsplit('-',1)[1].isdigit()]+[-1])+1
             access=next(a['points'] for a in manifest['access'] if a['room_id']==room['id'])
             placed=place_groups(manifest['building'],addition,assets,existing=manifest['instances'],access_points=access,detail_offset=offset)
             self.houses.extend_requirements(row['run_id'],placed['requirements'])

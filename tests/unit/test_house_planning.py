@@ -99,3 +99,23 @@ def test_books_spread_across_free_shelf_compartments():
     instances=[dict(id='shelf',room_id='office',group_id='library',role='bookshelf',prefab_guid='shelf',position=[0,0,0],center=[.5,.5,.5],bounds_size=[1,1,1],yaw=0)]
     place_details('office',['Book_set_A','Book_set_A'],{'Bookshelf':shelf,'Book_set_A':book},instances,[],[])
     assert [round(i['position'][1],2) for i in instances[1:]]==[.2,.8]
+
+
+def test_floor_decoration_uses_native_prefab_clear_of_doors_and_furniture():
+    from hdrp_agent.house_planning import box,overlap
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    def asset(name,path,size):return dict(prefab_guid=name,dependency_hash='v',prefab_path=path,bounds_size=size,bounds_center=[.2,.02,.1],front_status='unknown')
+    assets={'Carpet_C':asset('rug','Assets/AtmosphericHouse/Prefabs/Props/Carpets/Carpet_C.prefab',[1.8,.008,1.3]),'Decal_papers_G':asset('papers','Assets/AtmosphericHouse/Prefabs/Decals/Decal_papers_G.prefab',[1.6,.014,.86])}
+    desk=dict(id='desk',room_id='office',group_id='work',role='desk',prefab_guid='desk',center=[3,.4,1],position=[3,0,1],bounds_size=[1.8,.8,.8],yaw=0,support_id=None)
+    design=dict(room_id='office',groups=[],detail_assets=['Carpet_C','Decal_papers_G'])
+    result=place_groups(building,design,assets,existing=[desk])
+    assert len(result['instances'])==2 and not result['missing']
+    for i in result['instances']:
+        assert i['role']=='floor_covering' and i['scale']==[1,1,1] and i['support_id'] is None
+        assert abs(i['center'][1]-i['bounds_size'][1]/2-.001)<1e-8
+        footprint=box(i,i['center'][0],i['center'][2],i['yaw'])
+        assert not any(overlap(footprint,r) for r in result['door_reservations'])
+        assert not overlap(footprint,box(desk,3,1,0))
+    assets['Carpet_C']['bounds_size'][1]=1
+    result=place_groups(building,design,assets,existing=[desk])
+    assert len(result['instances'])==1 and any('unsupported' in m['reason'] for m in result['missing'])

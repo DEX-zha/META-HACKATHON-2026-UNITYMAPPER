@@ -170,3 +170,11 @@ Afficher les passes proposées/conservées/rejetées et le motif d'arrêt dans l
 Chaque run conserve `memory/STATE.md`, une synthèse par pièce `room-<hash>.md`, les sorties structurées du modèle dans `analysis-<hash>.md` et les contextes intégraux dans des archives JSON adressées par hash. Les appels d’inspection et d’enrichissement relisent la synthèse de leur pièce : tous les besoins non satisfaits restent présents, les doublons de défauts et métadonnées de reçus sont retirés du contexte courant. Les preuves complètes restent dans les archives ; ces documents ne constituent pas une qualification ni une reprise automatique d’appels inconnus.
 
 Les images d’inspection sont transportées en JPEG à résolution conservée, par lots limités en octets et en nombre, sans supprimer de vues. Les plafonniers sont des instances complètes du prefab du projet, montées selon leurs bounds et réparties selon la surface. Sources HDRP en temps réel et reçus natifs ; bake indirect et lumière artistique restent ouverts.
+
+### Flux caméra d’inspection
+
+Unity publie au plus cinq images JPEG par seconde pendant ses rendus d’inspection. Go les diffuse sur une connexion MJPEG authentifiée, limitée au run de l’action. Les images périmées cessent d’être présentées comme direct. Le panneau conserve les preuves fixes et les cadres SAM, sans plaquer une ancienne segmentation sur une nouvelle image vidéo. Ce flux d’affichage ne remplace pas les images probantes envoyées à Muse/SAM ; la caméra cesse d’émettre quand le job natif ferme sa scène isolée.
+
+### Priorité décoration au sol et inspection vidéo
+
+Les `detail_assets` peuvent inclure les tapis et les groupes de feuilles/decal-papers du pack. Le solveur utilise une recette de surface plane (bounds mesurés, épaisseur ≤ 5 cm, racines de prefab autorisées), sans leur inventer une face fonctionnelle. Placement natif près des usages, hors portes, mobilier et autres décors. Chaque besoin reste enregistré même sans place disponible. Unity vérifie appui et parcours réel sur ces surfaces ; aucune suppression de collision globale. Le programme de pièce expose explicitement les variantes disponibles et leurs dimensions. Les lampes plafond utilisent désormais Lamp_ceiling_round et les observations comprennent une vue au sol et une vue au plafond.

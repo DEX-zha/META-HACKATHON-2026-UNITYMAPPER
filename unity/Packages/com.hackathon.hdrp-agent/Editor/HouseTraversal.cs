@@ -3,19 +3,32 @@ using System.Linq;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEditor;
 namespace HdrpAgent.Editor {
 // Mesh colliders are temporary measurement proxies, including meshes with no authored collider.
 public static class HouseTraversal {
  const float Step=.25f,Radius=.4f,Height=2f;
  static bool Owned(Collider c,GameObject root)=>c!=null&&c.gameObject.scene==root.scene&&c.transform.IsChildOf(root.transform);
  public static JObject Check(GameObject root,JObject manifest){
+  var coverings=new HashSet<Transform>();
+  foreach(JObject item in manifest["instances"]){
+   if((string)item["role"]!="floor_covering")continue;
+   string path=AssetDatabase.GUIDToAssetPath((string)item["prefab_guid"]);
+   if(!path.StartsWith("Assets/AtmosphericHouse/Prefabs/Props/Carpets/",StringComparison.Ordinal)&&!path.StartsWith("Assets/AtmosphericHouse/Prefabs/Decals/Decal_papers_",StringComparison.Ordinal))throw new InvalidOperationException("Unapproved walkable floor detail");
+   var t=root.transform.Find((string)item["id"]);if(t==null)throw new InvalidOperationException("Floor detail missing");
+   var renderers=t.GetComponentsInChildren<MeshRenderer>();if(renderers.Length==0)throw new InvalidOperationException("Floor detail has no measured mesh");
+   var b=renderers[0].bounds;foreach(var r in renderers.Skip(1))b.Encapsulate(r.bounds);
+   if(b.size.y>.051f||b.min.y<-.005f||b.max.y>.06f)throw new InvalidOperationException("Floor detail exceeds walkable thickness");
+   coverings.Add(t);
+  }
+  Func<Collider,bool> walkable=c=>c.GetComponentsInParent<Transform>().Any(t=>t.name.EndsWith("-floor")||coverings.Contains(t));
   var building=(JObject)manifest["building"];var rooms=((JArray)building["rooms"]).OfType<JObject>().ToArray();
   float x0=rooms.Min(r=>((JArray)r["polygon"]).Min(p=>(float)p[0])),z0=rooms.Min(r=>((JArray)r["polygon"]).Min(p=>(float)p[1]));
   float x1=rooms.Max(r=>((JArray)r["polygon"]).Max(p=>(float)p[0])),z1=rooms.Max(r=>((JArray)r["polygon"]).Max(p=>(float)p[1]));
   int nx=Mathf.CeilToInt((x1-x0)/Step),nz=Mathf.CeilToInt((z1-z0)/Step);var valid=new HashSet<Vector2Int>();var floors=new Dictionary<Vector2Int,float>();
   for(int x=0;x<nx;x++)for(int z=0;z<nz;z++){
    var cell=new Vector2Int(x,z);var origin=new Vector3(x0+(x+.5f)*Step,.3f,z0+(z+.5f)*Step);
-   var hits=Physics.RaycastAll(origin,Vector3.down,.6f,1<<30,QueryTriggerInteraction.Ignore).Where(h=>Owned(h.collider,root)&&h.collider.GetComponentsInParent<Transform>().Any(t=>t.name.EndsWith("-floor"))&&h.normal.y>=Mathf.Cos(45*Mathf.Deg2Rad)).OrderBy(h=>h.distance).ToArray();
+   var hits=Physics.RaycastAll(origin,Vector3.down,.6f,1<<30,QueryTriggerInteraction.Ignore).Where(h=>Owned(h.collider,root)&&walkable(h.collider)&&h.normal.y>=Mathf.Cos(45*Mathf.Deg2Rad)).OrderBy(h=>h.distance).ToArray();
    if(hits.Length==0)continue;float y=hits[0].point.y;var bottom=new Vector3(origin.x,y+Radius+.015f,origin.z);var top=bottom+Vector3.up*(Height-2*Radius);
    if(Physics.OverlapCapsule(bottom,top,Radius,1<<30,QueryTriggerInteraction.Ignore).Any(c=>Owned(c,root)))continue;
    valid.Add(cell);floors[cell]=y;

@@ -104,6 +104,7 @@ func (s *Server) Handler() http.Handler {
 		}
 		reply(w, 202, result)
 	})
+	mux.HandleFunc("GET /api/actions/{action}/live", s.live)
 	mux.HandleFunc("GET /api/actions/{action}/inspection", func(w http.ResponseWriter, r *http.Request) {
 		data, e := s.Service.Inspection(r.Context(), r.PathValue("action"))
 		if e != nil {

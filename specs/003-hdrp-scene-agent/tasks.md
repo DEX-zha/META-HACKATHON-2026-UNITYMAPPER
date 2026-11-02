@@ -765,3 +765,8 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 
 - [x] T256 Corriger le HTTP 413 d’inspection par lots dimensionnés en octets sans supprimer de vues ; assembler des luminaires plafond entiers avec sources HDRP et reçus, puis tester la compilation native et une pièce. Contrôler explicitement les zones encore vides/éclairage fonctionnel. Le bake et la recette artistique restent T240–T243.
 - [x] T257 Ajouter des mémoires Markdown persistantes (état, pièce, analyses), compacter le contexte par pièce sans perdre besoins/rejets ni archives de preuves ; vérifier la persistance et leur injection dans les appels modèle.
+
+- [x] T258 Diffuser les images réelles de la caméra Unity dans un flux MJPEG authentifié, arrêter l’indication direct quand la caméra n’émet plus, préserver les captures et overlays SAM associés à leurs preuves ; tester transport et publication native.
+
+- [ ] T259 Remplacer le choix implicite de mobilier par des choix explicites de prefab par rôle et une préférence de disposition ; conserver les besoins indisponibles plutôt que substituer silencieusement. Ajouter un placement de tapis au sol, à taille native, hors portes et avec parcours sur surface mesurée. Vérifier différences de dispositions, sélection et appuis.
+- [x] T260 Priorité utilisateur : ajouter la couche de décoration au sol (tapis et groupes de feuilles du pack), dimensions natives, contrôle des portes/appuis/parcours et consignes de composition par usage ; vérifier un rendu avec plafond et sol. T259 reste ouvert pour le choix explicite du mobilier et des dispositions.

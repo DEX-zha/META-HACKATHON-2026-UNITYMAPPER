@@ -28,6 +28,9 @@ func TestLocalSessionOriginAndSingleUseBootstrap(t *testing.T) {
 	if w := call("GET", "/api/projects", "", "", nil); w.Code != 401 {
 		t.Fatal(w.Code)
 	}
+	if w := call("GET", "/api/actions/test/live", "", "", nil); w.Code != 401 {
+		t.Fatal("Live feed requires authentication", w.Code)
+	}
 	body := `{"token":"` + token + `"}`
 	if w := call("POST", "/api/auth/bootstrap", "http://evil.example", body, nil); w.Code != 403 {
 		t.Fatal(w.Code)

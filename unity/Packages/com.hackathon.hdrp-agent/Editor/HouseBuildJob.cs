@@ -15,7 +15,7 @@ namespace HdrpAgent.Editor {
  static HouseBuildJob(){CommandExecutor.Register("build_house",c=>new HouseBuildJob(c));}
  readonly BridgeCommand command;readonly string before;readonly Scene userScene;readonly bool userDirty;readonly string userSignature;
  Scene scene;GameObject root;Camera camera;RenderTexture target;VolumeProfile profile;
- JObject manifest,proof;string directory,scenePath;bool started,waiting,cancelled,built;int viewIndex,warm;
+ JObject manifest,proof;string directory,scenePath;bool started,waiting,cancelled,built;int viewIndex,warm;double lastLiveFrame=-1,viewStarted;Quaternion viewRotation;
  readonly List<Tuple<string,Vector3,Quaternion>> views=new List<Tuple<string,Vector3,Quaternion>>();
  readonly List<MeshCollider> colliders=new List<MeshCollider>();readonly List<string> hashes=new List<string>();
  public CommandResult Result{get;private set;}
@@ -34,8 +34,10 @@ namespace HdrpAgent.Editor {
    if(!started){started=true;waiting=true;BridgeClient.Request("GET","/v1/artifacts/"+(string)command.payload["manifest_hash"],null,null,(ok,text)=>{waiting=false;if(!ok){Fail("EVIDENCE_MISSING","House manifest unavailable");return;}try{var bytes=System.Text.Encoding.UTF8.GetBytes(text);if(BridgeJson.Hash(bytes)!=(string)command.payload["manifest_hash"])throw new InvalidDataException("Manifest hash differs");manifest=JObject.Parse(text);Build();}catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}});return;}
    if(!built)return;
    if(viewIndex<views.Count){
-    var view=views[viewIndex];camera.transform.SetPositionAndRotation(view.Item2,view.Item3);
-    RenderPipeline.SubmitRenderRequest(camera,new RenderPipeline.StandardRequest{destination=target});if(++warm<16)return;
+    var view=views[viewIndex];if(warm==0){viewStarted=EditorApplication.timeSinceStartup;viewRotation=camera.transform.rotation;}
+    double elapsed=EditorApplication.timeSinceStartup-viewStarted;
+    camera.transform.SetPositionAndRotation(view.Item2,Quaternion.Slerp(viewRotation,view.Item3,Mathf.Clamp01((float)elapsed/.65f)));
+    RenderPipeline.SubmitRenderRequest(camera,new RenderPipeline.StandardRequest{destination=target});PublishLive();if(++warm<16||elapsed<1.2)return;
     var previous=RenderTexture.active;var image=new Texture2D(1280,720,TextureFormat.RGB24,false);byte[] bytes;float mean;
     try{RenderTexture.active=target;image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();mean=image.GetPixels32().Average(p=>(p.r+p.g+p.b)/765f);bytes=image.EncodeToPNG();}finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
     string file="view-"+viewIndex+".png";File.WriteAllBytes(Path.Combine(directory,file),bytes);waiting=true;
@@ -45,6 +47,15 @@ namespace HdrpAgent.Editor {
    Publish("Captures terminées ; enregistrement du reçu");Cleanup();waiting=true;
    BridgeClient.PutArtifact(System.Text.Encoding.UTF8.GetBytes(proof.ToString(Newtonsoft.Json.Formatting.None)),"application/json",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House receipt not acknowledged","unknown");return;}hashes.Add(hash);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status="succeeded",before_version=before,after_version=SceneInspector.Version(),artifact_hashes=hashes.ToArray(),details_artifact_hash=hash,bake_status="not_required"};});
   }catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}
+ }
+ void PublishLive(){
+  double now=EditorApplication.timeSinceStartup;if(now-lastLiveFrame<.2)return;lastLiveFrame=now;
+  var previous=RenderTexture.active;var image=new Texture2D(target.width,target.height,TextureFormat.RGB24,false);
+  try{
+   RenderTexture.active=target;image.ReadPixels(new Rect(0,0,target.width,target.height),0,0);image.Apply();
+   string path=Path.Combine(Directory.GetParent(directory).FullName,"live.jpg"),temp=path+".tmp";
+   File.WriteAllBytes(temp,image.EncodeToJPG(70));if(File.Exists(path))File.Replace(temp,path,null);else File.Move(temp,path);
+  }finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
  }
  void Build(){
   BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev");
@@ -63,6 +74,7 @@ namespace HdrpAgent.Editor {
   foreach(JObject room in building["rooms"]){var poly=(JArray)room["polygon"];float x0=poly.Min(p=>(float)p[0]),x1=poly.Max(p=>(float)p[0]),z0=poly.Min(p=>(float)p[1]),z1=poly.Max(p=>(float)p[1]);
    foreach(string kind in new[]{"floor","ceiling"}){string key=(string)room["id"]+"-"+kind;new GameObject(key).transform.SetParent(root.transform,false);surfaces.Add(new JObject{["object_key"]=key,["kind"]=kind,["min_m"]=new JArray(x0,z0),["size_m"]=new JArray(x1-x0,z1-z0)});}
    var centre=new Vector3((x0+x1)/2,1.6f,(z0+z1)/2);for(int angle=0;angle<360;angle+=90)views.Add(Tuple.Create((string)room["id"],centre,Quaternion.Euler(0,angle,0)));
+   views.Add(Tuple.Create((string)room["id"],centre,Quaternion.Euler(55,0,0)));views.Add(Tuple.Create((string)room["id"],centre,Quaternion.Euler(-55,0,0)));
   }
   var architecture=ReferenceArchitecture.Build(root,new JObject{["walls"]=walls,["height_m"]=2.8f,["thickness_m"]=.2f,["lighting"]="warm_interior",["surfaces"]=surfaces},(string)manifest["interior_style"]);
   var lighting=HouseLighting.Build(root,building);

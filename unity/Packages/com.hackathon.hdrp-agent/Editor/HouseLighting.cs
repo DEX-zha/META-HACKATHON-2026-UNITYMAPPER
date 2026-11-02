@@ -11,7 +11,7 @@ namespace HdrpAgent.Editor {
 // A ceiling mounting recipe: whole prefabs, native scale, measured upper face.
 internal static class HouseLighting {
  internal static JArray Build(GameObject root,JObject building){
-  const string path="Assets/AtmosphericHouse/Prefabs/Props/Lamps/Lamp_ceiling_circle.prefab";
+  const string path="Assets/AtmosphericHouse/Prefabs/Props/Lamps/Lamp_ceiling_round.prefab";
   var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(path);
   if(!prefab)throw new InvalidDataException("Ceiling luminaire prefab missing: "+path);
   var receipts=new JArray();

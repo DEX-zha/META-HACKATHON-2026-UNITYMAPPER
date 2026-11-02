@@ -24,6 +24,7 @@ type Visual struct {
 	Path    string `json:"-"`
 }
 type Inspection struct {
+	Live         bool            `json:"live"`
 	State        string          `json:"state"`
 	Message      string          `json:"message"`
 	Images       []Visual        `json:"images"`
@@ -85,6 +86,10 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 			}
 		}
 	}
+	if house {
+		_, _, err := readLiveFrame(root, time.Now())
+		out.Live = err == nil
+	}
 	resolved, e := filepath.EvalSymlinks(root)
 	if e != nil || resolved != root {
 		if house {
@@ -98,7 +103,7 @@ func (s *Service) Inspection(ctx context.Context, action string) (Inspection, er
 		}
 		rel, _ := filepath.Rel(root, path)
 		if d.IsDir() {
-			if rel != "." && !visualDirectory.MatchString(filepath.ToSlash(rel)) {
+			if rel != "." && !visualDirectory.MatchString(filepath.ToSlash(rel)) && !(house && regexp.MustCompile(`^[a-f0-9]{12}$`).MatchString(rel)) {
 				return filepath.SkipDir
 			}
 			return nil

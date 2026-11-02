@@ -4,6 +4,7 @@ from math import ceil, cos, sin, radians
 from .domain import AgentError
 from .house_domain import BuildingIR
 from .house_supports import footprint_supported
+from .house_floor_details import floor_detail, place_floor_details
 
 # Relative functional relations, refined by measured bounds. Fourth field is
 # orientation toward the user; support names refer to slots in the same group.
@@ -179,7 +180,11 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
             cx,cy,cz=a['bounds_center'];sx,sy,sz=a['bounds_size'];rx,rz=rotate(cx,cz,angle)
             value=dict(id=s['id'],room_id=room['id'],group_id=group['id'],prefab_guid=a['prefab_guid'],dependency_hash=a['dependency_hash'],position=[x-rx,local_y-cy+sy/2,z-rz],yaw=angle,scale=[1,1,1],center=[x,local_y+sy/2,z],bounds_size=[sx,sy,sz],support_id=placed[s['support']]['id'] if s['support'] else None,role=s['role'])
             instances.append(value);placed[s['role']]=value
-    place_details(room['id'],design.get('detail_assets',[]),assets,instances,requirements,missing,offset=detail_offset)
+    details=design.get('detail_assets',[])
+    floors=[(i,n) for i,n in enumerate(details) if n.startswith(('Carpet_','Decal_papers_'))]
+    for i,name in enumerate(details):
+        if not name.startswith(('Carpet_','Decal_papers_')):place_details(room['id'],[name],assets,instances,requirements,missing,offset=detail_offset+i)
+    place_floor_details(room,floors,assets,instances,requirements,missing,reservations,detail_offset)
     return dict(instances=instances[initial:],requirements=requirements,missing=missing,access_points=uses,door_reservations=reservations)
 
 
@@ -190,7 +195,7 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
     existing children in world space so decoration never overlaps equipment.
     """
     by_guid={a['prefab_guid']:a for a in assets.values()}
-    supports=list(instances)
+    supports=[i for i in instances if i.get('role')!='floor_covering']
     for index,name in enumerate(names,offset):
         key=f'{room_id}-detail-{index}'
         requirements.append(dict(id=key,scope_id=room_id,role=name,quantity=1,priority='preferred',provenance='creative'))
