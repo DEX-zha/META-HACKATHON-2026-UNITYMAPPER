@@ -114,7 +114,16 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
     instances=[dict(i) for i in existing if i['room_id']==room['id']];initial=len(instances)
     missing=[];occupied=[box(i,i['center'][0],i['center'][2],i['yaw']) for i in instances if i['support_id'] is None];uses=list(entry)+list(access_points);requirements=[]
     for group in sorted(design['groups'],key=lambda g:{'mandatory':0,'preferred':1,'optional':2}[g['priority']]):
-        recipe=RECIPES.get(group['recipe'])
+        explicit='items' in group
+        recipe=[(i['slot'],i['asset'],*i['offset_m'],i['yaw_deg'],i['support_slot']) for i in group['items']] if explicit else RECIPES.get(group['recipe'])
+        if explicit and (not recipe or len({r[0] for r in recipe})!=len(recipe)):raise AgentError('INVALID_MODEL_OUTPUT','Explicit group needs unique slots')
+        if explicit:
+            # Topological ordering makes support relationships independent of model order.
+            pending=list(recipe);recipe=[];known=set()
+            while pending:
+                ready=[r for r in pending if r[5] is None or r[5] in known]
+                if not ready:raise AgentError('INVALID_MODEL_OUTPUT','Unknown or cyclic support slot')
+                for r in ready:recipe.append(r);known.add(r[0]);pending.remove(r)
         if recipe is None:
             missing.append(dict(id=group['id'],reason='No qualified recipe for '+group['description']));continue
         slots=[]
@@ -122,19 +131,23 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
             key=room['id']+'-'+group['id']+'-'+role
             requirements.append(dict(id=key,scope_id=room['id'],role=name,quantity=1,priority=group['priority'],provenance='inferred'))
             asset=assets.get(name)
-            if asset is None or asset['front_status'] not in {'qualified','not_applicable'}:
+            if asset is None or (not explicit and asset['front_status'] not in {'qualified','not_applicable'}):
                 missing.append(dict(id=key,reason='Prefab or functional semantics unavailable: '+name,priority=group['priority']));continue
-            slots.append(dict(id=key,role=role,asset=asset,x=x,z=z,yaw=yaw,support=support))
+            slots.append(dict(id=key,role=role,asset_name=name,asset=asset,x=x,z=z,yaw=yaw,support=support))
         ground=[s for s in slots if s['support'] is None]
         if not ground:continue
         best=None
-        for yaw in (0,90,180,270):
+        desired=group.get('anchor_m');desired_yaw=group.get('yaw_deg',0)
+        for yaw in (desired_yaw,) if explicit else (0,90,180,270):
             local=[]
             for s in ground:
                 x,z=rotate(s['x'],s['z'],yaw);local.append(box(s['asset'],x,z,s['yaw']+yaw))
             lo=[min(b[0] for b in local),min(b[1] for b in local),max(b[2] for b in local),max(b[3] for b in local)]
-            for fraction in (.25,.5,.75):
-                if yaw==0:anchor=[rect[0]+(rect[2]-rect[0])*fraction,rect[1]-lo[1]+.12]
+            anchors=[desired] if explicit else [None,None,None]
+            for index,anchor in enumerate(anchors):
+                fraction=(.25,.5,.75)[index]
+                if explicit:pass
+                elif yaw==0:anchor=[rect[0]+(rect[2]-rect[0])*fraction,rect[1]-lo[1]+.12]
                 elif yaw==180:anchor=[rect[0]+(rect[2]-rect[0])*fraction,rect[3]-lo[3]-.12]
                 elif yaw==90:anchor=[rect[0]-lo[0]+.12,rect[1]+(rect[3]-rect[1])*fraction]
                 else:anchor=[rect[2]-lo[2]-.12,rect[1]+(rect[3]-rect[1])*fraction]
@@ -144,7 +157,7 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
                 if any(overlap(b,o) for i,b in enumerate(footprints) for o in footprints[i+1:]):continue
                 access=[]
                 for s,b in zip(ground,footprints):
-                    if s['role'] in {'chair','plant'}:continue
+                    if s['role'] in {'chair','plant'} or s['asset_name'].split('/')[-1].startswith(('Chair','Interior_plant')):continue
                     candidates=[]
                     for side in (0,-1,1):
                         x,z=rotate(side*(s['asset']['bounds_size'][0]/2+.5),s['asset']['bounds_size'][2]/2+.65,s['yaw']+yaw)
@@ -172,13 +185,19 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
                 surface=next(p for p in support['surfaces'] if p['id']==region['surface_id'])
                 local_box=box(a,s['x'],s['z'],s['yaw'])
                 if not footprint_supported(surface['triangles'],local_box):missing.append(dict(id=s['id'],reason='Object exceeds actual support'));continue
-                px,pz=rotate(s['x'],s['z'],parent['yaw']);x=parent['center'][0]+px;z=parent['center'][2]+pz
+                surface_y=sum(v[1] for t in surface['triangles'] for v in t)/(3*len(surface['triangles']))
+                blocked=any(surface_y+.02<min(v[1] for v in t)<surface_y+a['bounds_size'][1]+.04 and overlap(local_box,[min(v[0] for v in t),min(v[2] for v in t),max(v[0] for v in t),max(v[2] for v in t)]) for other in support['surfaces'] for t in other.get('triangles',[]))
+                if blocked:missing.append(dict(id=s['id'],reason='Object intersects upper surface of supporting furniture'));continue
+                px,pz=rotate(s['x'],s['z'],parent['yaw']);x=parent['position'][0]+px;z=parent['position'][2]+pz
                 local_y=parent['position'][1]+sum(v[1] for t in surface['triangles'] for v in t)/(3*len(surface['triangles']))
                 angle=parent['yaw']+s['yaw']
             else:
                 x,z=rotate(s['x'],s['z'],yaw);x+=anchor[0];z+=anchor[1]
             cx,cy,cz=a['bounds_center'];sx,sy,sz=a['bounds_size'];rx,rz=rotate(cx,cz,angle)
             value=dict(id=s['id'],room_id=room['id'],group_id=group['id'],prefab_guid=a['prefab_guid'],dependency_hash=a['dependency_hash'],position=[x-rx,local_y-cy+sy/2,z-rz],yaw=angle,scale=[1,1,1],center=[x,local_y+sy/2,z],bounds_size=[sx,sy,sz],support_id=placed[s['support']]['id'] if s['support'] else None,role=s['role'])
+            footprint=box(a,x,z,angle)
+            if any(i['id']!=value['support_id'] and i['center'][1]+i['bounds_size'][1]/2>local_y+.005 and i['center'][1]-i['bounds_size'][1]/2<local_y+sy-.005 and overlap(footprint,box(i,i['center'][0],i['center'][2],i['yaw'])) for i in instances):
+                missing.append(dict(id=s['id'],reason='Placement intersects existing equipment',priority=group['priority']));continue
             instances.append(value);placed[s['role']]=value
     details=design.get('detail_assets',[])
     floors=[(i,n) for i,n in enumerate(details) if n.startswith(('Carpet_','Decal_papers_'))]

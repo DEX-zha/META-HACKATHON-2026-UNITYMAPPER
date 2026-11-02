@@ -178,3 +178,15 @@ Unity publie au plus cinq images JPEG par seconde pendant ses rendus d’inspect
 ### Priorité décoration au sol et inspection vidéo
 
 Les `detail_assets` peuvent inclure les tapis et les groupes de feuilles/decal-papers du pack. Le solveur utilise une recette de surface plane (bounds mesurés, épaisseur ≤ 5 cm, racines de prefab autorisées), sans leur inventer une face fonctionnelle. Placement natif près des usages, hors portes, mobilier et autres décors. Chaque besoin reste enregistré même sans place disponible. Unity vérifie appui et parcours réel sur ces surfaces ; aucune suppression de collision globale. Le programme de pièce expose explicitement les variantes disponibles et leurs dimensions. Les lampes plafond utilisent désormais Lamp_ceiling_round et les observations comprennent une vue au sol et une vue au plafond.
+
+### Disposition explicite par le modèle
+
+Le contrat ModelHouseRoomV2 exige les slots de prefab, offsets, relations de support, ancre et rotation de chaque groupe. La recette devient une étiquette d’usage, sans injection automatique de Workdesk/Chair_kitchen. Le chemin historique reste compatible avec les anciennes données, mais les nouveaux appels utilisent V2. Le solveur contrôle le placement proposé sans le rabattre sur un modèle mural fixe. Les assets HouseProps disposent d’identifiants préfixés pour éviter les collisions de noms. Une orientation inconnue peut être proposée explicitement, sans qualification implicite ; les surfaces porteuses restent contrôlées et les défauts de pose sont soumis à la revue visuelle.
+
+### Correction des intersections et des observations contaminées (2026-11-02)
+
+Les slots explicites vérifient désormais les intersections volumétriques entre objets et le dégagement au-dessus de la surface porteuse, avec coordonnées relatives au pivot du support. Les besoins refusés restent manquants, sans substitution. Ces tests conservateurs ne constituent pas encore une certification des collisions par maillage natif.
+
+Les scènes additives partageaient le masque de visibilité du main stage : l’inspection pouvait inclure les objets d’un ancien candidat ouvert par l’utilisateur. Après sauvegarde, le job attribue un bit de visibilité exclusif et un layer temporaire inutilisé (volumes/exposition), sans modifier la scène utilisateur ni enregistrer ces changements d’inspection. Échec explicite si l’isolation est impossible. Le reçu de construction indique un bake en attente, jamais « non requis » ; cette correction ne réalise pas le bake.
+
+Validation : 355 tests Python réussis, compilation Unity réussie. Essai isolé `35a4c58368794eaa85fb3d33375e5d2f`, 9 instances natives, 17 vues, appuis/parcours réussis et scène source inchangée. Les plantes étrangères observées avant isolation ont disparu. Revue visuelle non validée : matériau HouseProps rose, cônes lumineux marqués, bibliothèque vide et bake absent. L’assemblage reste un candidat technique, pas une pièce livrable. Les tests de collision sont conservateurs ; une campagne de défauts injectés natifs reste nécessaire.

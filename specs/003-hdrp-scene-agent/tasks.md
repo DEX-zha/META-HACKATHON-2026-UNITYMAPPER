@@ -770,3 +770,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 
 - [ ] T259 Remplacer le choix implicite de mobilier par des choix explicites de prefab par rôle et une préférence de disposition ; conserver les besoins indisponibles plutôt que substituer silencieusement. Ajouter un placement de tapis au sol, à taille native, hors portes et avec parcours sur surface mesurée. Vérifier différences de dispositions, sélection et appuis.
 - [x] T260 Priorité utilisateur : ajouter la couche de décoration au sol (tapis et groupes de feuilles du pack), dimensions natives, contrôle des portes/appuis/parcours et consignes de composition par usage ; vérifier un rendu avec plafond et sol. T259 reste ouvert pour le choix explicite du mobilier et des dispositions.
+
+- [ ] T261 Exécuter les plans V2 explicites (prefabs, offsets, supports, ancres et orientations), sans injection du mobilier de recette ni repositionnement silencieux ; exposer HouseProps, tester deux dispositions distinctes et un essai réel depuis le chat.
+
+- [ ] T262 Renforcer les rejets d’intersections/supports et isoler objets, lumières et volumes des captures additives ; comparer le même manifeste avec une ancienne scène ouverte, vérifier compilation, source inchangée et reçus. Ne pas confondre ces preuves avec la qualification artistique ou un bake.

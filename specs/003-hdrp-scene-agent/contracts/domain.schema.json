@@ -5187,6 +5187,140 @@
         "bridge_epoch"
       ],
       "additionalProperties": false
+    },
+    "ModelHouseRoomV2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "room_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/Id"
+              },
+              "recipe": {
+                "enum": [
+                  "office",
+                  "kitchen",
+                  "bedroom",
+                  "living",
+                  "bathroom",
+                  "dining",
+                  "storage",
+                  "custom",
+                  "library",
+                  "reading",
+                  "lounge",
+                  "plant"
+                ]
+              },
+              "priority": {
+                "enum": [
+                  "mandatory",
+                  "preferred",
+                  "optional"
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "anchor_m": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "yaw_deg": {
+                "type": "number",
+                "minimum": -360,
+                "maximum": 360
+              },
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slot": {
+                      "type": "string",
+                      "pattern": "^[a-zA-Z0-9_-]+$"
+                    },
+                    "asset": {
+                      "type": "string"
+                    },
+                    "offset_m": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "yaw_deg": {
+                      "type": "number",
+                      "minimum": -360,
+                      "maximum": 360
+                    },
+                    "support_slot": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "slot",
+                    "asset",
+                    "offset_m",
+                    "yaw_deg",
+                    "support_slot"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "recipe",
+              "priority",
+              "description",
+              "anchor_m",
+              "yaw_deg",
+              "items"
+            ]
+          }
+        },
+        "detail_assets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "room_id",
+        "groups",
+        "detail_assets",
+        "unresolved"
+      ]
     }
   }
 }

@@ -137,8 +137,9 @@ class HouseService:
         assets={}
         for r in rows:
             a=json.loads(r[0])
-            if a['prefab_path'].startswith('Assets/AtmosphericHouse/Prefabs/'):
+            if a['prefab_path'].startswith(('Assets/AtmosphericHouse/Prefabs/','Assets/HouseProps/Prefabs/')):
                 name=a['prefab_path'].rsplit('/',1)[-1].removesuffix('.prefab')
+                if a['prefab_path'].startswith('Assets/HouseProps/'):name='HouseProps/'+name
                 if name in assets and assets[name]['dependency_hash']!=a['dependency_hash']:raise AgentError('SEMANTICS_UNQUALIFIED','Multiple catalogue versions need remeasurement: '+name)
                 assets[name]=a
         return assets
@@ -175,7 +176,7 @@ class HouseService:
             building=building_from_outline(outline);assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
             for room in outline['rooms']:
                 self.guard(row);self.save(row,'furnishing','Aménagement de '+room['purpose'],current_scope=room['id'])
-                design=self.ask(row,'room-'+room['id'],room_prompt(room,params['brief'],assets),'ModelHouseRoom',images)
+                design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets),'ModelHouseRoomV2',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
                 placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
@@ -267,7 +268,7 @@ class HouseService:
             context=HouseMemory(self.settings.state,row['run_id']).compact(room['id'],self.houses.context(row['run_id'],room['id']))
             key='enrich-'+room['id']+'-'+fingerprint(dict(manifest=signature(manifest),context=context))[:16]
             supports=[dict(instance_id=i['id'],prefab_name=name,regions=a.get('support_regions',[]),surfaces=[dict(id=s['id'],height_m=s.get('height_m')) for s in a.get('surfaces',[])],children=[child['id'] for child in manifest['instances'] if child['support_id']==i['id']]) for i in manifest['instances'] if i['room_id']==room['id'] for name,a in assets.items() if a['prefab_guid']==i['prefab_guid'] and a.get('support_regions')]
-            addition=self.ask(row,key,'Propose ONLY additions to repair the reported missing equipment or sparse composition. Keep every existing instance. Return empty groups/detail_assets when no qualified safe addition can address these defects; explain unsupported needs in unresolved. Do not substitute random props for missing rugs, lamps or paintings. When storage is too empty, plan a complete coherent enrichment across several shelf compartments in this pass, not a token single book. Repeated book-cluster prefabs are allowed. Use measured support capacity and occupied children; keep some calm/empty space. Return all proposed detail_assets, without a fixed item quota. '+room_prompt(room,json.loads(row['request'])['parameters']['brief'],assets)+' Current instances, defects and persistent requirements: '+canonical(dict(instances=[i for i in manifest['instances'] if i['room_id']==room['id']],observations=local,context=context,supports=supports)),'ModelHouseRoom')
+            addition=self.ask(row,key,'Propose ONLY additions to repair the reported missing equipment or sparse composition. Keep every existing instance. Return empty groups/detail_assets when no qualified safe addition can address these defects; explain unsupported needs in unresolved. Do not substitute random props for missing rugs, lamps or paintings. When storage is too empty, plan a complete coherent enrichment across several shelf compartments in this pass, not a token single book. Repeated book-cluster prefabs are allowed. Use measured support capacity and occupied children; keep some calm/empty space. Return all proposed detail_assets, without a fixed item quota. '+room_prompt(dict(room,geometry=next(r for r in manifest['building']['rooms'] if r['id']==room['id']),portals=manifest['building']['portals']),json.loads(row['request'])['parameters']['brief'],assets)+' Current instances, defects and persistent requirements: '+canonical(dict(instances=[i for i in manifest['instances'] if i['room_id']==room['id']],observations=local,context=context,supports=supports)),'ModelHouseRoomV2')
             if addition['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Enrichment scope differs')
             addition=deepcopy(addition)
             for g in addition['groups']:g['id']='extra-'+signature(manifest)[:8]+'-'+g['id'][:40]

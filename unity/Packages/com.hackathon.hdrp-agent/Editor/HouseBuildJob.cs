@@ -45,7 +45,7 @@ namespace HdrpAgent.Editor {
    }
    proof["source_scene_unchanged"]=SceneManager.GetActiveScene()==userScene&&SceneInspector.Version()==before&&userScene.isDirty==userDirty;
    Publish("Captures terminées ; enregistrement du reçu");Cleanup();waiting=true;
-   BridgeClient.PutArtifact(System.Text.Encoding.UTF8.GetBytes(proof.ToString(Newtonsoft.Json.Formatting.None)),"application/json",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House receipt not acknowledged","unknown");return;}hashes.Add(hash);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status="succeeded",before_version=before,after_version=SceneInspector.Version(),artifact_hashes=hashes.ToArray(),details_artifact_hash=hash,bake_status="not_required"};});
+   BridgeClient.PutArtifact(System.Text.Encoding.UTF8.GetBytes(proof.ToString(Newtonsoft.Json.Formatting.None)),"application/json",(ok,hash)=>{waiting=false;if(!ok){Fail("ARTIFACT_UPLOAD_FAILED","House receipt not acknowledged","unknown");return;}hashes.Add(hash);Result=new CommandResult{command_id=command.id,bridge_epoch=command.bridge_epoch,payload_hash=command.payload_hash,status="succeeded",before_version=before,after_version=SceneInspector.Version(),artifact_hashes=hashes.ToArray(),details_artifact_hash=hash,bake_status="pending"};});
   }catch(Exception e){Fail("HOUSE_BUILD_FAILED",e.Message);}
  }
  void PublishLive(){
@@ -114,8 +114,24 @@ namespace HdrpAgent.Editor {
   var volumeObject=new GameObject("House lighting profile");volumeObject.transform.SetParent(root.transform,false);volumeObject.layer=30;var volume=volumeObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=10000;profile=ScriptableObject.CreateInstance<VolumeProfile>();var exposure=profile.Add<Exposure>(true);exposure.mode.Override(ExposureMode.Fixed);exposure.fixedExposure.Override(Mathf.Clamp((float?)manifest["exposure_ev"]??6,-4,16));var tone=profile.Add<Tonemapping>(true);tone.mode.Override(TonemappingMode.ACES);volume.sharedProfile=profile;
   string folder="Assets/AgentWorkspace/HouseRuns/"+run;Directory.CreateDirectory(folder);AssetDatabase.Refresh();string profilePath=folder+"/Lighting.asset";AssetDatabase.CreateAsset(profile,AssetDatabase.GenerateUniqueAssetPath(profilePath));scenePath=AssetDatabase.GenerateUniqueAssetPath(folder+"/House.unity");
   if(!EditorSceneManager.SaveScene(scene,scenePath))throw new IOException("Generated scene could not be saved");
-  proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false,["lighting"]=lighting};
-  var cameraObject=new GameObject("House inspection camera"){hideFlags=HideFlags.HideAndDontSave};SceneManager.MoveGameObjectToScene(cameraObject,scene);camera=cameraObject.AddComponent<Camera>();camera.enabled=false;camera.nearClipPlane=.05f;camera.farClipPlane=100;camera.fieldOfView=75;camera.aspect=1280f/720;camera.cullingMask=1<<30;camera.overrideSceneCullingMask=EditorSceneManager.GetSceneCullingMask(scene);var hd=cameraObject.AddComponent<HDAdditionalCameraData>();hd.volumeLayerMask=1<<30;hd.allowDynamicResolution=false;hd.antialiasing=HDAdditionalCameraData.AntialiasingMode.None;
+  // Additive main-stage scenes share a culling mask by default. Merely copying
+  // that mask to the camera includes the user's scene in every observation.
+  // Allocate an unused bit for inspection only, after saving the normal scene.
+  ulong inspectionMask=EditorSceneManager.CalculateAvailableSceneCullingMask();
+  if(inspectionMask==0)throw new InvalidOperationException("No isolated scene culling mask available");
+  EditorSceneManager.SetSceneCullingMask(scene,inspectionMask);
+  for(int i=0;i<SceneManager.sceneCount;i++){var other=SceneManager.GetSceneAt(i);if(other!=scene&&(EditorSceneManager.GetSceneCullingMask(other)&inspectionMask)!=0)throw new InvalidOperationException("Inspection scene shares visibility with another scene");}
+  // Volume blending is layer-based, independent of scene visibility. Use a
+  // transient unused layer too, so another candidate's global exposure cannot
+  // contaminate this observation. These inspection changes are never saved.
+  uint usedLayers=0;
+  for(int i=0;i<SceneManager.sceneCount;i++){var other=SceneManager.GetSceneAt(i);if(other==scene||!other.isLoaded)continue;foreach(var go in other.GetRootGameObjects())foreach(var t in go.GetComponentsInChildren<Transform>(true))usedLayers|=1u<<t.gameObject.layer;}
+  int inspectionLayer=-1;for(int i=31;i>=8;i--)if((usedLayers&(1u<<i))==0){inspectionLayer=i;break;}
+  if(inspectionLayer<0)throw new InvalidOperationException("No isolated inspection layer available");
+  foreach(var t in root.GetComponentsInChildren<Transform>(true))t.gameObject.layer=inspectionLayer;
+  foreach(var light in root.GetComponentsInChildren<Light>(true))light.cullingMask=1<<inspectionLayer;
+  proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false,["lighting"]=lighting,["inspection_scene_isolated"]=true};
+  var cameraObject=new GameObject("House inspection camera"){hideFlags=HideFlags.HideAndDontSave};SceneManager.MoveGameObjectToScene(cameraObject,scene);camera=cameraObject.AddComponent<Camera>();camera.enabled=false;camera.nearClipPlane=.05f;camera.farClipPlane=100;camera.fieldOfView=75;camera.aspect=1280f/720;camera.cullingMask=1<<inspectionLayer;camera.overrideSceneCullingMask=EditorSceneManager.GetSceneCullingMask(scene);var hd=cameraObject.AddComponent<HDAdditionalCameraData>();hd.volumeLayerMask=1<<inspectionLayer;hd.allowDynamicResolution=false;hd.antialiasing=HDAdditionalCameraData.AntialiasingMode.None;
   target=new RenderTexture(1280,720,24,RenderTextureFormat.ARGB32,RenderTextureReadWrite.sRGB){hideFlags=HideFlags.HideAndDontSave};target.Create();SceneManager.SetActiveScene(userScene);built=true;Publish("Architecture assemblée ; inspection intérieure");
  }
  static Vector3 V2(JToken t)=>new Vector3((float)t[0],0,(float)t[1]);

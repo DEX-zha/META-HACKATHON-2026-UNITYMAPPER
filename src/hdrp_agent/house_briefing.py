@@ -3,7 +3,8 @@ from .domain import canonical
 from .house_planning import RECIPES
 from .house_floor_details import floor_detail
 
-ROOM_POLICY = '''The native architecture builder supplies walls, floor, ceiling tiles and visible Lamp_ceiling_round ceiling lights with HDRP sources for every room. Ceiling_3x3 is a ceiling TILE, not a lamp. Do not invent an unsupported custom furnishing requirement for these built-in architectural elements. A specifically requested desk lamp or other fixture remains a separate need.
+ROOM_POLICY = '''You control the layout, not a fixed furniture recipe. For every group supply items with catalogue asset IDs, unique slot IDs, local offset_m [x,z], yaw_deg and support_slot (null for floor furniture). Supply anchor_m [world x,world z] and group yaw_deg. The recipe label only describes purpose; it does NOT select the furniture. Pick furniture for the brief and scale, vary layouts by design intent, consider island desks, wall desks and different facing directions. Room origin is given below. Positions will be checked, not silently replaced with a template. Keep supports before children semantically; cycles are invalid. Unknown-front assets can be explicitly chosen but require visual orientation review; only qualified support_regions can carry props. No arbitrary random variation or unsupported claims of qualification.
+The native architecture builder supplies walls, floor, ceiling tiles and visible Lamp_ceiling_round ceiling lights with HDRP sources for every room. Ceiling_3x3 is a ceiling TILE, not a lamp. Do not invent an unsupported custom furnishing requirement for these built-in architectural elements. A specifically requested desk lamp or other fixture remains a separate need.
 Design an inhabited room, not just the single furniture item named by its purpose.
 First fulfil explicit requests and exclusions. Furnished is the default unless the user asks for empty,
 minimal, shell-only, or an exact inventory. Infer useful complementary activities from the room purpose:
@@ -20,14 +21,14 @@ never resize prefabs or enlarge an explicitly dimensioned room just to fit extra
 For an inhabited game office, explicitly plan a floor layer: a rug near seating and, if the brief allows lived-in clutter, one or more coherent paper clusters near work/storage. Use available floor_assets in detail_assets; these are whole floor prefabs placed separately from tabletop props. Prefer smaller clusters that fit the room; do not carpet every gap. Clean/professional means restrained clutter, not no personal objects; horror/abandoned can use more. Respect explicit empty/minimal/clean-floor exclusions.
 Select plants as freestanding plant groups, libraries as library groups, seating corners as reading
 or lounge groups. Small books and stationery belong in detail_assets on qualified supports. Use Book_set_A for upright books in a library, Book_set_I for a tabletop stack, Notebook and Pencil_holder for work surfaces. Include books with a library rather than leaving it bare. Do not
-put large floor furniture in detail_assets. Use only catalogue names. Prefer qualified assets for inferred decoration; unqualified assets can retain an explicit requested need but cannot yet be placed. Do not repeat groups without
+put large floor furniture in detail_assets. Use only catalogue names. For tabletop detail_assets use qualified assets. For explicit group items, choose by style and actual dimensions; an unknown front requires visual review rather than silently substituting the same qualified furniture. Do not repeat groups without
 an activity/occupancy reason. Unavailable wall art, rugs or lighting must remain explicit needs when
 requested; do not replace them with unrelated props. Leave calm areas rather than filling every gap.'''
 
 
 def room_prompt(room,brief,assets):
     catalogue=dict(room=room,brief=brief,
-        floor_assets=[dict(name=n,size_m=a['bounds_size']) for n,a in assets.items() if floor_detail(n,a)],
+        room_geometry=room.get('geometry'),asset_catalogue=[dict(id=n,size_m=a['bounds_size'],front_status=a['front_status'],supports=[r.get('roles',[]) for r in a.get('support_regions',[])]) for n,a in assets.items() if not any(k in a.get('prefab_path','') for k in ('/Building/','/Doors_drawers/'))],floor_assets=[dict(name=n,size_m=a['bounds_size']) for n,a in assets.items() if floor_detail(n,a)],
         qualified_assets=[n for n,a in assets.items() if a.get('front_status') in {'qualified','not_applicable'}],
         unqualified_assets=[n for n,a in assets.items() if a.get('front_status') not in {'qualified','not_applicable'} and not floor_detail(n,a)])
-    return ROOM_POLICY+'\nRecipes: '+canonical({k:[s[1] for s in v] for k,v in RECIPES.items()})+'\ncustom retains an unsupported explicit need. Native placement checks decide what fits. Room and brief: '+canonical(catalogue)
+    return ROOM_POLICY+'\nGroup purpose labels: '+canonical(list(RECIPES))+'\nYou choose every item and its placement; purpose labels never inject assets. Native placement checks decide what fits. Room and brief: '+canonical(catalogue)

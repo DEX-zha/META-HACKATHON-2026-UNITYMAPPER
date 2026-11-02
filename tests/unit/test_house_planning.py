@@ -119,3 +119,44 @@ def test_floor_decoration_uses_native_prefab_clear_of_doors_and_furniture():
     assets['Carpet_C']['bounds_size'][1]=1
     result=place_groups(building,design,assets,existing=[desk])
     assert len(result['instances'])==1 and any('unsupported' in m['reason'] for m in result['missing'])
+
+
+def test_explicit_model_layout_changes_furniture_and_position_without_template():
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    def asset(guid):return dict(prefab_guid=guid,dependency_hash='v',bounds_center=[0,.4,0],bounds_size=[1.2,.8,.6],front_status='unknown',surfaces=[],support_regions=[])
+    assets={'HouseProps/Desk_office':asset('desk-a'),'Workdesk':asset('desk-b')}
+    def design(name,anchor,yaw):return dict(room_id='office',groups=[dict(id='work',recipe='office',priority='mandatory',description='custom work zone',anchor_m=anchor,yaw_deg=yaw,items=[dict(slot='desk',asset=name,offset_m=[0,0],yaw_deg=0,support_slot=None)])],detail_assets=[])
+    first=place_groups(building,design('HouseProps/Desk_office',[2,2],0),assets)
+    second=place_groups(building,design('Workdesk',[4,4],90),assets)
+    assert len(first['instances'])==len(second['instances'])==1
+    assert first['instances'][0]['prefab_guid']=='desk-a' and first['instances'][0]['center']==[2,.4,2]
+    assert second['instances'][0]['prefab_guid']=='desk-b' and second['instances'][0]['center']==[4,.4,4]
+    assert second['instances'][0]['yaw']==90
+    # No kitchen chair, screen or old fixed wall arrangement gets injected.
+    invalid=place_groups(building,design('Workdesk',[100,100],0),assets)
+    assert not invalid['instances'] and invalid['missing']
+
+
+def test_explicit_chair_slot_name_does_not_create_impossible_standing_access():
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    def asset(guid,size):return dict(prefab_guid=guid,dependency_hash='v',bounds_center=[0,size[1]/2,0],bounds_size=size,front_status='unknown',surfaces=[],support_regions=[])
+    assets={'HouseProps/Desk_office':asset('desk',[1.8,.78,.78]),'HouseProps/Chair_office':asset('chair',[.71,1.07,.69])}
+    items=[dict(slot='desk_island',asset='HouseProps/Desk_office',offset_m=[0,0],yaw_deg=180,support_slot=None),dict(slot='chair_main',asset='HouseProps/Chair_office',offset_m=[0,1.05],yaw_deg=180,support_slot=None)]
+    design=dict(room_id='office',groups=[dict(id='work',recipe='office',priority='mandatory',description='island',anchor_m=[3,2.6],yaw_deg=0,items=items)],detail_assets=[])
+    result=place_groups(building,design,assets)
+    assert len(result['instances'])==2 and not result['missing']
+
+
+def test_explicit_props_cannot_overlap_each_other_on_support():
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    table=dict(prefab_guid='desk',dependency_hash='v',bounds_center=[0,.4,0],bounds_size=[2,.8,1],front_status='qualified',support_regions=[dict(surface_id='top',rectangle_xz=[-1,-.5,1,.5])],surfaces=[dict(id='top',triangles=[[[-1,.8,-.5],[1,.8,-.5],[1,.8,.5]],[[-1,.8,-.5],[1,.8,.5],[-1,.8,.5]]])])
+    screen=dict(prefab_guid='screen',dependency_hash='v',bounds_center=[0,.2,0],bounds_size=[.5,.4,.2],front_status='qualified')
+    items=[dict(slot='desk',asset='desk',offset_m=[0,0],yaw_deg=0,support_slot=None)]+[dict(slot='screen'+str(i),asset='screen',offset_m=[0,0],yaw_deg=0,support_slot='desk') for i in range(2)]
+    group=dict(id='work',recipe='office',priority='mandatory',description='work',anchor_m=[3,3],yaw_deg=0,items=items)
+    result=place_groups(building,dict(room_id='office',groups=[group],detail_assets=[]),{'desk':table,'screen':screen})
+    assert len(result['instances'])==2
+    assert any('intersects existing' in m['reason'] for m in result['missing'])
+    table['surfaces'].append(dict(id='upper',triangles=[[[-1,1,-.5],[1,1,-.5],[1,1,.5]],[[-1,1,-.5],[1,1,.5],[-1,1,.5]]]))
+    result=place_groups(building,dict(room_id='office',groups=[group],detail_assets=[]),{'desk':table,'screen':screen})
+    assert len(result['instances'])==1
+    assert all('upper surface' in m['reason'] for m in result['missing'])
