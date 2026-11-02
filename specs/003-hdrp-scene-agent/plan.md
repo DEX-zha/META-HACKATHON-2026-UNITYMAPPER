@@ -291,3 +291,9 @@ La stratégie devient hiérarchique : programme du bâtiment → topologie multi
 ### Native zone recovery (T313)
 
 A zone currently returns immediately on a native support/traversal defect, before the corrective loop sees it. Give repairable support/passage failures a correction attempt with exact native receipts and current images. Preserve the last accepted zone when repair fails; never attempt recovery of changed user content, broken prefab connections/scales or unusable observation coverage. A strict reduction of native defects counts as measured progress only when equipment is retained and visual/exposure checks do not regress. Deployment waits for the active campaign to finish.
+
+### Catalogue-driven detail choices and wall attachment gap
+
+Attempt 5 reviewed a broad child-oriented catalogue but the room policy still named fixed book and stationery prefabs. Remove that preference; retain measured native-scale fit and visual review, letting the model select appropriate objects. This prompt correction alone does not establish varied outputs.
+
+The same attempt explicitly reports posters and curtains as unsupported. Add typed wall attachment targets in a subsequent implementation: room-owned boundary, distance along boundary and mounting height; verify reviewed visible-front/mounting semantics, native bounds, openings, adjacent objects and measured wall contact. Curtains additionally need an explicit compatible window target. Do not treat floor support as a wall attachment or infer qualification from prefab names alone. Native compilation and trials must wait until the active campaign releases Unity.

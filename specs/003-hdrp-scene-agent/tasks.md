@@ -844,3 +844,6 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T312 Diagnose blocky post-bake artifacts after detail relocation using read-only UV inspection and isolated reopened-scene/sun-off comparisons, preserving user scenes and mesh imports. Resolve before deploying the reference-bake generation default.
 
 - [x] T313 Route repairable native support/traversal zone failures into corrective replanning with exact receipts, retain failed zones separately and require native/visual non-regression. Successful recovery, failed recovery, room scope and non-repairable isolation/identity/coverage tests pass; full Python suite: 424 passed. Deployment waits for campaign attempt 5; autonomous visual qualification remains T284.
+
+- [x] T314 Remove fixed book/stationery prefab preferences from room policy and select according to the reviewed catalogue, purpose and measured fit. Repeatable visual variety remains T284.
+- [ ] T315 Add typed, visually qualified wall/window attachments for posters and curtains, with native-scale bounds, opening/collision checks, native contact receipts and source preservation; demonstrate them in an autonomous inhabited bedroom.
