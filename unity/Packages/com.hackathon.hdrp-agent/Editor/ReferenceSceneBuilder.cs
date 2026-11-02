@@ -95,6 +95,7 @@ namespace HdrpAgent.Editor
                 var tone=profile.Add<Tonemapping>(true);tone.mode.Override((TonemappingMode)Enum.Parse(typeof(TonemappingMode),protocol.tonemapping_mode));EditorUtility.SetDirty(profile);
             }
             var view=(JObject)((JArray)inspection["work_views"])[0];camera.transform.position=Vector(view["position_m"],-100,100);camera.transform.eulerAngles=Vector(view["rotation_deg"],-360,360);camera.fieldOfView=Number(view["fov_deg"],5,120);
+            PersistedVolumeProfile.Save(profile);
             var destination=folder+"/Reconstruction.unity";EditorSceneManager.SaveScene(scene,destination);SceneInspector.BindWorkingScene(destination);AssetDatabase.SaveAssets();return destination;
         }
     }

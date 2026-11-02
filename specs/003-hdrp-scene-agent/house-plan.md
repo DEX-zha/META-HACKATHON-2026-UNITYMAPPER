@@ -218,3 +218,18 @@ Données : intensités ET unités natives, transforms, activation, couleurs/temp
 Before replacing generation wholesale, qualify a narrow table/seating correction using a persistent isolated copy of the latest generated scene. The agent receives native object transforms, actual multi-angle prefab previews and a source-scene reference. It may request camera positions, apply exact object poses and undo its own changes. Geometry checks reject invalid operations without silently repositioning objects. Original and unrelated scenes remain unchanged. Each operation has an immutable request/result, an expected scene-state hash and explicit observations. Provider proposals are not evidence of improvement.
 
 The first delivery is a repeatable local experiment with a visual before/after report, not a claim that the full chat generation pipeline has been replaced. Promotion to the chat requires successful native and model validation of this interaction path.
+
+
+## Autonomous bedroom quality campaign (2026-11-02)
+
+The goal is a furnished bedroom comparable to House_clean_day, produced autonomously and repeatably. A passing transport test or a small successful furniture move is not acceptance. Preserve source scenes and use the shared API ledger for every paid call.
+
+1. Repair saved HDRP volume components and verify serialized exposure/tonemapping after reimport. Existing generated Lighting assets contain null component references; do not silently repair historical evidence.
+2. Establish candidate-owned daylight, indirect lighting and bake evidence, using the measured reference settings rather than copying lightmaps from different geometry. Qualify captures after reopening the scene.
+3. Expose actual multi-angle asset previews and bedroom reference details to selection. Require functional anchors, furnished storage, textiles, wall decoration and plausible everyday objects, with explicit unavailable-resource reporting.
+4. Extend persistent visual interaction beyond the pair experiment, retaining exact moves, reversible edits, close inspection, support and traversal checks. Corrections must change the observed scene and be re-evaluated.
+5. Run three independent bedroom generations with different requested arrangements. Keep complete manifests, budget receipts, before/after observations and defect history. All must preserve passages, contacts, prefab scale and architecture and meet the visual reference standard. Repetition means reliable quality, not an identical hardcoded arrangement.
+
+Do not declare the goal complete while lighting is unqualified, essential furnishings are absent, visible defects remain, or only one run has been evaluated.
+
+T281 evidence: native `Test volume profile persistence` passed after unloading components/profile and forcing reimport; the file contains both component records, exposure 6.25 and ACES, and both loaded components resolve to the owned asset path. Report: `.hdrp-agent/reports/profile-persistence.json`. Existing historical `Lighting 5.asset` in run e523a50d4782482cb5c7cd6bac4c58c5 contains two null component references and was left unchanged. Unity compilation and 381 Python tests passed. This establishes persistence, not visual equivalence or bake quality.

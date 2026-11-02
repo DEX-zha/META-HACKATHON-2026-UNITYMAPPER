@@ -798,3 +798,8 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T279 Execute the table/seating experiment with budget-accounted Muse calls, inspect before/after images and publish an honest report; distinguish interaction capability from artistic success.
 
 - [ ] T280 Promote direct interaction to chat only after broader pair/orientation tests, image exposure qualification, full reachability validation and a navigable visual asset catalogue. The scoped experiment is not a replacement for house generation.
+
+- [x] T281 Persist HDRP volume components as sub-assets in generated scenes and validate serialized exposure/tonemapping after reimport; preserve historical reports.
+- [ ] T282 Qualify reopened candidate-owned daylight/GI and lighting resources against clean-day reference evidence (extends T265–T266).
+- [ ] T283 Integrate visual asset selection and persistent whole-room corrective interaction with critical functional, support and traversal gates (extends T271/T280).
+- [ ] T284 Demonstrate three autonomous, distinctly arranged, fully furnished bedrooms with native and visual evidence comparable to House_clean_day; retain failed attempts and API costs.
