@@ -121,6 +121,17 @@ def alternative_anchors(desired,rect,local_bounds):
     return [desired]+sorted(([x,z] for x in xs for z in zs if [x,z]!=desired),key=lambda p:((p[0]-desired[0])**2+(p[1]-desired[1])**2,p[0],p[1]))
 
 
+def access_offset(asset,yaw,side=0):
+    """Approach the reviewed functional front, expressed in native prefab axes."""
+    forward=asset.get('forward') if asset.get('front_status')=='qualified' else None
+    fx,_,fz=forward or [0,0,1]
+    sx,_,sz=asset['bounds_size']
+    depth=(abs(fx)*sx+abs(fz)*sz)/2
+    width=(abs(fz)*sx+abs(fx)*sz)/2
+    lateral=side*(width+.5)
+    return rotate(fx*(depth+.65)+fz*lateral,fz*(depth+.65)-fx*lateral,yaw)
+
+
 def place_groups(building,design,assets,*,existing=(),access_points=(),detail_offset=0):
     room=next(r for r in building['rooms'] if r['id']==design['room_id']);rect=room_bounds(room)
     reservations,entry=door_reservations(building,room)
@@ -181,7 +192,7 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
                     if s['role'] in {'chair','plant'} or s['asset_name'].split('/')[-1].startswith(('Chair','Interior_plant')):continue
                     candidates=[]
                     for side in (0,-1,1):
-                        x,z=rotate(side*(s['asset']['bounds_size'][0]/2+.5),s['asset']['bounds_size'][2]/2+.65,s['yaw']+yaw)
+                        x,z=access_offset(s['asset'],s['yaw']+yaw,side)
                         point=[(b[0]+b[2])/2+x,(b[1]+b[3])/2+z]
                         if rect[0]+.4<point[0]<rect[2]-.4 and rect[1]+.4<point[1]<rect[3]-.4 and not any(overlap([point[0]-.4,point[1]-.4,point[0]+.4,point[1]+.4],o) for o in occupied+footprints):candidates.append(point)
                     if not candidates:break

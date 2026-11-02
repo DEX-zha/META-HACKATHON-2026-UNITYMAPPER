@@ -1,5 +1,6 @@
 """House v1 admission and durable execution, separate from the legacy reconstructor."""
 from contextlib import closing
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import io
@@ -11,6 +12,7 @@ from pathlib import Path
 from .house_convergence import converge, signature
 from .house_media import inspection_batches
 from .house_memory import HouseMemory
+from .house_layout_feedback import feedback as layout_feedback
 from .house_catalogue import Catalogue
 from .house_support_candidates import candidates as support_candidates
 from .house_visual_catalogue import load_previews, pages as visual_pages, batches as visual_batches, family as visual_family
@@ -224,12 +226,13 @@ class HouseService:
         ready,_=load_previews(self.settings.state/'house/visual-catalogue',selected)
         catalogue=Catalogue(self.houses)
         vectors={'positive_x':[1,0,0],'negative_x':[-1,0,0],'positive_z':[0,0,1],'negative_z':[0,0,-1]}
+        changed=False
         for name in sorted(ready):
             asset=assets[name]
             proposals=support_candidates(asset) if not asset.get('support_regions') else []
             if asset['front_status'] in {'qualified','not_applicable'} and not proposals:continue
             evidence=ready[name]
-            key='asset-review-'+room['id']+'-'+asset['prefab_guid']
+            key='asset-review-'+room['id']+'-'+asset['prefab_guid']+'-'+fingerprint(dict(front=asset['front_status'],proposals=proposals))[:10]
             decision=self.ask(row,key,'Review this exact prefab for functional orientation and accessible horizontal supports. The left image looks from local (+X,+Y,+Z), the right from (-X,+Y,-Z); Y is up. Front means the side a person uses (desk seating side, wardrobe doors), not camera-facing. Choose unknown when ambiguous; not_applicable only for objects with no meaningful functional front. Supports: select only supplied surface_id values clearly corresponding to rigid, accessible tabletops or open shelves. Reject beds, cushions, drawer interiors, hidden panels, decorative tops, narrow trim and anything uncertain. Numeric patches prove coverage only, not semantic suitability. Empty supports is valid. Explain visible evidence and uncertainty. Never approve from an asset name alone. '+canonical(dict(asset_id=name,size_m=asset['bounds_size'],bounds_center=asset['bounds_center'],proposals=proposals,existing_front=asset['front_status'])),'ModelHouseAssetReview',[evidence['data']])
             by_id={p['surface_id']:p for p in proposals}
             if set(decision['supports'])-by_id.keys():raise AgentError('INVALID_MODEL_OUTPUT','Support review selected an unmeasured patch')
@@ -240,6 +243,41 @@ class HouseService:
             for surface in dict.fromkeys(decision['supports']):
                 catalogue.qualify_support(asset['prefab_guid'],asset['dependency_hash'],surface,by_id[surface]['rectangle_xz'],['decor'],[review])
             assets[name]=catalogue.get(asset['prefab_guid'],asset['dependency_hash'])
+            changed=changed or fingerprint(asset)!=fingerprint(assets[name])
+        return changed
+
+    def refine_reviewed_design(self,row,room,design,assets,building,brief):
+        seen=set()
+        while fingerprint(design) not in seen:
+            seen.add(fingerprint(design))
+            if not self.review_selected_assets(row,room,design,assets):break
+            self.guard(row)
+            design=self.ask(row,'reviewed-layout-'+room['id']+'-'+fingerprint(dict(design=design,assets=assets))[:16],
+                'Revise this room plan using the newly reviewed functional fronts and support patches. Revisit unresolved needs and poor substitutes caused by previously unavailable supports: a qualified bedside tabletop can now carry the requested bedside lamp. Preserve valid functional groups and user intent. Do not keep a floor-lamp substitution solely because the earlier tabletop was unqualified. Use the actual qualified rectangles and native prop sizes; no invented supports. Return the complete room design, retaining explicit truly unsupported needs. '+room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),brief,assets)+' Current plan: '+canonical(design),'ModelHouseRoomV2')
+            if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Reviewed layout changed room scope or repeated group IDs')
+        return design
+
+    def place_reviewed_design(self,row,room,design,assets,building,brief):
+        seen=set();best=None;required_assets=None
+        while fingerprint(design) not in seen:
+            seen.add(fingerprint(design))
+            design=self.refine_reviewed_design(row,room,design,assets,building,brief)
+            planned=Counter(item['asset'] for group in design['groups'] if group['priority']=='mandatory' for item in group.get('items',[]))
+            if required_assets is None:required_assets=planned.copy()
+            placed=place_groups(building,design,assets)
+            missing=placed['missing']
+            for asset,count in (required_assets-planned).items():
+                missing.append(dict(id='retained-'+asset,reason='Layout repair removed mandatory planned equipment: '+asset,quantity=count,priority='mandatory'))
+            score=(sum(m.get('quantity',1) for m in missing if m.get('priority','mandatory')=='mandatory'),sum(m.get('quantity',1) for m in missing))
+            if best is None or score<best[0]:best=(score,deepcopy(design),placed)
+            if not missing:break
+            report=layout_feedback(design,placed,assets)
+            HouseMemory(self.settings.state,row['run_id']).note('layout-preflight-'+room['id']+'-'+str(len(seen)),report)
+            self.guard(row)
+            design=self.ask(row,'layout-repair-'+room['id']+'-'+str(len(seen)),
+                'Repair this rejected furnishing layout before Unity construction. Preserve the user brief, room dimensions, mandatory functions and valid groups. Do not solve failures by removing requested equipment or changing its priority. Native prefabs cannot stretch. Internal group intersections require changing item offsets/orientations or splitting the group; moving the whole group cannot solve them. Use native bounds and reviewed supports. Return the complete revised room design; preserve unavailable needs explicitly. '+room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),brief,assets)+' Current design and measured rejection: '+canonical(dict(design=design,feedback=report,required_asset_counts=dict(required_assets))),'ModelHouseRoomV2')
+            if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Layout repair changed room scope or repeated group IDs')
+        return best[1],best[2]
 
     def native(self,row,manifest):
         self.guard(row);cp=json.loads(row['checkpoint']);manifest=deepcopy(manifest)
@@ -290,8 +328,7 @@ class HouseService:
                 visual_selection=self.browse_assets(row,room,params['brief'],assets)
                 design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Visually reviewed resource selection (prefer suitable reviewed assets; do not confuse appearance with qualified supports): '+canonical(visual_selection)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
-                self.review_selected_assets(row,room,design,assets)
-                placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
+                design,placed=self.place_reviewed_design(row,room,design,assets,building,params['brief']);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
             if not requirements:raise AgentError('PROGRAM_INCOMPLETE','No supported functional requirements')
             program=dict(id='house',project_id=row['project_id'],run_id=run,brief=params['brief'],creative_policy=params['creative_policy'],reference_hashes=params['reference_hashes'],rooms=[dict(id=r['id'],floor_id='ground',purpose=r['purpose']) for r in outline['rooms']],requirements=requirements)

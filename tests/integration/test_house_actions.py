@@ -245,3 +245,39 @@ def test_independent_sam_concepts_run_concurrently_and_keep_evidence_order(tmp_p
     h.inspect(row,dict(rooms=[dict(id='bedroom')]),[],dict(scene_version='v1',captures=[dict(room_id='bedroom',key='front',usable=True,artifact_hash=artifact)]))
     assert decoded==names
     assert [s['concept'] for s in h.progress(r['action_id'])['segmentations']]==names
+
+
+def test_reviewed_supports_trigger_layout_revision_and_new_assets_are_reviewed(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id']);room=dict(id='bedroom')
+    first=dict(room_id='bedroom',groups=[],detail_assets=[],unresolved=['Bedside support unavailable'])
+    revised=dict(room_id='bedroom',groups=[],detail_assets=['Lamp_table'],unresolved=[])
+    reviewed=[]
+    def review(row,room,design,assets):
+        reviewed.append(design)
+        return len(reviewed)==1
+    monkeypatch.setattr(h,'review_selected_assets',review);monkeypatch.setattr(h,'ask',lambda *args:revised)
+    result=h.refine_reviewed_design(row,room,first,{},dict(rooms=[room],portals=[]),'Bedroom with bedside lamp')
+    assert result==revised and reviewed==[first,revised]
+
+
+def test_layout_revision_does_not_repeat_identical_design_forever(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id']);room=dict(id='bedroom')
+    design=dict(room_id='bedroom',groups=[],detail_assets=[],unresolved=[]);reviews=[]
+    monkeypatch.setattr(h,'review_selected_assets',lambda *args:reviews.append(True) or True)
+    monkeypatch.setattr(h,'ask',lambda *args:design)
+    assert h.refine_reviewed_design(row,room,design,{},dict(rooms=[room],portals=[]),'Bedroom')==design
+    assert len(reviews)==1
+
+
+def test_layout_repair_cannot_win_by_dropping_mandatory_furniture(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id']);room=dict(id='bedroom')
+    design=dict(room_id='bedroom',groups=[dict(id='clothes',priority='mandatory',items=[dict(asset='Wardrobe')])],detail_assets=[],unresolved=[])
+    empty=dict(room_id='bedroom',groups=[],detail_assets=[],unresolved=[])
+    monkeypatch.setattr(h,'refine_reviewed_design',lambda row,room,design,*args:design)
+    def place(building,design,assets):
+        return dict(instances=[],requirements=[],missing=[dict(id='wardrobe',priority='mandatory',reason='Needs placement')] if design['groups'] else [])
+    monkeypatch.setattr('hdrp_agent.house_service.place_groups',place)
+    monkeypatch.setattr('hdrp_agent.house_service.layout_feedback',lambda *args:{})
+    monkeypatch.setattr(h,'ask',lambda *args:empty)
+    selected,placed=h.place_reviewed_design(row,room,design,{},dict(rooms=[room],portals=[]),'Bedroom with wardrobe')
+    assert selected==design and placed['missing']

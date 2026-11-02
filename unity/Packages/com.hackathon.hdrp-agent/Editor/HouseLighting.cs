@@ -31,12 +31,13 @@ internal static class HouseLighting {
     foreach(var light in lights){
      light.gameObject.SetActive(true);light.enabled=true;
      if(!light.GetComponent<HDAdditionalLightData>())light.gameObject.AddComponent<HDAdditionalLightData>();
-     light.lightUnit=UnityEngine.Rendering.LightUnit.Lumen;light.intensity=lumens/lights.Length;light.range=5;light.shadows=LightShadows.Soft;light.lightmapBakeType=LightmapBakeType.Realtime;
+     light.range=5;light.shadows=LightShadows.Soft;light.lightmapBakeType=LightmapBakeType.Realtime;
      light.useColorTemperature=true;light.colorTemperature=3500;light.color=Color.white;light.cullingMask=1<<30;
      if(light.type==LightType.Spot){light.spotAngle=110;light.transform.rotation=Quaternion.LookRotation(Vector3.down,Vector3.forward);PrefabUtility.RecordPrefabInstancePropertyModifications(light.transform);}
+     PhotometricIntensity.Set(light,lumens/lights.Length,LightUnit.Lumen);
      PrefabUtility.RecordPrefabInstancePropertyModifications(light);
     }
-    receipts.Add(new JObject{["room_id"]=room["id"],["prefab_path"]=path,["connected"]=PrefabUtility.GetPrefabInstanceStatus(go)==PrefabInstanceStatus.Connected,["native_scale"]=true,["mount_height_m"]=2.8f,["lumens"]=lumens,["temperature_k"]=3500,["source_count"]=lights.Length,["mode"]="realtime_ceiling",["bake_qualified"]=false});
+    receipts.Add(new JObject{["room_id"]=room["id"],["prefab_path"]=path,["connected"]=PrefabUtility.GetPrefabInstanceStatus(go)==PrefabInstanceStatus.Connected,["native_scale"]=true,["mount_height_m"]=2.8f,["lumens"]=lumens,["native_intensities"]=new JArray(lights.Select(l=>l.intensity)),["native_units"]=new JArray(lights.Select(l=>PhotometricIntensity.NativeUnit(l).ToString())),["temperature_k"]=3500,["source_count"]=lights.Length,["mode"]="realtime_ceiling",["bake_qualified"]=false});
    }
   }
   return receipts;

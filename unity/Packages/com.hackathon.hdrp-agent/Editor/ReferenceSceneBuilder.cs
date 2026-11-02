@@ -80,7 +80,7 @@ namespace HdrpAgent.Editor
             foreach(JObject item in (JArray)plan["lights"]){
                 var go=new GameObject("Reference light");go.transform.position=Vector(item["position_m"],-100,100);go.transform.eulerAngles=Vector(item["rotation_deg"],-360,360);
                 var light=go.AddComponent<Light>();var type=(string)item["type"];light.type=type=="directional"?LightType.Directional:type=="spot"?LightType.Spot:LightType.Point;
-                go.AddComponent<HDAdditionalLightData>();light.lightUnit=type=="directional"?UnityEngine.Rendering.LightUnit.Lux:UnityEngine.Rendering.LightUnit.Lumen;light.intensity=Number(item["intensity"],0,type=="directional"?150000:100000);light.color=Color3(item["color_rgb"]);light.range=30;light.spotAngle=Number(item["spot_angle_deg"],1,179);light.shadows=architecture==null?LightShadows.Soft:LightShadows.None;light.lightmapBakeType=LightmapBakeType.Realtime;
+                go.AddComponent<HDAdditionalLightData>();light.color=Color3(item["color_rgb"]);light.range=30;light.spotAngle=Number(item["spot_angle_deg"],1,179);light.shadows=architecture==null?LightShadows.Soft:LightShadows.None;light.lightmapBakeType=LightmapBakeType.Realtime;PhotometricIntensity.Set(light,Number(item["intensity"],0,type=="directional"?150000:100000),type=="directional"?LightUnit.Lux:LightUnit.Lumen);
             }
             var volume=new GameObject("Reconstructed atmosphere").AddComponent<Volume>();volume.isGlobal=true;volume.priority=10;
             var profile=ScriptableObject.CreateInstance<VolumeProfile>();AssetDatabase.CreateAsset(profile,folder+"/Resources/Atmosphere.asset");volume.sharedProfile=profile;

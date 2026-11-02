@@ -816,3 +816,8 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 
 - [x] T292 Bind structured visual choices to exact supplied family/asset identifiers and verify request auditing and wrong-level rejection; live attempt 4 has passed family selection.
 - [x] T293 Parallelize independent SAM concepts with separate budget-accounted clients, deterministic evidence association and joined in-flight calls. Offline integration tests pass; live deployment is pending attempt 4 completion.
+
+- [x] T294 Use qualified native fronts in access checks and expose forward axes/pivot conventions to the planner; regression-test side/front confusion.
+- [x] T295 Revisit layouts after newly reviewed supports and return internal group intersections to the model before construction; retain mandatory planned equipment and stop repeated designs. Offline verification complete; live campaign qualification pending.
+- [x] T296 Convert requested photometric units into Unity-native intensity after configuring light shape; compile and verify point/spot/directional conversions natively.
+- [ ] T297 Complete and view the queued matched-camera photometric comparison once Unity resumes polling, then deploy latest Python planning fixes and resume the bedroom quality campaign. No artistic success is claimed from T296 alone.

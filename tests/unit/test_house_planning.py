@@ -175,3 +175,26 @@ def test_invalid_supports_keep_needs_without_aborting_independent_furniture(pare
     assert len(result['requirements'])==3
     assert len(result['missing'])==2
     assert all(m['reason']=='Unknown or cyclic support slot' for m in result['missing'])
+
+
+@pytest.mark.parametrize('forward,yaw,expected',[
+    ([0,0,1],0,(0,1.15)),([0,0,-1],0,(0,-1.15)),
+    ([1,0,0],0,(1.65,0)),([1,0,0],90,(0,-1.65)),
+])
+def test_access_uses_reviewed_native_front_and_rotated_depth(forward,yaw,expected):
+    from hdrp_agent.house_planning import access_offset
+    asset=dict(front_status='qualified',forward=forward,bounds_size=[2,1,1])
+    assert access_offset(asset,yaw)==pytest.approx(expected)
+
+
+def test_wardrobe_cannot_claim_access_from_its_side_when_front_faces_wall():
+    from hdrp_agent.house_planning import rotate
+    building=building_from_outline(dict(rooms=[dict(id='bedroom',floor_index=0,width_m=6,depth_m=6)]))
+    asset=dict(prefab_guid='wardrobe',dependency_hash='v1',bounds_center=[0,1,0],bounds_size=[1,2,1],front_status='qualified',forward=[1,0,0],surfaces=[],support_regions=[])
+    design=dict(room_id='bedroom',groups=[dict(id='storage',recipe='storage',priority='mandatory',description='clothes',anchor_m=[5.4,3],yaw_deg=0,items=[dict(slot='wardrobe',asset='Wardrobe',offset_m=[0,0],yaw_deg=0,support_slot=None)])],detail_assets=[])
+    result=place_groups(building,design,{'Wardrobe':asset})
+    assert len(result['instances'])==1
+    item=result['instances'][0];front=rotate(1,0,item['yaw']);point=result['access_points'][-1]
+    delta=[point[0]-item['center'][0],point[1]-item['center'][2]]
+    assert sum(a*b for a,b in zip(front,delta))==pytest.approx(1.15)
+    assert item['center'][0]!=pytest.approx(5.4) or item['yaw']!=0
