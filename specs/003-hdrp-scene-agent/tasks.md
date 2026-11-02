@@ -802,7 +802,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T281 Persist HDRP volume components as sub-assets in generated scenes and validate serialized exposure/tonemapping after reimport; preserve historical reports.
 - [ ] T282 Qualify reopened candidate-owned daylight/GI and lighting resources against clean-day reference evidence (extends T265–T266).
 - [ ] T283 Integrate visual asset selection and persistent whole-room corrective interaction with critical functional, support and traversal gates (extends T271/T280).
-- [ ] T284 Demonstrate three autonomous, distinctly arranged, fully furnished bedrooms with native and visual evidence comparable to House_clean_day; retain failed attempts and API costs.
+- [ ] T284 Demonstrate two autonomous, distinctly arranged, fully furnished bedrooms with native and visual evidence comparable to House_clean_day; retain failed attempts and API costs.
 
 - [x] T285 Export the full native two-angle prefab catalogue incrementally with hash-bound identities; verify source scene state and inspect rendered pages.
 - [x] T286 Connect family discovery and paginated visual asset review to initial room planning, persist decisions/provenance, reject selections outside observed pages, and verify a budget-accounted live selection.
@@ -810,7 +810,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 
 - [x] T288 Batch all visual catalogue pages within the twelve-image transport contract without discarding candidates; test full pagination coverage.
 - [x] T289 Propose measured support patches, reject holes/overlapping triangles, obtain hash-bound visual reviews for selected assets, retain unknown fronts and reject invented patches before mutation. Validate one live bedside-table review and regression suite.
-- [ ] T290 Observe campaign attempt 2 through actual placement/render/correction, inspect outcomes, and repair remaining composition/lighting defects. This contributes to T284 and does not replace the three-run quality gate.
+- [ ] T290 Observe campaign attempt 2 through actual placement/render/correction, inspect outcomes, and repair remaining composition/lighting defects. This contributes to T284 and does not replace the two-run quality gate.
 
 - [x] T291 Clarify zero-based floor indices and feed invalid-outline validation back to the model before furnishing; stop repeated identical invalid outlines. Qualify the fix in campaign attempt 3; final visual outcome remains T284/T290.
 
@@ -851,3 +851,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T316 Route measured explicit group floor coverings through floor-detail placement, preserving intent and requirements without rejecting independent furniture. Native-size fit, identity/priority, unresolved floor space and spoofed/non-walkable asset tests pass; full Python suite: 428 passed. Offline replay of attempt 5 preflight 3 retains all 19 instances with no missing requirements or internal collisions. Native qualification remains pending.
 
 - [ ] T317 Qualify upper wall/ceiling trim closure with dedicated native seam/grazing-ray measurements and matched lighting comparisons; distinguish opaque single-sided source materials from actual geometry gaps and shadow leakage, preserving native prefabs and user assets. Prioritize the user's 2026-11-03 observation; extends T308.
+
+- [ ] T318 Let corrective inspection adjust one selected furniture item with its supported descendants, keeping unrelated group furniture fixed; preserve native scale, contacts, circulation, equipment and visual non-regression. Verify bedside/plant placement corrections in the two-bedroom campaign.

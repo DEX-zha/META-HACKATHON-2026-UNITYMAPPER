@@ -5094,6 +5094,7 @@
                 "enum": [
                   "move",
                   "rotate",
+                  "adjust_item",
                   "replace",
                   "reframe",
                   "measure",

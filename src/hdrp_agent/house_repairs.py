@@ -9,12 +9,26 @@ def propose(manifest,observations,attempted):
     objects={i['id']:i for i in manifest['instances']}
     for observation in observations:
         target=objects.get(observation.get('instance_id'))
-        if target is None or observation['suggested_action'] not in {'move','rotate'}:continue
+        if target is None or observation['suggested_action'] not in {'move','rotate','adjust_item'}:continue
+        individual=observation['suggested_action']=='adjust_item'
+        # Supported props need a support-aware placement operation; this control
+        # moves floor furniture and carries its existing supported descendants.
+        if individual and (target.get('support_id') is not None or target.get('role')=='floor_covering'):continue
         delta=observation['translation_m'];angle=observation['yaw_delta']
         if len(delta)!=3 or not all(isfinite(v) for v in delta+[angle]) or abs(delta[1])>.001 or hypot(delta[0],delta[2])>6 or abs(angle)>180:continue
         if hypot(delta[0],delta[2])<.01 and abs(angle)<.1:continue
-        result=deepcopy(manifest);group=[i for i in result['instances'] if i['room_id']==target['room_id'] and i['group_id']==target['group_id']]
-        anchor=list(next((i for i in group if i['support_id'] is None),target)['center'])
+        result=deepcopy(manifest)
+        if individual:
+            selected={target['id']}
+            while True:
+                children={i['id'] for i in result['instances'] if i['room_id']==target['room_id'] and i.get('support_id') in selected}
+                if children<=selected:break
+                selected.update(children)
+            group=[i for i in result['instances'] if i['id'] in selected]
+            anchor=list(target['center'])
+        else:
+            group=[i for i in result['instances'] if i['room_id']==target['room_id'] and i['group_id']==target['group_id']]
+            anchor=list(next((i for i in group if i['support_id'] is None),target)['center'])
         for item in group:
             for key in ('position','center'):
                 x,z=rotate(item[key][0]-anchor[0],item[key][2]-anchor[2],angle)
@@ -43,5 +57,5 @@ def propose(manifest,observations,attempted):
             entry=next((a for a in entries if a['room_id']==room_id),None)
             if entry is None:entries.append(dict(room_id=room_id,points=points))
             else:entry['points']=points
-        if valid:return result,dict(kind='transform_group',scope_id=target['room_id'],group_id=target['group_id'],translation_m=delta,yaw_delta=angle,reason=observation['message'],signature=signature)
+        if valid:return result,dict(kind='transform_item' if individual else 'transform_group',scope_id=target['room_id'],group_id=target['group_id'],instance_id=target['id'],affected_instance_ids=[i['id'] for i in group],translation_m=delta,yaw_delta=angle,reason=observation['message'],signature=signature)
     return None
