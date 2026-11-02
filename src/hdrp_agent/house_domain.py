@@ -235,11 +235,15 @@ class AssetSemantics(Contract):
     sockets: list[dict] = Field(default_factory=list)
     style_tags: list[str] = Field(default_factory=list)
     measurement_evidence: str | None = None
+    placement_modes: list[Literal['floor','horizontal_support','wall_mount','window_mount','unknown']] = Field(default_factory=list)
+    placement_evidence: list[str] = Field(default_factory=list)
     @model_validator(mode='after')
     def qualification(self):
         if '..' in self.prefab_path.split('/'):raise ValueError('Asset path traversal')
         if any(x<0 for x in self.bounds_size):raise ValueError('Negative bounds')
         if self.front_status=='qualified' and (not self.front_evidence or self.forward is None):raise ValueError('Qualified front requires semantic evidence')
+        if self.placement_modes and not self.placement_evidence:raise ValueError('Placement modes require reviewed evidence')
+        if 'unknown' in self.placement_modes and len(self.placement_modes)!=1:raise ValueError('Unknown placement cannot qualify other modes')
         for vector in (self.forward,self.up):
             if vector is not None and abs(sum(x*x for x in vector)-1)>1e-4:raise ValueError('Semantic axes must be unit vectors')
         if self.forward is not None and abs(sum(a*b for a,b in zip(self.forward,self.up)))>1e-4:raise ValueError('Forward and up must be orthogonal')

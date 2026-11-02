@@ -63,3 +63,15 @@ def test_symmetric_front_still_requires_explicit_review(tmp_path):
     evidence=[dict(kind='reviewed_multiview',reference='symmetric-table',reviewer='operator')]
     result=c.qualify_front('a'*32,'b'*32,None,evidence,status='not_applicable')
     assert result['forward'] is None and result['front_status']=='not_applicable'
+
+
+def test_placement_review_requires_exact_dependency_and_survives_remeasurement(tmp_path):
+    c=Catalogue(HouseStore(Store(tmp_path/'s.db')));row=measured();c.import_measurements([row])
+    evidence=dict(kind='reviewed_multiview',reference='poster-preview',reviewer='visual-review',dependency_hash='b'*32)
+    with pytest.raises(AgentError):c.qualify_placement('a'*32,'b'*32,['wall_mount'],[dict(evidence,dependency_hash='c'*32)])
+    reviewed=c.qualify_placement('a'*32,'b'*32,['wall_mount'],[evidence])
+    assert reviewed['placement_modes']==['wall_mount'] and reviewed['placement_evidence']
+    c.import_measurements([row]);assert c.get('a'*32,'b'*32)['placement_modes']==['wall_mount']
+    c.import_measurements([dict(row,dependency_hash='c'*32)])
+    assert c.get('a'*32,'c'*32)['placement_modes']==[]
+    with pytest.raises(AgentError):c.import_measurements([dict(row,placement_modes=['floor'])])

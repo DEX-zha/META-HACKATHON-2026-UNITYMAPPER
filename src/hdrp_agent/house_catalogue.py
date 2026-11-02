@@ -12,7 +12,7 @@ class Catalogue:
         for row in rows:
             value=dict(row)
             # Geometry export cannot assert an intended semantic front.
-            if any(k in value for k in ('forward','front_status','front_evidence','support_regions','use_volumes','sockets')):
+            if any(k in value for k in ('forward','front_status','front_evidence','support_regions','use_volumes','sockets','placement_modes','placement_evidence')):
                 raise AgentError('SEMANTICS_UNQUALIFIED','Native geometry is not a reviewed functional orientation')
             if any(s.get('supports_items') or s.get('qualification') not in {'geometry_candidate','unavailable'} for s in value.get('surfaces',[])):
                 raise AgentError('SEMANTICS_UNQUALIFIED','Native measurements cannot qualify support use')
@@ -47,6 +47,18 @@ class Catalogue:
         a=self.get(guid,dependency_hash)
         if a['front_status'] not in {'qualified','not_applicable'}:raise AgentError('SEMANTICS_UNQUALIFIED','Functional front is not qualified')
         return a
+
+    def qualify_placement(self,guid,dependency_hash,modes,evidence):
+        if not modes or not evidence or any(not isinstance(e,dict) or e.get('kind') not in {'reviewed_multiview','trusted_annotation'} or not e.get('reference') or not e.get('reviewer') or e.get('dependency_hash')!=dependency_hash for e in evidence):
+            raise AgentError('SEMANTICS_UNQUALIFIED','Placement needs exact-prefab reviewed evidence')
+        with self.store.tx() as c:
+            row=c.execute('SELECT body FROM asset_semantics WHERE prefab_guid=? AND dependency_hash=?',(guid,dependency_hash)).fetchone()
+            if not row:raise AgentError('SEMANTICS_UNQUALIFIED','Prefab must be measured first')
+            data=json.loads(row[0]);data.update(placement_modes=list(dict.fromkeys(modes)),placement_evidence=[canonical(e) for e in evidence])
+            asset=AssetSemantics.model_validate(data)
+            c.execute('UPDATE asset_semantics SET body=? WHERE prefab_guid=? AND dependency_hash=?',(canonical(asset.model_dump(mode='json')),guid,dependency_hash))
+            self.store.event(c,guid,'house.placement_qualified',dict(dependency_hash=dependency_hash,modes=modes,evidence=evidence))
+        return asset.model_dump(mode='json')
 
     def qualify_support(self,guid,dependency_hash,surface_id,rectangle,roles,evidence):
         from .house_supports import footprint_supported

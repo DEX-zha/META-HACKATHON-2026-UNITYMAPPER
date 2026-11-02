@@ -853,3 +853,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T317 Qualify upper wall/ceiling trim closure with dedicated native seam/grazing-ray measurements and matched lighting comparisons; distinguish opaque single-sided source materials from actual geometry gaps and shadow leakage, preserving native prefabs and user assets. Prioritize the user's 2026-11-03 observation; extends T308.
 
 - [ ] T318 Let corrective inspection adjust one selected furniture item with its supported descendants, keeping unrelated group furniture fixed; preserve native scale, contacts, circulation, equipment and visual non-regression. Verify bedside/plant placement corrections in the two-bedroom campaign.
+
+- [ ] T319 Qualify allowed placement modes from exact prefab previews, persist hash-bound evidence and reject floor placement of wall/window/supported-only objects before construction; verify dependency invalidation and replanning feedback. Complete actual wall/window mounting through T315, rather than treating rejection as the final feature.

@@ -6880,7 +6880,8 @@
         "required": [
           "front",
           "supports",
-          "summary"
+          "summary",
+          "placement_modes"
         ],
         "properties": {
           "front": {
@@ -6902,6 +6903,20 @@
           },
           "summary": {
             "type": "string"
+          },
+          "placement_modes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "floor",
+                "horizontal_support",
+                "wall_mount",
+                "window_mount",
+                "unknown"
+              ]
+            }
           }
         }
       },

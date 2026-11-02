@@ -182,6 +182,9 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
             asset=assets.get(name)
             if asset is None or (not explicit and asset['front_status'] not in {'qualified','not_applicable'}):
                 missing.append(dict(id=key,reason='Prefab or functional semantics unavailable: '+name,priority=group['priority']));continue
+            mode='horizontal_support' if support else 'floor'
+            if asset.get('placement_modes') and mode not in asset['placement_modes']:
+                missing.append(dict(id=key,reason='Requested '+mode+' placement is not visually qualified for '+name,required_placement_modes=asset['placement_modes'],priority=group['priority']));continue
             slots.append(dict(id=key,role=role,asset_name=name,asset=asset,x=x,z=z,yaw=yaw,support=support))
         ground=[s for s in slots if s['support'] is None]
         if not ground:continue
@@ -287,6 +290,8 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
         key=f'{room_id}-detail-{index}'
         requirements.append(dict(id=key,scope_id=room_id,role=name,quantity=1,priority='preferred',provenance='creative'))
         asset=assets.get(name);placed=False
+        if asset and asset.get('placement_modes') and 'horizontal_support' not in asset['placement_modes']:
+            missing.append(dict(id=key,reason='Horizontal support is not visually qualified for detail: '+name,required_placement_modes=asset['placement_modes'],priority='preferred'));continue
         if asset and asset['front_status'] in {'qualified','not_applicable'}:
             # Explicit designs use arbitrary slot IDs (e.g. shelf01) as roles.
             # Prefer reviewed book-support semantics, not a particular slot name.
