@@ -820,7 +820,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T294 Use qualified native fronts in access checks and expose forward axes/pivot conventions to the planner; regression-test side/front confusion.
 - [x] T295 Revisit layouts after newly reviewed supports and return internal group intersections to the model before construction; retain mandatory planned equipment and stop repeated designs. Offline verification complete; live campaign qualification pending.
 - [x] T296 Convert requested photometric units into Unity-native intensity after configuring light shape; compile and verify point/spot/directional conversions natively.
-- [ ] T297 Complete and view the queued matched-camera photometric comparison once Unity resumes polling, then deploy latest Python planning fixes and resume the bedroom quality campaign. No artistic success is claimed from T296 alone.
+- [x] T297 Complete and view the matched-camera photometric comparison, then deploy latest Python planning fixes after terminal native work. Diagnostic bedroom campaign resumed; end-to-end artistic qualification remains T284/T290. No artistic success is claimed from T296 alone.
 
 - [x] T298 Read imported geometry through the editor read-only mesh API without changing import flags; verify native wall audits and the complete 16-instance diagnostic replay.
 - [x] T299 Observe the render-request HDRP history rather than the default camera history; record exposure/tonemapping/frame settings, preserve invalid diagnostic history and reject construction in Play Mode.
@@ -829,3 +829,4 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T302 Distinguish source renderer cache invalidation from actual edits using serialized object state; test rejection of transform, activation and component changes natively. Restore the diagnostic-created hidden sky helper and preserve source file hashes.
 - [x] T303 Correct the baked result enum and distinguish native photometric units from inspector display units in model reference context; reconcile the already-completed native receipt without replay.
 - [ ] T304 Diagnose the dark baked candidate using actual lightmap bindings/photometry and matched exposures; qualify reopened resources and artistic appearance before enabling daylight baking in chat.
+- [ ] T305 Meter candidate exposure from actual HDRP render-request history across room overview views, then lock a measured value for comparisons; verify against fixed exposure and a live baked room, preserving profile provenance. Integrate with the autonomous correction manifest only after native validation.
