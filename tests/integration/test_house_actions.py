@@ -187,3 +187,15 @@ def test_close_reloaded_build_refuses_unverified_or_active_execution(tmp_path,pr
     with pytest.raises(AgentError):h.stop(row['id'],dict(reason='Close'))
     assert h.get(row['id'])['state']=='recovery_required'
     assert h.store.get('sessions',row['session_id'])['state']=='recovery_required'
+
+
+def test_late_native_cancellation_releases_stopped_run_but_unknown_does_not(tmp_path):
+    h,r,row,path=interrupted_build(tmp_path)
+    with h.store.tx() as c:
+        c.execute('UPDATE sessions SET stop_requested=1 WHERE id=?',(row['session_id'],))
+    assert not h.close_cancelled_build(row)
+    with h.store.tx() as c:
+        c.execute("UPDATE commands SET status='cancelled',result=? WHERE session_id=?",(canonical(dict(status='cancelled')),row['session_id']))
+    assert h.close_cancelled_build(row)
+    assert h.get(row['id'])['state']=='failed'
+    assert h.store.get('sessions',row['session_id'])['state']=='interrupted'

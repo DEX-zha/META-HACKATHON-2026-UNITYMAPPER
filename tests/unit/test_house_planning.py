@@ -134,7 +134,8 @@ def test_explicit_model_layout_changes_furniture_and_position_without_template()
     assert second['instances'][0]['yaw']==90
     # No kitchen chair, screen or old fixed wall arrangement gets injected.
     invalid=place_groups(building,design('Workdesk',[100,100],0),assets)
-    assert not invalid['instances'] and invalid['missing']
+    assert invalid['instances'] and not invalid['missing']
+    assert all(0 < v < 6 for v in invalid['instances'][0]['center'][::2])
 
 
 def test_explicit_chair_slot_name_does_not_create_impossible_standing_access():

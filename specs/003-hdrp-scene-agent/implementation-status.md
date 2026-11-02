@@ -260,3 +260,11 @@ A recovery diagnostic reads only an identity-matching local native receipt. `DOM
 ### Closing a retired build after domain reload
 
 The existing Stop action now closes a `recovery_required` house run only when every unknown command is an isolated `build_house` with a matching `DOMAIN_RELOAD` receipt from a retired epoch, Unity is freshly connected in the new epoch, and no native commands are queued or executing. It preserves the partial scene and unknown command outcomes, records the full checked receipt in an audit event, and ends the session as interrupted/inconclusive. This releases the lease for a separate new run; it does not resume or validate the old scene. General recovery (T065) remains separate. Chat distinguishes `EDITOR_RECOVERY_REQUIRED` from `SESSION_ACTIVE` and offers “Close interrupted run”.
+
+### Stagnation corrections (2026-11-02)
+
+Repair planning no longer overwrites the accepted scene's visual observations. Missing/composition observations can correspond across category or target drift only with conservative message similarity; new physical defects and severity escalation still reject candidates. This is not a semantic guarantee: uncertain correspondence fails closed.
+
+Explicit group placement now searches nearby and room-wide feasible anchors on a 25 cm grid and quarter-turn rotations, retaining the proposed pose when valid. All existing native-scale, overlap, door and access checks still apply. Replaying the exact design from run `6b8e597d5b37479f8515d056c74ef12f` placed 15 objects, including the previously rejected bed, desk, chair and plant. The teddy's unqualified bed support, one oversized shelf prop and one floor decal remain unresolved. This is an offline geometric result, not artistic validation.
+
+Native builds accept optional `inspection_targets` from observed defects and append closer diagonal views after the standard overview/group cameras, checking room boundaries, camera clearance and occlusion. The receipt records target IDs and view keys in `focused_views`. Compilation passed; no complete paid generation was claimed for this change. General camera navigation and bake qualification remain open.

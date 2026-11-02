@@ -58,7 +58,7 @@ namespace HdrpAgent.Editor {
   }finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
  }
  void Build(){
-  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev");
+  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev","inspection_targets");
   if((string)manifest["schema_version"]!="house-manifest.v1"||(string)manifest["run_id"]!=(string)command.payload["run_id"])throw new InvalidDataException("House manifest identity differs");
   string run=(string)manifest["run_id"];if(run.Length!=32||run.Any(c=>!Uri.IsHexDigit(c)))throw new InvalidDataException("Invalid run ID");
   directory=Path.Combine(BridgeClient.ResolveWorkspace(),".hdrp-agent/house/runs",run,((string)command.payload["manifest_hash"]).Substring(0,12));Directory.CreateDirectory(directory);
@@ -109,6 +109,23 @@ namespace HdrpAgent.Editor {
     views.Add(Tuple.Create((string)first["room_id"],point,Quaternion.LookRotation(ray)));
    }
   }
+  // Preserve overview cameras for comparison, then inspect reported objects more closely.
+  var focused=new JArray();
+  foreach(string key in (manifest["inspection_targets"] as JArray ?? new JArray()).Values<string>().Distinct()){
+   if(!objects.TryGetValue(key,out var targetObject))continue;
+   var item=((JArray)manifest["instances"]).OfType<JObject>().First(i=>(string)i["id"]==key);
+   var room=((JArray)building["rooms"]).OfType<JObject>().First(r=>(string)r["id"]==(string)item["room_id"]);var polygon=(JArray)room["polygon"];
+   var bounds=BoundsOf(targetObject);var look=bounds.center;
+   foreach(float angle in new[]{45f,135f,225f,315f}){
+    var point=look+Quaternion.Euler(0,angle,0)*Vector3.forward*Mathf.Max(.75f,bounds.extents.magnitude*1.2f);point.y=Mathf.Clamp(look.y+.3f,.5f,2.1f);
+    if(point.x<polygon.Min(p=>(float)p[0])+.25f||point.x>polygon.Max(p=>(float)p[0])-.25f||point.z<polygon.Min(p=>(float)p[1])+.25f||point.z>polygon.Max(p=>(float)p[1])-.25f)continue;
+    if(Physics.OverlapSphere(point,.15f,1<<30).Any(c=>c.transform.IsChildOf(root.transform)))continue;
+    var ray=look-point;var hits=Physics.RaycastAll(point,ray.normalized,ray.magnitude,1<<30).Where(h=>h.collider.transform.IsChildOf(root.transform)).OrderBy(h=>h.distance).ToArray();
+    if(hits.Length>0&&!hits[0].collider.transform.IsChildOf(targetObject.transform))continue;
+    focused.Add(new JObject{["instance_id"]=key,["view_key"]="view-"+views.Count,["position_m"]=A(point)});
+    views.Add(Tuple.Create((string)item["room_id"],point,Quaternion.LookRotation(ray)));
+   }
+  }
   var traversal=HouseTraversal.Check(root,manifest);foreach(var defect in (JArray)traversal["defects"])defects.Add(defect.DeepClone());
   foreach(var collider in colliders)if(collider)UnityEngine.Object.DestroyImmediate(collider);colliders.Clear();
   var volumeObject=new GameObject("House lighting profile");volumeObject.transform.SetParent(root.transform,false);volumeObject.layer=30;var volume=volumeObject.AddComponent<Volume>();volume.isGlobal=true;volume.priority=10000;profile=ScriptableObject.CreateInstance<VolumeProfile>();var exposure=profile.Add<Exposure>(true);exposure.mode.Override(ExposureMode.Fixed);exposure.fixedExposure.Override(Mathf.Clamp((float?)manifest["exposure_ev"]??6,-4,16));var tone=profile.Add<Tonemapping>(true);tone.mode.Override(TonemappingMode.ACES);volume.sharedProfile=profile;
@@ -130,7 +147,7 @@ namespace HdrpAgent.Editor {
   if(inspectionLayer<0)throw new InvalidOperationException("No isolated inspection layer available");
   foreach(var t in root.GetComponentsInChildren<Transform>(true))t.gameObject.layer=inspectionLayer;
   foreach(var light in root.GetComponentsInChildren<Light>(true))light.cullingMask=1<<inspectionLayer;
-  proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false,["lighting"]=lighting,["inspection_scene_isolated"]=true};
+  proof=new JObject{["schema_version"]="house-native.v1",["run_id"]=run,["manifest_hash"]=command.payload["manifest_hash"],["scene_path"]=scenePath,["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath)),["instances"]=instances,["architecture"]=architecture,["defects"]=defects,["captures"]=new JArray(),["traversal"]=traversal,["traversal_qualified"]=(bool)traversal["passed"],["lighting_qualified"]=false,["lighting"]=lighting,["inspection_scene_isolated"]=true,["focused_views"]=focused};
   var cameraObject=new GameObject("House inspection camera"){hideFlags=HideFlags.HideAndDontSave};SceneManager.MoveGameObjectToScene(cameraObject,scene);camera=cameraObject.AddComponent<Camera>();camera.enabled=false;camera.nearClipPlane=.05f;camera.farClipPlane=100;camera.fieldOfView=75;camera.aspect=1280f/720;camera.cullingMask=1<<inspectionLayer;camera.overrideSceneCullingMask=EditorSceneManager.GetSceneCullingMask(scene);var hd=cameraObject.AddComponent<HDAdditionalCameraData>();hd.volumeLayerMask=1<<inspectionLayer;hd.allowDynamicResolution=false;hd.antialiasing=HDAdditionalCameraData.AntialiasingMode.None;
   target=new RenderTexture(1280,720,24,RenderTextureFormat.ARGB32,RenderTextureReadWrite.sRGB){hideFlags=HideFlags.HideAndDontSave};target.Create();SceneManager.SetActiveScene(userScene);built=true;Publish("Architecture assembled; interior inspection");
  }

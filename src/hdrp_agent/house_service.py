@@ -188,7 +188,9 @@ class HouseService:
                 assets[name]=a
         return assets
     def native(self,row,manifest):
-        self.guard(row);cp=json.loads(row['checkpoint']);h=self.artifacts.put(canonical(manifest).encode(),'application/json')
+        self.guard(row);cp=json.loads(row['checkpoint']);manifest=deepcopy(manifest)
+        manifest['inspection_targets']=cp.get('inspection_targets',[])
+        h=self.artifacts.put(canonical(manifest).encode(),'application/json')
         command_id='house-build-'+row['run_id']+'-'+h[:12]
         with self.store.tx() as c:
             old=c.execute('SELECT * FROM commands WHERE id=?',(command_id,)).fetchone()
@@ -331,7 +333,7 @@ class HouseService:
                     if persist:self.houses.defect(run,dict(id='vision-'+room['id']+'-'+str(batch_index)+'-'+str(index),scope_id=room['id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=hashes))
         saved=json.loads(row['checkpoint']).get('segmentation_receipts',{})
         saved[proof['scene_version']]=self.artifacts.put(canonical(segments).encode(),'application/json')
-        self.save(row,'inspection','Visual inspection saved',segmentation_receipts=saved)
+        self.save(row,'inspection','Visual inspection saved',segmentation_receipts=saved,inspection_targets=list(dict.fromkeys(o.get('instance_id') for o in observations if o.get('instance_id') in {i['id'] for i in instances})))
         return observations
 
     def replan_repairs(self,row,outline,assets,manifest,proof):
@@ -432,9 +434,25 @@ class HouseService:
             self.store.event(c,row['id'],'house.progress',dict(run_id=row['run_id'],stage='stopped',message=message))
         HouseMemory(self.settings.state,row['run_id']).state(cp)
 
+    def close_cancelled_build(self,row):
+        with self.store.tx() as c:
+            session=c.execute('SELECT * FROM sessions WHERE id=?',(row['session_id'],)).fetchone()
+            commands=c.execute('SELECT * FROM commands WHERE session_id=?',(row['session_id'],)).fetchall()
+            if not session['stop_requested'] or not commands:return False
+            if any(q['kind']!='build_house' or q['status'] not in {'succeeded','cancelled','failed'} or not q['result'] for q in commands):return False
+            if any(json.loads(q['result'])['status']!=q['status'] for q in commands):return False
+            if c.execute("SELECT state FROM house_actions WHERE id=?",(row['id'],)).fetchone()[0]!='recovery_required':return False
+            cp=json.loads(row['checkpoint']);cp.update(stage='stopped',message='Stop confirmed by Unity; generated scenes preserved.',execution_state='interrupted',error_code=None,updated_at=utc_now())
+            c.execute("UPDATE house_actions SET state='failed',checkpoint=? WHERE id=?",(canonical(cp),row['id']))
+            self.store.update_session(c,row['session_id'],state='interrupted',verdict='inconclusive',stop_reason='STOP_CONFIRMED')
+            self.store.event(c,row['id'],'house.stop_confirmed',dict(command_ids=[q['id'] for q in commands]))
+        HouseMemory(self.settings.state,row['run_id']).state(cp)
+        return True
+
     def stop(self,action,reason):
         payload('StopRequest',reason);row=self.row(action)
         if row['state']=='recovery_required':
+            if self.close_cancelled_build(row):return self.get(action)
             self.close_reloaded_build(row,reason['reason'])
             return self.get(action)
         with self.store.tx() as c:

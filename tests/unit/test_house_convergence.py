@@ -65,3 +65,29 @@ def test_unactionable_initial_defect_replans_without_any_prior_rejection():
     result=converge(m,{},proof(m),[defect],build=lambda m:({},proof(m)),inspect=lambda *a:[defect],enrich=lambda *a:None,record=lambda *a:None,guard=lambda:None,reconsider=lambda *a:reviews.append('repair') or [])
     assert reviews==['repair']
     assert result[3]==[defect]  # Planning cannot erase evidence.
+
+
+def test_replanning_never_becomes_visual_acceptance_baseline(monkeypatch):
+    import hdrp_agent.house_convergence as loop
+    m=dict(instances=[dict(id='desk')],exposure_ev=14)
+    defect=dict(room_id='house',instance_id='wall',kind='missing',severity='blocking',message='No curtains')
+    planning=dict(defect,instance_id='invented-target',message='Proposed move')
+    def move(manifest,observations,attempted):
+        if observations!=[planning] or len(manifest['instances'])>1:return None
+        candidate=deepcopy(manifest);candidate['instances'].append(dict(id='book'))
+        return candidate,dict(kind='enrich_room')
+    monkeypatch.setattr(loop,'propose',move)
+    result=converge(m,{},proof(m),[defect],build=lambda c:({},proof(c)),inspect=lambda *a:[defect],enrich=lambda *a:None,record=lambda *a:None,guard=lambda:None,reconsider=lambda *a:[planning])
+    assert len(result[0]['instances'])==2
+    assert result[3]==[defect]
+
+
+def test_absence_relabeling_does_not_create_regression_but_new_collision_does():
+    from hdrp_agent.house_convergence import acceptable
+    before=proof(dict(instances=[dict(id='wardrobe')],exposure_ev=14));after=deepcopy(before)
+    after['instances'].append(dict(id='books',connected=True,native_scale=True,support_passed=True))
+    old=[dict(room_id='house',instance_id='wardrobe',kind='composition',severity='blocking',message='Wardrobe is empty; no clothes inside.'),dict(room_id='house',instance_id='shelf',kind='missing',severity='blocking',message='No posters or curtains on the bare walls.')]
+    new=[dict(old[0],kind='missing'),dict(old[1],instance_id='wall-decor')]
+    assert acceptable(before,after,old,new,dict(kind='enrich_room'))[0]
+    new.append(dict(room_id='house',instance_id='books',kind='collision',severity='blocking',message='Books intersect the wardrobe.'))
+    assert not acceptable(before,after,old,new,dict(kind='enrich_room'))[0]

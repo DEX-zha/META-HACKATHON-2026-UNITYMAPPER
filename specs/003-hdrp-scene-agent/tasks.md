@@ -787,3 +787,8 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T271 Catalogue visuel navigable par familles : index complet, dimensions/styles/supports exposés ; produire les planches de vignettes et leur sélection progressive, avec qualification des matériaux/supports avant placement.
 
 - [x] T272 Add explicit closure for isolated house builds interrupted by domain reload: verify matching native receipt, retired editor epoch, fresh connection and absence of pending commands; preserve partial scenes, unknown outcomes and API reservations; release the session lease without replay. Test refusal of missing/mismatched receipts, active commands and stale editor presence. Distinguish recovery locks from active work in chat.
+
+- [x] T273 Preserve observed evidence separately from repair planning; tolerate conservative correspondence for missing/composition relabeling without relaxing physical-defect or severity gates. Add regression tests for replanning, target drift and new collisions.
+- [x] T274 Search alternative whole-group placements at native scale (25 cm grid and quarter turns), keep the preferred pose when valid, retain clearance/support constraints, and replay the stopped bedroom's original design offline.
+- [ ] T275 Target close-up inspection cameras at observed defective instances, preserve overview cameras and record focused view provenance. Implementation and Unity compilation verified; qualify camera visibility and corrective convergence in a complete live run.
+- [x] T276 Release a stopped house session when delayed terminal cancellation receipts arrive, preserving scene files and requiring every command to have a known terminal outcome.

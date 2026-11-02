@@ -108,6 +108,19 @@ def door_reservations(building,room):
     return boxes,points
 
 
+def alternative_anchors(desired,rect,local_bounds):
+    """Search feasible room space at 25 cm resolution, preserving the proposed pose first."""
+    x0,z0,x1,z1=rect;lx0,lz0,lx1,lz1=local_bounds
+    low_x,high_x=x0+.12-lx0,x1-.12-lx1
+    low_z,high_z=z0+.12-lz0,z1-.12-lz1
+    if low_x>high_x or low_z>high_z:return [desired]
+    xs={low_x,high_x,min(high_x,max(low_x,desired[0]))}
+    zs={low_z,high_z,min(high_z,max(low_z,desired[1]))}
+    xs.update(low_x+i*.25 for i in range(int((high_x-low_x)/.25)+1))
+    zs.update(low_z+i*.25 for i in range(int((high_z-low_z)/.25)+1))
+    return [desired]+sorted(([x,z] for x in xs for z in zs if [x,z]!=desired),key=lambda p:((p[0]-desired[0])**2+(p[1]-desired[1])**2,p[0],p[1]))
+
+
 def place_groups(building,design,assets,*,existing=(),access_points=(),detail_offset=0):
     room=next(r for r in building['rooms'] if r['id']==design['room_id']);rect=room_bounds(room)
     reservations,entry=door_reservations(building,room)
@@ -145,14 +158,15 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
         if not ground:continue
         best=None
         desired=group.get('anchor_m');desired_yaw=group.get('yaw_deg',0)
-        for yaw in (desired_yaw,) if explicit else (0,90,180,270):
+        for yaw in tuple((desired_yaw+d)%360 for d in (0,90,180,270)) if explicit else (0,90,180,270):
             local=[]
             for s in ground:
                 x,z=rotate(s['x'],s['z'],yaw);local.append(box(s['asset'],x,z,s['yaw']+yaw))
             lo=[min(b[0] for b in local),min(b[1] for b in local),max(b[2] for b in local),max(b[3] for b in local)]
-            anchors=[desired] if explicit else [None,None,None]
+            anchors=alternative_anchors(desired,rect,lo) if explicit else [None,None,None]
             for index,anchor in enumerate(anchors):
-                fraction=(.25,.5,.75)[index]
+                if explicit and best is not None and (anchor[0]-desired[0])**2+(anchor[1]-desired[1])**2+(.5 if yaw!=desired_yaw%360 else 0)>=best[0]:continue
+                fraction=(.25,.5,.75)[index] if not explicit else 0
                 if explicit:pass
                 elif yaw==0:anchor=[rect[0]+(rect[2]-rect[0])*fraction,rect[1]-lo[1]+.12]
                 elif yaw==180:anchor=[rect[0]+(rect[2]-rect[0])*fraction,rect[3]-lo[3]-.12]
@@ -174,11 +188,11 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
                     access.append(candidates[0])
                 else:
                     if access_check(rect,occupied+footprints,uses+access):
-                        score=sum((p[0]-(rect[0]+rect[2])/2)**2+(p[1]-(rect[1]+rect[3])/2)**2 for p in access)
+                        score=((anchor[0]-desired[0])**2+(anchor[1]-desired[1])**2+(.5 if yaw!=desired_yaw%360 else 0)) if explicit else sum((p[0]-(rect[0]+rect[2])/2)**2+(p[1]-(rect[1]+rect[3])/2)**2 for p in access)
                         if best is None or score<best[0]:best=(score,yaw,anchor,footprints,access)
                 continue
         if best is None:
-            missing.extend(dict(id=s['id'],reason='No arrangement preserves access at native size',priority=group['priority']) for s in slots);continue
+            missing.extend(dict(id=s['id'],reason='No collision-free placement with access found on the 25 cm search grid at native size',priority=group['priority']) for s in slots);continue
         _,yaw,anchor,footprints,access=best;occupied.extend(footprints);uses.extend(access)
         placed={}
         for s in slots:
