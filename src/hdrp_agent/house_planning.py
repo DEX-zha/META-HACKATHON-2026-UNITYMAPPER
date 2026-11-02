@@ -122,7 +122,14 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
             pending=list(recipe);recipe=[];known=set()
             while pending:
                 ready=[r for r in pending if r[5] is None or r[5] in known]
-                if not ready:raise AgentError('INVALID_MODEL_OUTPUT','Unknown or cyclic support slot')
+                if not ready:
+                    # Keep unresolved props as needs; one invalid support must
+                    # not abort independent, geometrically valid furniture.
+                    for role,name,*_ in pending:
+                        key=room['id']+'-'+group['id']+'-'+role
+                        requirements.append(dict(id=key,scope_id=room['id'],role=name,quantity=1,priority=group['priority'],provenance='inferred'))
+                        missing.append(dict(id=key,reason='Unknown or cyclic support slot',priority=group['priority']))
+                    break
                 for r in ready:recipe.append(r);known.add(r[0]);pending.remove(r)
         if recipe is None:
             missing.append(dict(id=group['id'],reason='No qualified recipe for '+group['description']));continue

@@ -160,3 +160,17 @@ def test_explicit_props_cannot_overlap_each_other_on_support():
     result=place_groups(building,dict(room_id='office',groups=[group],detail_assets=[]),{'desk':table,'screen':screen})
     assert len(result['instances'])==1
     assert all('upper surface' in m['reason'] for m in result['missing'])
+
+
+@pytest.mark.parametrize('parents', [('books','books'),('book2','book1')])
+def test_invalid_supports_keep_needs_without_aborting_independent_furniture(parents):
+    building=building_from_outline(dict(rooms=[dict(id='office',floor_index=0,width_m=6,depth_m=6)]))
+    asset=dict(prefab_guid='shelf',dependency_hash='v',bounds_center=[0,.5,0],bounds_size=[1,1,.4],front_status='qualified',surfaces=[],support_regions=[])
+    items=[dict(slot='shelf',asset='shelf',offset_m=[0,0],yaw_deg=0,support_slot=None)]
+    items.extend(dict(slot='book'+str(i+1),asset='book',offset_m=[0,0],yaw_deg=0,support_slot=parent) for i,parent in enumerate(parents))
+    design=dict(room_id='office',groups=[dict(id='library',recipe='library',priority='mandatory',anchor_m=[3,3],yaw_deg=0,items=items)],detail_assets=[])
+    result=place_groups(building,design,{'shelf':asset})
+    assert len(result['instances'])==1
+    assert len(result['requirements'])==3
+    assert len(result['missing'])==2
+    assert all(m['reason']=='Unknown or cyclic support slot' for m in result['missing'])

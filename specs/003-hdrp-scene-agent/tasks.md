@@ -774,3 +774,8 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T261 Exécuter les plans V2 explicites (prefabs, offsets, supports, ancres et orientations), sans injection du mobilier de recette ni repositionnement silencieux ; exposer HouseProps, tester deux dispositions distinctes et un essai réel depuis le chat.
 
 - [ ] T262 Renforcer les rejets d’intersections/supports et isoler objets, lumières et volumes des captures additives ; comparer le même manifeste avec une ancienne scène ouverte, vérifier compilation, source inchangée et reçus. Ne pas confondre ces preuves avec la qualification artistique ou un bake.
+
+- [x] T263 Préserver les codes de refus serveur dans le chat, expliquer Unity occupé/déconnecté, tester un refus SESSION_ACTIVE et réconcilier la dernière demande sans doubler son action.
+- [x] T264 Conserver les objets à support inconnu/cyclique comme besoins manquants sans interrompre le mobilier indépendant ; tests de supports absents et cycliques.
+- [ ] T265 Référence artistique House_clean_day : audit des assets et consignes de composition/revue réalisés ; transposer et qualifier les matériaux HDRP, éclairage jour par ouvertures, fills indirects et probes propres au candidat. Ne pas copier le layout de référence.
+- [ ] T266 Intégrer bake isolé et reçu de ressources propres au candidat (sans toucher la scène utilisateur), puis qualifier une chambre habitée selon la capture utilisateur : textiles, murs décorés, rangements garnis, objets motivés, passages libres, ombres de contact et lumière naturelle. Dépend : T240–T242, T265.

@@ -211,11 +211,17 @@ func (s *Service) accept(ctx context.Context, c store.Conversation, m store.Chat
 		e = s.Agent.Do(ctx, "POST", "/v1/app/actions", request, &result)
 		if e != nil {
 			state := "failed"
+			code := "ACTION_DELIVERY_FAILED"
 			var failure *agentclient.Error
-			if errors.As(e, &failure) && failure.Unknown {
-				state = "recovery_required"
+			if errors.As(e, &failure) {
+				// The transport only exposes reviewed codes, never raw response bodies.
+				code = failure.Code
+				if failure.Unknown {
+					state = "recovery_required"
+				}
 			}
-			s.DB.RecordAction(ctx, aid, state, json.RawMessage(`{"error_code":"ACTION_DELIVERY_FAILED"}`), state == "recovery_required")
+			result, _ := json.Marshal(map[string]string{"error_code": code})
+			s.DB.RecordAction(ctx, aid, state, result, state == "recovery_required")
 			continue
 		}
 		var status struct {
