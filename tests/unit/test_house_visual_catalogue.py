@@ -82,3 +82,25 @@ def test_room_browsing_retains_visual_decisions_and_provenance(tmp_path):
     assert result['preview_evidence'][0]['image_sha256']==record['sha256']
     assert not result['semantic_qualified']
     assert list((tmp_path/'house/runs'/('a'*32)/'memory').glob('analysis-*.md'))
+
+
+def test_transport_batches_cover_all_pages():
+    from hdrp_agent.house_visual_catalogue import batches
+    result=list(batches(iter(range(29))))
+    assert [len(b) for b in result]==[12,12,5]
+    assert sum(result,[])==list(range(29))
+
+
+def test_asset_review_rejects_unmeasured_support_before_writing(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    from hdrp_agent.house_service import HouseService
+    directory=tmp_path/'house/visual-catalogue';directory.mkdir(parents=True)
+    assets,_=fixture(directory)
+    assets['Chair'].update(front_status='unknown',bounds_center=[0,1,0],surfaces=[])
+    service=HouseService.__new__(HouseService);service.settings=SimpleNamespace(state=tmp_path);service.houses=object()
+    writes=[]
+    monkeypatch.setattr('hdrp_agent.house_service.Catalogue',lambda _:SimpleNamespace(qualify_support=lambda *args:writes.append(args),qualify_front=lambda *args,**kwargs:writes.append(args)))
+    service.ask=lambda *args,**kwargs:dict(front='not_applicable',supports=['invented-surface'],summary='Looks flat')
+    with pytest.raises(AgentError,match='unmeasured patch'):
+        service.review_selected_assets({},dict(id='bedroom'),dict(groups=[dict(items=[dict(asset='Chair')])],detail_assets=[]),assets)
+    assert not writes

@@ -4,6 +4,8 @@
 def model_summary(schema, value):
     if schema == 'ModelHouseCatalogueChoice':
         return value.get('summary', '') + '\nSelected: ' + ', '.join(value.get('selected', []))
+    if schema == 'ModelHouseAssetReview':
+        return value.get('summary', '') + '\nFront: ' + value.get('front', 'unknown') + '; reviewed supports: ' + ', '.join(value.get('supports', []))
     if schema == 'ModelHouseOutline':
         return '\n'.join(f"{r['purpose']}: {r['width_m']} × {r['depth_m']} m, floor {r['floor_index']}. {r['brief']}" for r in value.get('rooms', []))
     if schema == 'ModelHouseRoomV2':

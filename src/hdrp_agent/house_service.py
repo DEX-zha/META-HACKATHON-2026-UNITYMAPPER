@@ -10,7 +10,9 @@ from pathlib import Path
 from .house_convergence import converge, signature
 from .house_media import inspection_batches
 from .house_memory import HouseMemory
-from .house_visual_catalogue import load_previews, pages as visual_pages, family as visual_family
+from .house_catalogue import Catalogue
+from .house_support_candidates import candidates as support_candidates
+from .house_visual_catalogue import load_previews, pages as visual_pages, batches as visual_batches, family as visual_family
 from .house_activity import model_summary
 from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
@@ -202,16 +204,41 @@ class HouseService:
         if set(choice['selected'])-families.keys():raise AgentError('INVALID_MODEL_OUTPUT','Unknown visual catalogue family')
         names=sorted({n for f in choice['selected'] for n in families[f] if n in ready})
         notes=[];selected=[];evidence=[]
-        for index,page in enumerate(visual_pages(ready,names)):
+        for index,batch in enumerate(visual_batches(visual_pages(ready,names))):
             self.guard(row)
-            allowed={a['asset_id'] for a in page['assets']}
-            decision=self.ask(row,prefix+'-page-'+str(index),'Inspect these actual two-angle prefab previews. Select exact asset_id values suitable for the room, including distinctive furnishings and small details that support its purpose. Read the key-to-asset mapping; do not infer a functional front or safe support from appearance alone. Select alternatives when useful, omit unsuitable items, and explain their visual roles/style and uncertainty. Avoid generic adult lounge furniture in a child bedroom unless justified by the brief. '+canonical(dict(room=room,brief=brief,style_intent=choice['summary'],page=page['assets'])),'ModelHouseCatalogueChoice',[page['image']])
+            records=[a for page in batch for a in page['assets']]
+            allowed={a['asset_id'] for a in records}
+            decision=self.ask(row,prefix+'-page-'+str(index),'Inspect these actual two-angle prefab previews. Select exact asset_id values suitable for the room, including distinctive furnishings and small details that support its purpose. Read the key-to-asset mapping; do not infer a functional front or safe support from appearance alone. Select alternatives when useful, omit unsuitable items, and explain their visual roles/style and uncertainty. Avoid generic adult lounge furniture in a child bedroom unless justified by the brief. '+canonical(dict(room=room,brief=brief,style_intent=choice['summary'],pages=[page['assets'] for page in batch])),'ModelHouseCatalogueChoice',[page['image'] for page in batch])
             if set(decision['selected'])-allowed:raise AgentError('INVALID_MODEL_OUTPUT','Visual selection leaves inspected page')
             selected.extend(decision['selected']);notes.append(decision['summary'])
-            evidence.extend(page['assets'])
+            evidence.extend(records)
         result=dict(status='reviewed',selected_assets=sorted(set(selected)),visual_notes=notes,preview_evidence=evidence,unavailable_previews=[n for f in choice['selected'] for n in families[f] if n not in ready],semantic_qualified=False)
         HouseMemory(self.settings.state,row['run_id']).note(prefix+'-selection',result)
         return result
+
+    def review_selected_assets(self,row,room,design,assets):
+        names=set(design.get('detail_assets',[]))
+        names.update(item['asset'] for group in design['groups'] for item in group.get('items',[]))
+        selected={name:assets[name] for name in names if name in assets}
+        ready,_=load_previews(self.settings.state/'house/visual-catalogue',selected)
+        catalogue=Catalogue(self.houses)
+        vectors={'positive_x':[1,0,0],'negative_x':[-1,0,0],'positive_z':[0,0,1],'negative_z':[0,0,-1]}
+        for name in sorted(ready):
+            asset=assets[name]
+            proposals=support_candidates(asset) if not asset.get('support_regions') else []
+            if asset['front_status'] in {'qualified','not_applicable'} and not proposals:continue
+            evidence=ready[name]
+            key='asset-review-'+room['id']+'-'+asset['prefab_guid']
+            decision=self.ask(row,key,'Review this exact prefab for functional orientation and accessible horizontal supports. The left image looks from local (+X,+Y,+Z), the right from (-X,+Y,-Z); Y is up. Front means the side a person uses (desk seating side, wardrobe doors), not camera-facing. Choose unknown when ambiguous; not_applicable only for objects with no meaningful functional front. Supports: select only supplied surface_id values clearly corresponding to rigid, accessible tabletops or open shelves. Reject beds, cushions, drawer interiors, hidden panels, decorative tops, narrow trim and anything uncertain. Numeric patches prove coverage only, not semantic suitability. Empty supports is valid. Explain visible evidence and uncertainty. Never approve from an asset name alone. '+canonical(dict(asset_id=name,size_m=asset['bounds_size'],bounds_center=asset['bounds_center'],proposals=proposals,existing_front=asset['front_status'])),'ModelHouseAssetReview',[evidence['data']])
+            by_id={p['surface_id']:p for p in proposals}
+            if set(decision['supports'])-by_id.keys():raise AgentError('INVALID_MODEL_OUTPUT','Support review selected an unmeasured patch')
+            review=dict(kind='reviewed_multiview',reference=evidence['sha256'],reviewer='Muse structured visual review',note=decision['summary'],dependency_hash=asset['dependency_hash'],stage=key)
+            if asset['front_status'] not in {'qualified','not_applicable'} and decision['front']!='unknown':
+                front=decision['front']
+                catalogue.qualify_front(asset['prefab_guid'],asset['dependency_hash'],vectors.get(front),[review],status='not_applicable' if front=='not_applicable' else 'qualified')
+            for surface in dict.fromkeys(decision['supports']):
+                catalogue.qualify_support(asset['prefab_guid'],asset['dependency_hash'],surface,by_id[surface]['rectangle_xz'],['decor'],[review])
+            assets[name]=catalogue.get(asset['prefab_guid'],asset['dependency_hash'])
 
     def native(self,row,manifest):
         self.guard(row);cp=json.loads(row['checkpoint']);manifest=deepcopy(manifest)
@@ -251,6 +278,7 @@ class HouseService:
                 visual_selection=self.browse_assets(row,room,params['brief'],assets)
                 design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Visually reviewed resource selection (prefer suitable reviewed assets; do not confuse appearance with qualified supports): '+canonical(visual_selection)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
+                self.review_selected_assets(row,room,design,assets)
                 placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
             if not requirements:raise AgentError('PROGRAM_INCOMPLETE','No supported functional requirements')

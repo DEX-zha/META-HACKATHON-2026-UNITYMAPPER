@@ -5398,6 +5398,37 @@
           "type": "string"
         }
       }
+    },
+    "ModelHouseAssetReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "front",
+        "supports",
+        "summary"
+      ],
+      "properties": {
+        "front": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "not_applicable",
+            "positive_x",
+            "negative_x",
+            "positive_z",
+            "negative_z"
+          ]
+        },
+        "supports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
     }
   }
 }

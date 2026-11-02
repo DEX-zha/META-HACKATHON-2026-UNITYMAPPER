@@ -74,3 +74,15 @@ def pages(previews, names=None):
         stream = io.BytesIO()
         canvas.save(stream, format='PNG')
         yield dict(image=stream.getvalue(), assets=records, semantic_qualified=False)
+
+
+def batches(items):
+    """Transport batches cover every page; the model's image endpoint accepts twelve."""
+    batch=[]
+    for item in items:
+        batch.append(item)
+        if len(batch)==12:
+            yield batch
+            batch=[]
+    if batch:
+        yield batch

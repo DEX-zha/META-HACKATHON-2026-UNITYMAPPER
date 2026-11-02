@@ -242,3 +242,14 @@ The native incremental exporter now renders both project prefab roots into `.hdr
 Room planning now chooses relevant resource families, reviews every page of their actual images with Muse, validates that selections belong to the observed page, and carries the selected IDs, visual notes and provenance into composition and Markdown memory. Pages contain four prefabs each at 1280×720 to meet the existing image transport contract; pagination does not truncate the selected families. Preview appearance never upgrades front/support qualification. The catalogue remains available beyond the selected shortlist.
 
 A budget-accounted live test selected Bed_twin for a child bedroom and rejected Sofa_3seat and the oversized Bed_king, describing their visible materials and measured dimensions. Evidence: `.hdrp-agent/reports/catalogue-live/result.json` and `page.png`; cost USD 0.0003649. This validates image delivery and one grounded selection, not whole-room composition. The running backend still needs the new code loaded before the next end-to-end campaign. Full suite: 385 passed before two additional browsing tests; final targeted catalogue suite: 6 passed.
+
+
+### Support discovery and campaign restart
+
+Attempt 1 (`073ca8526fcb4a2abfb9a852ba7f1621`) selected 392 candidates over 98 pages. It was explicitly stopped before native construction because one call per page delayed useful scene feedback. Completed observations remain archived; terminal STOP_REQUESTED and zero active native commands were verified before service restart.
+
+Visual review now sends up to twelve pages per transport batch, covering every selected page. It does not discard candidates or impose an analysis-round quota. Selected room assets are then reviewed individually for functional front and accessible rigid supports. Support proposals are inset rectangles fully covered by actual measured triangles; holes and duplicate triangles are rejected and overhead clearance is reported. The model may select only supplied patch IDs, may leave front unknown, and cannot invent geometry or overwrite already reviewed fronts. Qualification records retain the exact preview hash, dependency hash and structured decision. Runtime contact/collision checks remain necessary.
+
+Live support review of Side_table_E selected the visible top and two shelves and left the front unknown; cost USD 0.0004515, evidence `.hdrp-agent/reports/support-review-live.json`. This is one reviewed prefab, not whole-catalogue qualification. Full Python suite: 392 passed.
+
+Attempt 2 (`39272a15ca2c469681b5018825432047`, action `campaign-f56c7ffc2d164fbd8d59509b411a11d2`) was admitted after deploying these changes. Track the existing action and process; do not relaunch on a polling timeout. Requests and admissions are archived in `.hdrp-agent/reports/bedroom-quality-campaign/attempt-2.json`. Bedroom composition, lighting and repeatability remain unproven.

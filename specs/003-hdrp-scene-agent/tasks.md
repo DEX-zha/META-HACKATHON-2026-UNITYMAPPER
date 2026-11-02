@@ -807,3 +807,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T285 Export the full native two-angle prefab catalogue incrementally with hash-bound identities; verify source scene state and inspect rendered pages.
 - [x] T286 Connect family discovery and paginated visual asset review to initial room planning, persist decisions/provenance, reject selections outside observed pages, and verify a budget-accounted live selection.
 - [ ] T287 Deploy the visual browsing path and qualify complete room composition and corrective enrichment with the expanded catalogue. T271 remains open for support/material qualification and end-to-end evidence.
+
+- [x] T288 Batch all visual catalogue pages within the twelve-image transport contract without discarding candidates; test full pagination coverage.
+- [x] T289 Propose measured support patches, reject holes/overlapping triangles, obtain hash-bound visual reviews for selected assets, retain unknown fronts and reject invented patches before mutation. Validate one live bedside-table review and regression suite.
+- [ ] T290 Observe campaign attempt 2 through actual placement/render/correction, inspect outcomes, and repair remaining composition/lighting defects. This contributes to T284 and does not replace the three-run quality gate.
