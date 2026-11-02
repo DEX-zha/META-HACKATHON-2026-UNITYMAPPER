@@ -21,7 +21,7 @@ from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
 from .store import utc_now
 from .house_store import HouseStore
-from .house_planning import building_from_outline, place_groups
+from .house_planning import building_from_outline, place_groups, namespace_addition
 from .house_briefing import room_prompt, RENDER_REFERENCE_POLICY
 from .house_lighting_reference import load_reference
 from .house_zones import assemble as assemble_zones
@@ -473,8 +473,7 @@ class HouseService:
             supports=[dict(instance_id=i['id'],prefab_name=name,regions=a.get('support_regions',[]),surfaces=[dict(id=s['id'],height_m=s.get('height_m')) for s in a.get('surfaces',[])],children=[child['id'] for child in manifest['instances'] if child['support_id']==i['id']]) for i in manifest['instances'] if i['room_id']==room['id'] for name,a in assets.items() if a['prefab_guid']==i['prefab_guid'] and a.get('support_regions')]
             addition=self.ask(row,key,'Propose ONLY additions to repair the reported missing equipment or sparse composition. Keep every existing instance. Return empty groups/detail_assets when no qualified safe addition can address these defects; explain unsupported needs in unresolved. Do not substitute random props for missing rugs, lamps or paintings. When storage is too empty, plan a complete coherent enrichment across several shelf compartments in this pass, not a token single book. Repeated book-cluster prefabs are allowed. Use measured support capacity and occupied children; keep some calm/empty space. Return all proposed detail_assets, without a fixed item quota. '+room_prompt(dict(room,geometry=next(r for r in manifest['building']['rooms'] if r['id']==room['id']),portals=manifest['building']['portals']),json.loads(row['request'])['parameters']['brief'],assets)+' Native lighting reference data: '+canonical(self.reference_context(row))+' Current instances, defects and persistent requirements: '+canonical(dict(instances=[i for i in manifest['instances'] if i['room_id']==room['id']],observations=local,context=context,supports=supports)),'ModelHouseRoomV2')
             if addition['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Enrichment scope differs')
-            addition=deepcopy(addition)
-            for g in addition['groups']:g['id']='extra-'+signature(manifest)[:8]+'-'+g['id'][:40]
+            addition=namespace_addition(addition,'extra-'+signature(manifest)[:8]+'-')
             offset=max([int(i['id'].rsplit('-',1)[1]) for i in manifest['instances'] if i['room_id']==room['id'] and '-detail-' in i['id'] and i['id'].rsplit('-',1)[1].isdigit()]+[-1])+1
             access=next((a['points'] for a in manifest['access'] if a['room_id']==room['id']),[])
             placed=place_groups(manifest['building'],addition,assets,existing=manifest['instances'],access_points=access,detail_offset=offset)

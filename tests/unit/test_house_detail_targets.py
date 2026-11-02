@@ -1,7 +1,7 @@
 from copy import deepcopy
 import pytest
 from hdrp_agent.domain import payload
-from hdrp_agent.house_planning import place_details
+from hdrp_agent.house_planning import place_details, namespace_addition
 from hdrp_agent.providers.meta_responses import spark_request, reviewed_format
 
 
@@ -14,6 +14,23 @@ def setup_supports():
 
 
 def target():return dict(asset='Notebook',support_group='drawing',support_slot='desk01',surface_id='upper')
+
+
+def test_enrichment_keeps_new_and_existing_support_references_distinct():
+    existing=dict(target(),support_group='existing')
+    design=dict(groups=[dict(id='drawing')],detail_assets=[target(),existing,'Carpet_C'])
+    original=deepcopy(design)
+    result=namespace_addition(design,'extra-pass-')
+    assert design==original
+    assert result['groups'][0]['id']==result['detail_assets'][0]['support_group']=='extra-pass-drawing'
+    assert result['detail_assets'][1]==existing
+    assert result['detail_assets'][2]=='Carpet_C'
+
+
+def test_enrichment_rejects_group_id_collisions_after_namespacing():
+    from hdrp_agent.domain import AgentError
+    with pytest.raises(AgentError):
+        namespace_addition(dict(groups=[dict(id='a'*40+'1'),dict(id='a'*40+'2')]),'extra-')
 
 
 def test_target_contract_and_strict_provider_format():

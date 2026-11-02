@@ -243,6 +243,19 @@ def detail_asset(entry):
     return entry['asset'] if isinstance(entry,dict) else entry
 
 
+def namespace_addition(design,prefix):
+    """Rename newly proposed groups and their detail references together."""
+    from copy import deepcopy
+    result=deepcopy(design)
+    renamed={g['id']:prefix+g['id'][:40] for g in result['groups']}
+    if len(renamed)!=len(result['groups']) or len(set(renamed.values()))!=len(renamed):
+        raise AgentError('INVALID_MODEL_OUTPUT','Addition group identities are ambiguous')
+    for group in result['groups']:group['id']=renamed[group['id']]
+    for detail in result.get('detail_assets',[]):
+        if isinstance(detail,dict):detail['support_group']=renamed.get(detail['support_group'],detail['support_group'])
+    return result
+
+
 def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0):
     """Pack native-sized props on qualified mesh patches, retaining every need.
 

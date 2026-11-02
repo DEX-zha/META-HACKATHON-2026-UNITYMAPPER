@@ -134,7 +134,12 @@ namespace HdrpAgent.Editor {
   }finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
  }
  void Build(){
-  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev","inspection_targets","calibrate_exposure");
+  var fields=new List<string>{"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev","inspection_targets"};
+  if(manifest.Property("calibrate_exposure")!=null){
+   fields.Add("calibrate_exposure");
+   if(manifest["calibrate_exposure"].Type!=JTokenType.Boolean)throw new InvalidDataException("Exposure calibration must be boolean");
+  }
+  BridgeJson.Closed(manifest,fields.ToArray());
   if((string)manifest["schema_version"]!="house-manifest.v1"||(string)manifest["run_id"]!=(string)command.payload["run_id"])throw new InvalidDataException("House manifest identity differs");
   string run=(string)manifest["run_id"];if(run.Length!=32||run.Any(c=>!Uri.IsHexDigit(c)))throw new InvalidDataException("Invalid run ID");
   directory=Path.Combine(BridgeClient.ResolveWorkspace(),".hdrp-agent/house/runs",run,((string)command.payload["manifest_hash"]).Substring(0,12));Directory.CreateDirectory(directory);
