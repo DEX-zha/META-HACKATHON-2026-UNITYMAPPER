@@ -322,3 +322,19 @@ Unity compiled the native calibration implementation without reported C# errors,
 The repaired bedroom's upright books were placed on the bedside table because explicit designs use slot IDs such as `shelf01` as instance roles, while detail ordering only recognized the literal role `bookshelf`. Detail placement now prioritizes reviewed support-region `books` semantics and filters candidate supports to the requested room. Tests cover arbitrary slot IDs, competing bedside supports and exclusion of a foreign room's shelf.
 
 Replaying the actual repaired plan against the current catalogue moves Book_set_A from `sleeping_area-bedside01` to `bookshelf_wall-shelf01`, with no missing items. Evidence: `.hdrp-agent/reports/bedroom-quality-campaign/detail-support-replay.json`. This is offline placement evidence; Unity remains locked. Notebook and Pencil_holder still land on the dresser because the current flat detail-name list cannot express intended support destinations. Add explicit support targets to the model's decoration control rather than relying only on solver ordering. Existing native collision/contact checks must remain authoritative.
+
+
+### Explicit decoration targets (T307)
+
+ModelHouseRoomV2 now accepts supported detail objects with `asset`, `support_group`, `support_slot` and nullable `surface_id`. Legacy string plans and floor details remain supported. Both domain and HTTP contracts expose this control. Selected-asset review extracts the asset name while preserving the placement target. The solver requires an unambiguous matching support in the same room and retains qualified-surface/collision checks; unavailable, blocked or unsuitable targets remain missing instead of moving to unrelated furniture. Tests cover target contracts, room isolation, unavailable support/region, oversized props and occupied shelves.
+
+Budget-accounted Muse call `call-d37f8a7afc314a7aae81003a1e09cfbf` cost $0.0080558. Given the existing plan and measured selected supports, it retained the furniture and selected the library for upright books and the work desk for the book stack, notebook and pencil holder. Offline placement succeeded without missing items. Evidence: `.hdrp-agent/reports/bedroom-quality-campaign/explicit-detail-targets.json`. This validates real structured model output and geometric placement, not visual quality or autonomous whole-room completion.
+
+Unity reconnected with epoch `editor-c596eaf8fc614c3792f97b8c8b5ee8ac`; calibration probe `63ca30ea970a4d2ab978553b64c16bcf` is running with candidate-owned GPU baking. Wait for its terminal receipt before any restart or other native test.
+
+
+### Native exposure calibration result
+
+Probe `63ca30ea970a4d2ab978553b64c16bcf` completed normally: candidate-owned GPU bake, source scene preserved, fixed exposure readback exactly 3.0, four overview measurements 2.35965/1.93285/4.69286/3.41608 EV100, median locked at 2.88786459. All 27 captures report Fixed exposure at that measured value. All 415 Python tests pass after synchronizing the HTTP contract. Native calibration is technically validated, but visual review still finds sparse decoration, a broad unnatural direct-light band and noisy wall shadows. Artistic qualification remains false.
+
+Next isolate directional shadow caster culling: the candidate sun inherited view-frustum caster culling from the reference despite cameras observing from inside the room. A diagnostic change disables this optimization while retaining all photometry, geometry and fixed exposure, and records the actual flag in daylight provenance. Compile and compare against the preceding run before concluding that it fixes the defect.

@@ -5305,7 +5305,14 @@
         "detail_assets": {
           "type": "array",
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/ModelHouseDetailTarget"
+              }
+            ]
           }
         },
         "unresolved": {
@@ -5429,6 +5436,41 @@
           "type": "string"
         }
       }
+    },
+    "ModelHouseDetailTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "asset": {
+          "type": "string",
+          "minLength": 1
+        },
+        "support_group": {
+          "type": "string",
+          "minLength": 1
+        },
+        "support_slot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "surface_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "asset",
+        "support_group",
+        "support_slot",
+        "surface_id"
+      ]
     }
   }
 }

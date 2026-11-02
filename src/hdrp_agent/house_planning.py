@@ -232,11 +232,15 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
                 missing.append(dict(id=s['id'],reason='Placement intersects existing equipment',priority=group['priority']));continue
             instances.append(value);placed[s['role']]=value
     details=design.get('detail_assets',[])
-    floors=[(i,n) for i,n in enumerate(details) if n.startswith(('Carpet_','Decal_papers_'))]
+    floors=[(i,n) for i,n in enumerate(details) if isinstance(n,str) and n.startswith(('Carpet_','Decal_papers_'))]
     for i,name in enumerate(details):
-        if not name.startswith(('Carpet_','Decal_papers_')):place_details(room['id'],[name],assets,instances,requirements,missing,offset=detail_offset+i)
+        if not isinstance(name,str) or not name.startswith(('Carpet_','Decal_papers_')):place_details(room['id'],[name],assets,instances,requirements,missing,offset=detail_offset+i)
     place_floor_details(room,floors,assets,instances,requirements,missing,reservations,detail_offset)
     return dict(instances=instances[initial:],requirements=requirements,missing=missing,access_points=uses,door_reservations=reservations)
+
+
+def detail_asset(entry):
+    return entry['asset'] if isinstance(entry,dict) else entry
 
 
 def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0):
@@ -247,7 +251,8 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
     """
     by_guid={a['prefab_guid']:a for a in assets.values()}
     supports=[i for i in instances if i.get('room_id')==room_id and i.get('role')!='floor_covering']
-    for index,name in enumerate(names,offset):
+    for index,entry in enumerate(names,offset):
+        name=detail_asset(entry);target=entry if isinstance(entry,dict) else None
         key=f'{room_id}-detail-{index}'
         requirements.append(dict(id=key,scope_id=room_id,role=name,quantity=1,priority='preferred',provenance='creative'))
         asset=assets.get(name);placed=False
@@ -257,6 +262,10 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
             candidates=sorted(supports,key=lambda i:0 if name.startswith('Book_') and (
                 i.get('role')=='bookshelf' or any('books' in r.get('roles',[]) for r in by_guid[i['prefab_guid']].get('support_regions',[]))
             ) else 1)
+            if target:
+                candidates=[i for i in candidates if i.get('group_id')==target['support_group'] and i.get('role')==target['support_slot']]
+                if len(candidates)!=1:
+                    missing.append(dict(id=key,reason='Explicit detail support is missing or ambiguous',support_target=target,priority='preferred'));continue
             for parent in candidates:
                 support=by_guid[parent['prefab_guid']]
                 def occupancy(region):
@@ -268,7 +277,9 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
                         x,z=rotate(child['center'][0]-parent['position'][0],child['center'][2]-parent['position'][2],-parent['yaw'])
                         if x0<=x<=x1 and z0<=z<=z1 and abs(child['center'][1]-child['bounds_size'][1]/2-height)<.03:count+=1
                     return count
-                for region in sorted(support.get('support_regions',[]),key=occupancy):
+                regions=support.get('support_regions',[])
+                if target and target.get('surface_id') is not None:regions=[r for r in regions if r['surface_id']==target['surface_id']]
+                for region in sorted(regions,key=occupancy):
                     if region.get('roles')==['books'] and not name.startswith('Book_'):continue
                     surface=next(s for s in support['surfaces'] if s['id']==region['surface_id'])
                     triangles=surface['triangles']
@@ -300,4 +311,4 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
                         if placed:break
                     if placed:break
                 if placed:break
-        if not placed:missing.append(dict(id=key,reason='No qualified, unoccupied support for detail: '+name,priority='preferred'))
+        if not placed:missing.append(dict(id=key,reason='No qualified, unoccupied support for detail: '+name,priority='preferred',**({'support_target':target} if target else {})))

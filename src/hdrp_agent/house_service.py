@@ -220,7 +220,8 @@ class HouseService:
         return result
 
     def review_selected_assets(self,row,room,design,assets):
-        names=set(design.get('detail_assets',[]))
+        from .house_planning import detail_asset
+        names={detail_asset(d) for d in design.get('detail_assets',[])}
         names.update(item['asset'] for group in design['groups'] for item in group.get('items',[]))
         selected={name:assets[name] for name in names if name in assets}
         ready,_=load_previews(self.settings.state/'house/visual-catalogue',selected)
