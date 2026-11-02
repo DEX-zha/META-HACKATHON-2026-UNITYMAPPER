@@ -134,3 +134,56 @@ def test_recovery_diagnosis_requires_matching_native_receipt(tmp_path):
     receipt['payload_hash']='b'*64;path.write_text(json.dumps(receipt))
     assert h.get(r['action_id'])['progress']['recovery']['cause']=='UNVERIFIED_NATIVE_OUTCOME'
     with h.store.connect() as c:assert c.execute("SELECT status,result FROM commands WHERE id='native-test'").fetchone()['status']=='unknown'
+
+
+def interrupted_build(tmp_path):
+    import json
+    from hdrp_agent.domain import fingerprint
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id'])
+    with h.store.tx() as c:
+        project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()
+        epoch=project['epoch'];body=dict(payload=dict(run_id=row['run_id']))
+        digest=fingerprint(body['payload'])
+        c.execute("UPDATE house_actions SET state='recovery_required' WHERE id=?",(row['id'],))
+        h.store.update_session(c,row['session_id'],state='recovery_required')
+        c.execute('INSERT INTO commands(id,session_id,project_id,epoch,kind,status,body,payload_hash) VALUES(?,?,?,?,?,?,?,?)',('interrupted-build',row['session_id'],row['project_id'],epoch,'build_house','unknown',canonical(body),digest))
+        c.execute("UPDATE projects SET epoch='new-editor' WHERE id=?",(row['project_id'],));h.queue.touch(c,row['project_id'],'new-editor')
+    result=dict(command_id='interrupted-build',payload_hash=digest,bridge_epoch=epoch,status='unknown',before_version='source',after_version='source',artifact_hashes=[],captures=[],snapshot_id=None,manifest_hash='0'*64,bake_status='not_required',details_artifact_hash=None,error=dict(code='DOMAIN_RELOAD',message='Editor reloaded',retryable=False,command_id='interrupted-build'))
+    receipt=dict(command_id=result['command_id'],payload_hash=digest,bridge_epoch=epoch,status='unknown',result=result)
+    root=h.settings.project_path(json.loads(project['body'])['project_root'])
+    path=root/'.hdrp-agent/bridge/receipts/interrupted-build.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(canonical(receipt))
+    return h,r,row,path
+
+
+def test_close_reloaded_build_preserves_unknown_evidence_and_releases_lease(tmp_path):
+    h,r,row,path=interrupted_build(tmp_path);original=path.read_bytes()
+    other=deepcopy(r);other.update(action_id='new-house',idempotency_key='new-house')
+    with pytest.raises(AgentError) as error:h.admit(other)
+    assert error.value.code=='EDITOR_RECOVERY_REQUIRED'
+    result=h.stop(row['id'],dict(reason='Close interrupted build'))
+    assert result['state']=='failed' and result['execution_state']=='interrupted'
+    assert path.read_bytes()==original
+    with h.store.connect() as c:
+        command=c.execute("SELECT * FROM commands WHERE id='interrupted-build'").fetchone()
+        assert command['status']=='unknown' and command['result'] is None
+        assert c.execute('SELECT state FROM sessions WHERE id=?',(row['session_id'],)).fetchone()[0]=='interrupted'
+        assert c.execute("SELECT count(*) FROM events WHERE kind='house.recovery_closed'").fetchone()[0]==1
+    assert h.stop(row['id'],dict(reason='Close again'))['state']=='failed'
+    assert h.admit(other)['state']=='queued'
+
+
+@pytest.mark.parametrize('problem',['missing_receipt','mismatched_result','same_epoch','running_command','stale_presence','non_house'])
+def test_close_reloaded_build_refuses_unverified_or_active_execution(tmp_path,problem):
+    import json
+    h,r,row,path=interrupted_build(tmp_path)
+    with h.store.tx() as c:
+        if problem=='same_epoch':c.execute("UPDATE projects SET epoch=(SELECT epoch FROM commands WHERE id='interrupted-build')");h.queue.touch(c,row['project_id'],c.execute('SELECT epoch FROM projects').fetchone()[0])
+        if problem=='running_command':c.execute("UPDATE commands SET status='running'")
+        if problem=='stale_presence':c.execute("UPDATE project_presence SET last_seen='2000-01-01T00:00:00+00:00'")
+        if problem=='non_house':c.execute("UPDATE commands SET kind='apply_patch'")
+    if problem=='missing_receipt':path.unlink()
+    if problem=='mismatched_result':
+        receipt=json.loads(path.read_text());receipt['result']['payload_hash']='b'*64;path.write_text(canonical(receipt))
+    with pytest.raises(AgentError):h.stop(row['id'],dict(reason='Close'))
+    assert h.get(row['id'])['state']=='recovery_required'
+    assert h.store.get('sessions',row['session_id'])['state']=='recovery_required'

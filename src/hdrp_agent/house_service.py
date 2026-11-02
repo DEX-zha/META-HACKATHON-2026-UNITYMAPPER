@@ -99,7 +99,10 @@ class HouseService:
                 if request['expected_scene_version']!=data['scene_version']:raise AgentError('STALE_VERSION','Unity scene changed')
                 presence=c.execute('SELECT * FROM project_presence WHERE project_id=?',(request['project_id'],)).fetchone()
                 if not presence or presence['epoch']!=project['epoch'] or datetime.fromisoformat(presence['last_seen'].replace('Z','+00:00'))<datetime.now(timezone.utc)-timedelta(seconds=15):raise AgentError('EDITOR_UNAVAILABLE','Unity is not connected')
-                if c.execute("SELECT 1 FROM sessions WHERE state NOT IN ('completed','interrupted','limit_reached')").fetchone():raise AgentError('SESSION_ACTIVE','Another run owns the editor')
+                owner=c.execute("SELECT state FROM sessions WHERE state NOT IN ('completed','interrupted','limit_reached')").fetchone()
+                if owner:
+                    if owner['state']=='recovery_required':raise AgentError('EDITOR_RECOVERY_REQUIRED','An interrupted run still owns Unity. Close the interrupted run after verifying its native receipt; waiting will not release it.')
+                    raise AgentError('SESSION_ACTIVE','Another run owns the editor')
                 refs=request['parameters']['reference_hashes']
                 if len(refs)!=len(set(refs)) or set(refs)!=set(request['artifact_hashes']):raise AgentError('INVALID_INPUT','Reference hashes differ')
                 if request['parameters']['creative_policy']=='reference_guided' and not refs:raise AgentError('INVALID_INPUT','Reference-guided mode needs a reference')
@@ -387,8 +390,53 @@ class HouseService:
         for index,defect in enumerate(observations):
             self.houses.defect(run,dict(id='vision-selected-'+str(index),scope_id=defect['room_id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=defect['evidence_ids']))
 
+    def close_reloaded_build(self, row, reason):
+        """Release an old isolated build's lease, without replay or a success claim."""
+        with self.store.tx() as c:
+            current=c.execute('SELECT state FROM house_actions WHERE id=?',(row['id'],)).fetchone()
+            if current['state']=='failed':return
+            if current['state']!='recovery_required':raise AgentError('RECOVERY_REQUIRED','Run state changed; refresh before closing it')
+            project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()
+            presence=c.execute('SELECT * FROM project_presence WHERE project_id=?',(row['project_id'],)).fetchone()
+            if not presence or presence['epoch']!=project['epoch'] or datetime.fromisoformat(presence['last_seen'].replace('Z','+00:00'))<datetime.now(timezone.utc)-timedelta(seconds=15):
+                raise AgentError('EDITOR_UNAVAILABLE','Reconnect Unity before closing the interrupted build')
+            if c.execute("SELECT 1 FROM commands WHERE project_id=? AND status IN ('queued','claimed','running')",(row['project_id'],)).fetchone():
+                raise AgentError('RECOVERY_REQUIRED','A native command is still pending; wait for its terminal receipt')
+            commands=c.execute("SELECT * FROM commands WHERE session_id=? AND status='unknown'",(row['session_id'],)).fetchall()
+            if not commands:raise AgentError('RECOVERY_REQUIRED','No interrupted native build receipt is available for verification')
+            root=self.settings.project_path(json.loads(project['body'])['project_root']).resolve()
+            verified=[]
+            for command in commands:
+                if command['kind']!='build_house' or command['epoch']==project['epoch']:
+                    raise AgentError('RECOVERY_REQUIRED','Only isolated builds from a retired editor epoch can be closed')
+                try:
+                    path=root/'.hdrp-agent'/'bridge'/'receipts'/(command['id']+'.json')
+                    if path.is_symlink() or not path.resolve().is_relative_to(root) or path.stat().st_size>1000000:raise ValueError()
+                    receipt=json.loads(path.read_text());result=payload('CommandResult',receipt['result'])
+                    for field,expected in [('command_id',command['id']),('payload_hash',command['payload_hash']),('bridge_epoch',command['epoch'])]:
+                        if receipt.get(field)!=expected or result.get(field)!=expected:raise ValueError()
+                    body=json.loads(command['body'])
+                    if fingerprint(body['payload'])!=command['payload_hash'] or body['payload'].get('run_id')!=row['run_id']:raise ValueError()
+                    if receipt.get('status')!='unknown' or result['status']!='unknown' or (result.get('error') or {}).get('code')!='DOMAIN_RELOAD':raise ValueError()
+                    if command['result'] and json.loads(command['result'])!=result:raise ValueError()
+                except (OSError,ValueError,KeyError,TypeError,AgentError):
+                    raise AgentError('RECOVERY_REQUIRED','Matching DOMAIN_RELOAD receipt required; no state was released')
+                verified.append(receipt)
+            message='Interrupted build closed. Partial scene preserved and unverified; no commands replayed. Start a new request to build separately.'
+            cp=json.loads(row['checkpoint']);cp.update(stage='stopped',message=message,execution_state='interrupted',quality_state='incomplete',error_code=None,stop_reason='DOMAIN_RELOAD_ABANDONED',updated_at=utc_now())
+            c.execute("UPDATE house_actions SET state='failed',checkpoint=? WHERE id=?",(canonical(cp),row['id']))
+            c.execute('UPDATE sessions SET stop_requested=1 WHERE id=?',(row['session_id'],))
+            self.store.update_session(c,row['session_id'],state='interrupted',verdict='inconclusive',stop_reason='DOMAIN_RELOAD_ABANDONED: partial scene preserved; outcome unverified')
+            # Keep unknown command outcomes and all provider reservations intact.
+            self.store.event(c,row['id'],'house.recovery_closed',dict(reason=reason,receipts=verified,current_epoch=project['epoch'],scene_verified=False,replayed=False))
+            self.store.event(c,row['id'],'house.progress',dict(run_id=row['run_id'],stage='stopped',message=message))
+        HouseMemory(self.settings.state,row['run_id']).state(cp)
+
     def stop(self,action,reason):
         payload('StopRequest',reason);row=self.row(action)
+        if row['state']=='recovery_required':
+            self.close_reloaded_build(row,reason['reason'])
+            return self.get(action)
         with self.store.tx() as c:
             c.execute('UPDATE sessions SET stop_requested=1 WHERE id=?',(row['session_id'],))
             if row['state']=='queued':
