@@ -75,7 +75,7 @@ def test_three_real_handoffs_maximum_and_best_previous_render_retained(tmp_path,
     assert worker.store.get('sessions',report['job']['session_id'])['attempts_used']==3
     assert not (root/'plan-3.json').exists() and worker.next_ready() is None
     assert budget.state()['settled_usd_micro']==0
-    assert 'Référence' in (root/'comparison.html').read_text()
+    assert 'Reference' in (root/'comparison.html').read_text()
 
 
 @pytest.mark.parametrize('fidelity_mode',[None,'1.0'])
@@ -106,7 +106,7 @@ def test_detail_report_keeps_object_link_and_selected_preview(tmp_path):
     (root/'preview-result.json').write_text(canonical([dict(asset_id='asset-chair',file='preview.png')]))
     worker.export(job)
     html=(root/'details.html').read_text()
-    assert '<h2>chair</h2>' in html and 'front' in html and 'Variante retenue : Chair' in html
+    assert '<h2>chair</h2>' in html and 'front' in html and 'Variante retainede : Chair' in html
     assert 'details.html' in (root/'comparison.html').read_text()
     assert json.loads((root/'report.json').read_text())['fidelity_verified'] is False
 

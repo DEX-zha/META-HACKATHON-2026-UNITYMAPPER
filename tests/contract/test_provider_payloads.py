@@ -175,7 +175,7 @@ def test_reference_analysis_has_room_for_reasoning_and_geometry(tmp_path):
 
 def test_analysis_requests_do_not_send_client_output_caps():
     for name in ['ModelReferenceAnalysis','ModelReconstructionPlan','ModelDiagnosis']:
-        assert 'max_output_tokens' not in spark_request('Analyse',[],name)
+        assert 'max_output_tokens' not in spark_request('Analysis',[],name)
 
 
 def test_large_correction_context_is_not_rejected_as_image_overflow():

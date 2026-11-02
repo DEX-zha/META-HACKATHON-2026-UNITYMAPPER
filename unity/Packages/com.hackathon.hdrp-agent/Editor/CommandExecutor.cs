@@ -14,6 +14,7 @@ namespace HdrpAgent.Editor
         static ICommandJob job;
         static BridgeCommand command;
         static Action<CommandResult> completion;
+        static bool reloadLocked;
         public static Func<string> CurrentVersion = ()=>"unqualified";
         public static ReceiptStore Receipts {get;set;}
         public static bool Busy=>command!=null;
@@ -27,6 +28,8 @@ namespace HdrpAgent.Editor
             incoming.Validate();
             if(incoming.bridge_epoch!=epoch)throw new InvalidOperationException("Stale bridge epoch");
             Receipts.Start(incoming);command=incoming;completion=completed;
+            // Defer script recompilation until this durable native operation has finished.
+            EditorApplication.LockReloadAssemblies();reloadLocked=true;
             if(LocalValidationRunner.Running){Finish(Failure("EDITOR_BUSY","Local graphical qualification still owns the scene"));return;}
             if(DateTimeOffset.Parse(incoming.deadline_utc)<=DateTimeOffset.UtcNow){Finish(Failure("DEADLINE","Deadline expired","cancelled"));return;}
             if(!handlers.TryGetValue(incoming.kind,out var handler)){Finish(Failure("CAPABILITY_MISSING","Command kind is not implemented"));return;}
@@ -46,7 +49,8 @@ namespace HdrpAgent.Editor
             catch(Exception){Finish(Failure("COMMAND_OUTCOME_UNKNOWN","Execution interrupted; inspect before recovery","unknown"));}
         }
         static void Finish(CommandResult result){
-            Receipts.Complete(result);job=null;command=null;var done=completion;completion=null;done?.Invoke(result);
+            Receipts.Complete(result);job=null;command=null;var done=completion;completion=null;
+            try{done?.Invoke(result);}finally{if(reloadLocked){reloadLocked=false;EditorApplication.UnlockReloadAssemblies();}}
         }
         static void BeforeReload(){
             // A reload never marks an in-flight native operation as successfully completed.

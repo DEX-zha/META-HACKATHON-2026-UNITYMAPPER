@@ -60,7 +60,7 @@ namespace HdrpAgent.Editor
         }
         static void Move(){
             var view=Current;probe.transform.SetPositionAndRotation(ReferenceSceneBuilder.Vector(view["position_m"],-100,100),Quaternion.Euler(ReferenceSceneBuilder.Vector(view["rotation_deg"],-360,360)));probe.fieldOfView=(float)view["fov_deg"];HDCamera.GetOrCreate(probe).Reset();warm=0;
-            Status="Inspection "+(index+1)+"/"+views.Count+" · "+(string)view["object_key"]+" · "+(string)view["angle"]+" · écart à vérifier";
+            Status="Inspection "+(index+1)+"/"+views.Count+" · "+(string)view["object_key"]+" · "+(string)view["angle"]+" · difference to verify";
             Navigate(view);
         }
         static void Navigate(JObject view){
@@ -76,7 +76,7 @@ namespace HdrpAgent.Editor
             var frame=result["frames"][0];var file=(string)frame["file"];if(Path.GetFileName(file)!=file)throw new InvalidDataException("Invalid inspection image path");var bytes=File.ReadAllBytes(Path.Combine(directory,file));if(BridgeJson.Hash(bytes)!=(string)frame["sha256"])throw new InvalidDataException("Saved image changed");
             if(Image==null)Image=new Texture2D(2,2){hideFlags=HideFlags.HideAndDontSave};if(!Image.LoadImage(bytes))throw new InvalidDataException("Invalid saved image");
             scenePath=(string)result["scene_path"];version=(string)result["version"];architecture=result["architecture"] as JObject;views=(JArray)saved["views"];map=(JArray)saved["objects"];index=0;
-            Status="Candidat retenu · inspection conservée · "+(string)Current["object_key"]+" · "+(string)Current["angle"];ReferenceVisionWindow.ShowWindow();Navigate(Current);ReferenceVisionWindow.Refresh();
+            Status="Candidate retained · inspection retained · "+(string)Current["object_key"]+" · "+(string)Current["angle"];ReferenceVisionWindow.ShowWindow();Navigate(Current);ReferenceVisionWindow.Refresh();
         }
         static void Readback(){
             var old=RenderTexture.active;try{RenderTexture.active=target;if(Image==null)Image=new Texture2D(1280,720,TextureFormat.RGB24,false){hideFlags=HideFlags.HideAndDontSave};Image.ReadPixels(new Rect(0,0,1280,720),0,0);Image.Apply();}finally{RenderTexture.active=old;}
@@ -95,15 +95,15 @@ namespace HdrpAgent.Editor
                 records.Add(new JObject{["view"]=Current.DeepClone(),["file"]=file,["sha256"]=BridgeJson.Hash(png),["projected_objects"]=ReferenceRoomAudit.Project(Root,probe)});
                 index++;if(index<views.Count){Move();return;}
                 ReferenceWorkflow.Atomic(Path.Combine(output,"result.json"),new JObject{["status"]="complete",["mode"]="editor_hdrp_probe",["scene_path"]=scenePath,["version"]=version,["request_sha256"]=BridgeJson.Hash(File.ReadAllBytes(Path.Combine(output,"request.json"))),["width"]=1280,["height"]=720,["warmup_frames"]=32,["frames"]=records,["architecture"]=architecture,["render_protocol"]=JObject.FromObject(HdrpAgent.Runtime.ReferenceRenderProtocol.Read(probe,"editor_hdrp_probe")),["performance_qualified"]=false,["gizmos_in_images"]=false});
-                Status="Inspection terminée · gros plans transmis à la prochaine correction";Cleanup();
+                Status="Inspection complete · close-ups passed to the next correction";Cleanup();
             }catch(Exception e){Cancel(e.GetType().Name+": "+e.Message);}
         }
-        public static void Cancel(string reason){if(!Running)return;ReferenceWorkflow.Atomic(Path.Combine(output,"interruption.json"),new JObject{["reason"]=reason});Status="Inspection arrêtée : "+reason;Cleanup();}
+        public static void Cancel(string reason){if(!Running)return;ReferenceWorkflow.Atomic(Path.Combine(output,"interruption.json"),new JObject{["reason"]=reason});Status="Inspection stopped: "+reason;Cleanup();}
         static void Cleanup(){if(probe!=null)UnityEngine.Object.DestroyImmediate(probe.gameObject);probe=null;if(target!=null){target.Release();UnityEngine.Object.DestroyImmediate(target);}target=null;ReferenceVisionWindow.Refresh();}
         static void Draw(SceneView scene){
             if(!Gizmos||map==null||SceneManager.GetActiveScene().path!=scenePath||EditorApplication.isPlaying)return;
             var old=Handles.color;try{foreach(JObject item in map){var t=Find((string)item["key"]);var b=BoundsOf(t);if(!b.HasValue)continue;bool active=Current!=null&&(string)Current["object_key"]==(string)item["key"];
-                Handles.color=active?Color.cyan:new Color(1,.65f,.1f,.8f);Handles.DrawWireCube(b.Value.center,b.Value.size);if(active)Handles.Label(b.Value.max,(string)item["key"]+(item["residual"]?.Type==JTokenType.Null?" · non mesuré":" · écart "+((float)item["residual"]).ToString("F3")));
+                Handles.color=active?Color.cyan:new Color(1,.65f,.1f,.8f);Handles.DrawWireCube(b.Value.center,b.Value.size);if(active)Handles.Label(b.Value.max,(string)item["key"]+(item["residual"]?.Type==JTokenType.Null?" · not measured":" · difference "+((float)item["residual"]).ToString("F3")));
                 var support=BoundsOf(Find((string)item["support_key"]));if(support.HasValue)Handles.DrawDottedLine(b.Value.center,support.Value.center,4);
             }
             if(architecture?["walls"] is JArray walls)foreach(JObject wall in walls){
@@ -121,13 +121,13 @@ namespace HdrpAgent.Editor
         public static void Refresh(){foreach(var w in Resources.FindObjectsOfTypeAll<ReferenceVisionWindow>())w.Repaint();SceneView.RepaintAll();}
         void OnGUI(){
             EditorGUILayout.LabelField(ReferenceVision.Status,EditorStyles.wordWrappedLabel);
-            ReferenceVision.Follow=EditorGUILayout.Toggle("Suivre dans la vue Scene",ReferenceVision.Follow);ReferenceVision.Gizmos=EditorGUILayout.Toggle("Afficher la carte et les supports",ReferenceVision.Gizmos);
-            EditorGUILayout.LabelField("Cyan : cible observée · orange : placement à vérifier · pointillés : support supposé",EditorStyles.wordWrappedMiniLabel);
+            ReferenceVision.Follow=EditorGUILayout.Toggle("Follow in Scene view",ReferenceVision.Follow);ReferenceVision.Gizmos=EditorGUILayout.Toggle("Show map and supports",ReferenceVision.Gizmos);
+            EditorGUILayout.LabelField("Cyan: observed target · orange: placement to verify · dotted: assumed support",EditorStyles.wordWrappedMiniLabel);
             using(new EditorGUI.DisabledScope(ReferenceVision.Running)){
-                EditorGUILayout.BeginHorizontal();if(GUILayout.Button("Tour intérieur 360°"))ReferenceRoomControls.Survey();if(GUILayout.Button("Inspecter la caméra Scene"))ReferenceRoomControls.InspectSceneCamera();EditorGUILayout.EndHorizontal();
+                EditorGUILayout.BeginHorizontal();if(GUILayout.Button("360° interior survey"))ReferenceRoomControls.Survey();if(GUILayout.Button("Inspect the Scene camera"))ReferenceRoomControls.InspectSceneCamera();EditorGUILayout.EndHorizontal();
             }
             var rect=GUILayoutUtility.GetRect(200,Mathf.Max(120,position.height-155));if(ReferenceVision.Image!=null)GUI.DrawTexture(rect,ReferenceVision.Image,ScaleMode.ScaleToFit);
-            EditorGUILayout.LabelField("Flux HDRP de la caméra d’inspection · images analysées sans gizmos",EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("HDRP inspection camera stream · images analyzed without gizmos",EditorStyles.miniLabel);
         }
     }
 }

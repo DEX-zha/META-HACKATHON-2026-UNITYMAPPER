@@ -21,7 +21,7 @@ namespace HdrpAgent.Editor
         static JArray detailViews,detailCaptures,detailLimits;
         static int detailOffset,detailCount;
         public static bool Running=>stage!=null;
-        public static string Status=>SessionState.GetString("HdrpAgent.ReferenceStatus","Prêt à enregistrer une référence.");
+        public static string Status=>SessionState.GetString("HdrpAgent.ReferenceStatus","Ready to record a reference.");
         public static string LastDirectory=>SessionState.GetString("HdrpAgent.ReferenceDirectory","");
         static string Workspace=>BridgeClient.ResolveWorkspace();
         static string Owner=>Path.Combine(Workspace,".hdrp-agent","reference-owner.json");
@@ -79,7 +79,7 @@ namespace HdrpAgent.Editor
                     foreach(var behaviour in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,FindObjectsSortMode.None))if(behaviour!=null&&(behaviour.GetType().Namespace=="FS_Atmo"||behaviour.GetType().Assembly.GetName().Name=="Assembly-CSharp"))behaviour.enabled=false;
                     EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());EditorSceneManager.SaveScene(SceneManager.GetActiveScene());bundle["static_snapshot"]=true;
                     var camera=Camera.main??UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None).FirstOrDefault();if(camera==null)throw new InvalidOperationException("Place a camera before recording the scene");
-                    var plan=CreateRecordingPlan(camera);bundle["inspection"]=plan;expectedVersion=SceneInspector.Version();capture=CaptureController.BeginReference(plan,true);stage="recording";Say("Enregistrement à 360° : devant, derrière, côtés et dessus…");
+                    var plan=CreateRecordingPlan(camera);bundle["inspection"]=plan;expectedVersion=SceneInspector.Version();capture=CaptureController.BeginReference(plan,true);stage="recording";Say("360° recording: front, back, sides, and top…");
                 }else{
                     var files=new JArray();for(int i=0;i<media.Length;i++){var ext=Path.GetExtension(media[i]).ToLowerInvariant();if(!new[]{".png",".jpg",".jpeg",".mp4",".mov",".m4v",".webm"}.Contains(ext)||new FileInfo(media[i]).Length>200000000)throw new InvalidDataException("Unsupported or oversized reference media");var name="input-"+i+ext;File.Copy(media[i],Path.Combine(directory,name));files.Add(name);}bundle["media_files"]=files;
                     // The source is preserved, but no source object is copied into the output.
@@ -92,8 +92,8 @@ namespace HdrpAgent.Editor
             var path=Path.Combine(directory,"bundle.json");
             return new JObject{["operation_id"]=command.payload["operation_id"],["session_id"]=command.session_id,["run_id"]=id,["bundle_sha256"]=BridgeJson.Hash(File.ReadAllBytes(path))};
         }
-        public static void RecordCurrent()=>Begin("recorded","Reproduire fidèlement la composition visible, les objets du projet, les matériaux, les lumières et l’atmosphère de la référence.",Array.Empty<string>());
-        public static void RebuildSavedReference(){var saved=LastDirectory;var previous=JObject.Parse(File.ReadAllText(Path.Combine(saved,"bundle.json")));var kind=(string)previous["kind"];Begin(kind,((string)previous["brief"]??"")+" Reproduire fidèlement la référence conservée ; corriger la disposition, le cadrage et le rendu depuis les comparaisons visuelles. Les dimensions d’une image non cotée sont estimées.",Array.Empty<string>(),saved);}
+        public static void RecordCurrent()=>Begin("recorded","Faithfully reproduce the visible composition, project objects, materials, lighting, and atmosphere of the reference.",Array.Empty<string>());
+        public static void RebuildSavedReference(){var saved=LastDirectory;var previous=JObject.Parse(File.ReadAllText(Path.Combine(saved,"bundle.json")));var kind=(string)previous["kind"];Begin(kind,((string)previous["brief"]??"")+" Faithfully reproduce the saved reference; correct layout, framing, and rendering using visual comparisons. Dimensions from an unscaled image are estimates.",Array.Empty<string>(),saved);}
         public static void ContinueSavedAnalysis(){
             if(Running||BridgeClient.SessionOwnsEditor||CommandExecutor.Busy||LocalValidationRunner.Running||EditorApplication.isPlayingOrWillChangePlaymode||Lightmapping.isRunning||File.Exists(Owner))throw new InvalidOperationException("Another operation owns editor");
             var saved=LastDirectory;if(string.IsNullOrEmpty(saved)||!Directory.Exists(saved))throw new InvalidDataException("No saved reference analysis");
@@ -107,12 +107,12 @@ namespace HdrpAgent.Editor
             using(var stream=new FileStream(Owner,FileMode.CreateNew,FileAccess.Write,FileShare.Read))using(var writer=new StreamWriter(stream))writer.Write(new JObject{["id"]=id,["directory"]=directory}.ToString());
             try{
                 foreach(var name in new[]{"native-stop.json","status.json","report.json"}){var file=Path.Combine(directory,name);if(File.Exists(file))File.Move(file,Path.Combine(directory,"before-continuation-"+name));}
-                Atomic(Path.Combine(directory,"status.json"),new JObject{["state"]="resuming",["message"]="Réutilisation de l’analyse et des masques conservés ; aucun appel interrompu renvoyé."});
-                stage="awaiting-plan";BridgeClient.Disconnect();Atomic(Path.Combine(directory,"resume-request.json"),new JObject{["cached_sam_only"]=true,["new_layout_only"]=true});Say("Poursuite depuis l’analyse enregistrée…");
+                Atomic(Path.Combine(directory,"status.json"),new JObject{["state"]="resuming",["message"]="Reusing the saved analysis and masks; no interrupted calls are replayed."});
+                stage="awaiting-plan";BridgeClient.Disconnect();Atomic(Path.Combine(directory,"resume-request.json"),new JObject{["cached_sam_only"]=true,["new_layout_only"]=true});Say("Continuing from the saved analysis…");
             }catch(Exception e){Fail(e.GetType().Name+": "+e.Message);throw;}
         }
         public static void ImportBuildingPlan(string[] paths){if(paths==null||paths.Length<1||paths.Length>3)throw new InvalidDataException("One video or up to three images");Begin("external","[building-prefabs-required] Reproduce this illustrated living room plan using Assets/AtmosphericHouse/Prefabs/Building for floor and all wall modules, including actual door and window openings. Use project furniture and fittings for the remaining visible objects. Match composition, materials and lighting. Dimensions and hidden geometry are estimates. No primitive replacement walls.",paths);}
-        public static void ImportMedia(string[] paths){if(paths==null||paths.Length<1||paths.Length>3)throw new InvalidDataException("One video or up to three images");Begin("external","Reproduire les objets et le rendu de la référence avec les assets locaux et les lumières ; signaler les éléments absents ou ambigus.",paths);}
+        public static void ImportMedia(string[] paths){if(paths==null||paths.Length<1||paths.Length>3)throw new InvalidDataException("One video or up to three images");Begin("external","Reproduce the reference objects and rendering using local assets and lighting; report missing or ambiguous elements.",paths);}
         static JObject Pose(string key,Vector3 position,Quaternion rotation,float fov)=>JObject.FromObject(new{key,position_m=ReferenceAssets.Vec(position),rotation_deg=ReferenceAssets.Vec(rotation.eulerAngles),fov_deg=fov});
         public static JObject CreateRecordingPlan(Camera camera){
             // Bounds choose recording cameras only. Object transforms/bounds from
@@ -130,14 +130,14 @@ namespace HdrpAgent.Editor
             var names=new[]{"work-front","work-front-right","work-back-right","work-back","work-back-left","work-front-left"};var work=new JArray();for(int i=0;i<6;i++)work.Add(orbit(names[i],i*60,25));work.Add(orbit("work-top-front",0,65));work.Add(orbit("work-top-back",180,65));
             return new JObject{["work_views"]=work,["control_views"]=new JArray(orbit("control-high",90,55),orbit("control-low",270,10)),["path_key"]="reference-orbit",["fps"]=24,["duration_seconds"]=6,["width"]=1280,["height"]=720,["fixed_ev"]=0,["seed"]=1729,["warmup_frames"]=64};
         }
-        static void Submit(){bundle["candidate_base_version"]=expectedVersion;Atomic(Path.Combine(directory,"bundle.json"),bundle);stage="awaiting-plan";Say("Référence prête ; analyse Muse et segmentation SAM…");}
+        static void Submit(){bundle["candidate_base_version"]=expectedVersion;Atomic(Path.Combine(directory,"bundle.json"),bundle);stage="awaiting-plan";Say("Reference ready; Muse analysis and SAM segmentation…");}
         static void BeginDetailBatch(){
             if(SceneManager.GetActiveScene().isDirty||SceneInspector.Version()!=expectedVersion)throw new InvalidDataException("Source changed before detail recording");
             detailCount=Math.Min(8,detailViews.Count-detailOffset);var work=new JArray();
             foreach(JObject view in detailViews.Skip(detailOffset).Take(detailCount)){var pose=(JObject)view.DeepClone();pose.Remove("object_key");pose.Remove("angle");work.Add(pose);}
             while(work.Count<3){var padding=(JObject)work[0].DeepClone();padding["key"]="detail-padding-"+work.Count;work.Add(padding);}
             var plan=(JObject)bundle["inspection"].DeepClone();plan["work_views"]=work;plan["warmup_frames"]=32;plan["path_key"]="detail-static";
-            capture=CaptureController.BeginReference(plan,false);stage="recording-details";Say("Gros plans réels : "+(detailOffset+1)+"–"+(detailOffset+detailCount)+" / "+detailViews.Count+"…");
+            capture=CaptureController.BeginReference(plan,false);stage="recording-details";Say("Actual close-ups: "+(detailOffset+1)+"–"+(detailOffset+detailCount)+" / "+detailViews.Count+"…");
         }
         public static void Stop(){if(!Running)return;Atomic(Path.Combine(directory,"native-stop.json"),new JObject{["reason"]="Operator requested stop"});stage="stopping";if(EditorApplication.isPlaying)EditorApplication.isPlaying=false;}
         static void Fail(string reason){
@@ -158,7 +158,7 @@ namespace HdrpAgent.Editor
                     }
                 }catch(Exception e){Atomic(Path.Combine(directory,"interruption-restoration.json"),new JObject{["status"]="not_restored",["reason"]=e.Message,["native_command_replayed"]=false});}
             }
-            Say("Arrêt : "+reason);Release();
+            Say("Stop: "+reason);Release();
         }
         static void Release(){
             ReferenceVision.Cancel("Reference workflow released");FloorplanCapture.Cancel("Reference workflow released");stage=null;
@@ -181,7 +181,7 @@ namespace HdrpAgent.Editor
             capture=Path.Combine(directory,"floorplan-"+iteration+"-resume-"+Guid.NewGuid().ToString("N"));
             FloorplanCapture.Begin((JObject)request["camera"],capture,expectedVersion);
             began+=EditorApplication.timeSinceStartup-compositionPausedAt;
-            File.Delete(Path.Combine(directory,"native-conflict.json"));stage="capturing-floorplan";Say("Reprise de la mesure seule ; aucun appel modèle rejoué.");
+            File.Delete(Path.Combine(directory,"native-conflict.json"));stage="capturing-floorplan";Say("Resuming measurement only; no model calls replayed.");
         }
         static void Tick(){
             if(!Running||EditorApplication.isCompiling)return;
@@ -196,14 +196,14 @@ namespace HdrpAgent.Editor
                     if(((string)interruption["reason"]??"").StartsWith("CONCURRENT_EDIT",StringComparison.Ordinal)){
                         compositionPausedAt=EditorApplication.timeSinceStartup;stage="paused-floorplan";
                         Atomic(Path.Combine(directory,"native-conflict.json"),new JObject{["reason"]=interruption["reason"],["expected_version"]=expectedVersion,["scene_path"]=SceneManager.GetActiveScene().path,["ordinal"]=iteration});
-                        Say("Mesure en pause : modification de scène détectée ; modifications conservées.");return;
+                        Say("Measurement paused: scene edit detected; edits preserved.");return;
                     }
                 }
                 if(capture!=null&&File.Exists(Path.Combine(capture,"interruption.json")))throw new InvalidOperationException("Native capture interrupted; no replay");
                 if(stage=="capturing-floorplan"){
                     if(File.Exists(Path.Combine(capture,"interruption.json")))throw new InvalidOperationException("Offscreen capture interrupted: "+File.ReadAllText(Path.Combine(capture,"interruption.json")));
                     if(!File.Exists(Path.Combine(capture,"result.json")))return;
-                    Atomic(Path.Combine(directory,"render-"+iteration+".json"),new JObject{["ordinal"]=iteration,["capture_directory"]=capture,["capture_mode"]="floorplan_offscreen",["scene_path"]=SceneManager.GetActiveScene().path,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});iteration++;stage="awaiting-plan";Say("Composition capturée hors écran ; comparaison géométrique…");return;
+                    Atomic(Path.Combine(directory,"render-"+iteration+".json"),new JObject{["ordinal"]=iteration,["capture_directory"]=capture,["capture_mode"]="floorplan_offscreen",["scene_path"]=SceneManager.GetActiveScene().path,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});iteration++;stage="awaiting-plan";Say("Composition captured offscreen; comparing geometry…");return;
                 }
                 if(stage=="recording"&&CaptureReady()){CheckCapture();bundle["capture_directory"]=capture;Submit();return;}
                 if(stage=="recording-details"&&CaptureReady()){
@@ -211,12 +211,12 @@ namespace HdrpAgent.Editor
                     if(detailOffset<detailViews.Count)BeginDetailBatch();else{Atomic(Path.Combine(directory,"detail-result.json"),new JObject{["captures"]=detailCaptures,["limits"]=detailLimits});stage="awaiting-plan";}return;
                 }
                 if(stage=="capturing"&&CaptureReady()){
-                    CheckCapture();Atomic(Path.Combine(directory,"render-"+iteration+".json"),new JObject{["ordinal"]=iteration,["capture_directory"]=capture,["scene_path"]=SceneManager.GetActiveScene().path,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});iteration++;stage="awaiting-plan";Say("Rendu candidat terminé ; comparaison et ajustement…");return;
+                    CheckCapture();Atomic(Path.Combine(directory,"render-"+iteration+".json"),new JObject{["ordinal"]=iteration,["capture_directory"]=capture,["scene_path"]=SceneManager.GetActiveScene().path,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});iteration++;stage="awaiting-plan";Say("Candidate render complete; comparing and adjusting…");return;
                 }
                 if(stage=="inspecting"){
                     var folder=Path.Combine(directory,"inspection-"+(iteration-1));
                     if(File.Exists(Path.Combine(folder,"interruption.json")))throw new InvalidOperationException("Editor inspection interrupted; no replay");
-                    if(File.Exists(Path.Combine(folder,"result.json"))){stage="awaiting-plan";Say("Inspection ciblée terminée ; analyse des gros plans…");}return;
+                    if(File.Exists(Path.Combine(folder,"result.json"))){stage="awaiting-plan";Say("Targeted inspection complete; analyzing close-ups…");}return;
                 }
                 if(stage!="awaiting-plan")return;
                 var inspectionRequest=Path.Combine(directory,"inspection-request-"+(iteration-1)+".json");
@@ -224,7 +224,7 @@ namespace HdrpAgent.Editor
                     if((bool?)bundle["scene_inspection"]!=true||new FileInfo(inspectionRequest).Length>50000)throw new InvalidDataException("Editor inspection not admitted");
                     var inspectionCommand=JObject.Parse(File.ReadAllText(inspectionRequest));
                     if((int)inspectionCommand["ordinal"]!=iteration-1||(string)inspectionCommand["version"]!=expectedVersion)throw new InvalidDataException("Stale inspection command");
-                    ReferenceVision.Begin(inspectionCommand,Path.Combine(directory,"inspection-"+(iteration-1)));stage="inspecting";Say("La caméra Scene inspecte les écarts et leurs supports…");return;
+                    ReferenceVision.Begin(inspectionCommand,Path.Combine(directory,"inspection-"+(iteration-1)));stage="inspecting";Say("The Scene camera is inspecting differences and their supports…");return;
                 }
                 var detailRequest=Path.Combine(directory,"detail-request.json");
                 if(File.Exists(detailRequest)&&!File.Exists(Path.Combine(directory,"detail-result.json"))){
@@ -263,9 +263,9 @@ namespace HdrpAgent.Editor
                             if(SceneInspector.Version()!=(string)receipt["version"])throw new InvalidDataException("Retained candidate changed since its measurement");
                             var savedInspection=Path.Combine(directory,"inspection-"+ordinal);if(File.Exists(Path.Combine(savedInspection,"result.json")))ReferenceVision.ShowSaved(savedInspection);
                         }
-                        Say("Reconstruction terminée — comparer le résultat à la référence. "+(string)status["message"]);Release();return;
+                        Say("Reconstruction complete — compare the result with the reference. "+(string)status["message"]);Release();return;
                     }
-                    Say((string)status["message"]??"Analyse en cours…");
+                    Say((string)status["message"]??"Analysis en cours…");
                 }
                 var geometryRequest=Path.Combine(directory,"geometry-request.json");var geometryResult=Path.Combine(directory,"geometry-result.json");
                 if(File.Exists(geometryRequest)&&!File.Exists(geometryResult)){
@@ -287,7 +287,7 @@ namespace HdrpAgent.Editor
                 var scene=ReferenceSceneBuilder.Build(plan,catalogue,"repro-"+id+"-"+iteration,(JObject)command["inspection"],(JArray)command["supports"],(JObject)command["capture_protocol"],(string)bundle["interior_style"]??"B",(JObject)command["architecture"]);
                 appliedPlan=(JObject)plan.DeepClone();contactReport=ReferenceSceneBuilder.LastContacts;
                 expectedVersion=SceneInspector.Version();Atomic(receiptFile,new JObject{["status"]="built",["ordinal"]=iteration,["scene_path"]=scene,["version"]=expectedVersion,["applied_plan"]=appliedPlan,["contacts"]=contactReport,["room_finish"]=ReferenceSceneBuilder.LastRoomFinish});
-                if(command["composition_capture"] is JObject composition){capture=Path.Combine(directory,"floorplan-"+iteration);FloorplanCapture.Begin(composition,capture,expectedVersion);stage="capturing-floorplan";Say("Mesure hors écran de la composition…");return;}
+                if(command["composition_capture"] is JObject composition){capture=Path.Combine(directory,"floorplan-"+iteration);FloorplanCapture.Begin(composition,capture,expectedVersion);stage="capturing-floorplan";Say("Measuring composition offscreen…");return;}
                 capture=CaptureController.BeginReference((JObject)command["inspection"],true);stage="capturing";Say("Construction et capture du candidat "+(iteration+1)+"/"+(int)bundle["max_iterations"]+"…");
             }catch(Exception e){Fail(e.GetType().Name+": "+e.Message);}
         }

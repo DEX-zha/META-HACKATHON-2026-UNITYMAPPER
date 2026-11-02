@@ -10,6 +10,7 @@ from pathlib import Path
 from .house_convergence import converge, signature
 from .house_media import inspection_batches
 from .house_memory import HouseMemory
+from .house_activity import model_summary
 from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
 from .store import utc_now
@@ -56,6 +57,30 @@ class HouseService:
             self.store.event(c,row['id'],'house.progress',dict(run_id=row['run_id'],stage=stage,message=message))
         HouseMemory(self.settings.state,row['run_id']).state(checkpoint)
         return checkpoint
+    def activity(self, row):
+        with closing(self.store.connect()) as c:
+            events=c.execute("SELECT id,kind,body,created_at FROM events WHERE subject=? AND kind IN ('house.progress','house.decision') ORDER BY id",(row['id'],)).fetchall()
+        return [dict(id=e['id'],kind=e['kind'],timestamp=e['created_at'],**json.loads(e['body'])) for e in events]
+
+    def recovery(self, row):
+        if row['state']!='recovery_required':return None
+        with closing(self.store.connect()) as c:
+            command=c.execute("SELECT * FROM commands WHERE session_id=? AND status='unknown' ORDER BY rowid DESC LIMIT 1",(row['session_id'],)).fetchone()
+            project=c.execute('SELECT body FROM projects WHERE id=?',(row['project_id'],)).fetchone()
+        detail=dict(cause='UNVERIFIED_NATIVE_OUTCOME',message='Unity command outcome is unverified. Execution is paused; no command has been replayed.',next_step='Inspect the native receipt and generated scene before reconciliation.',automatic_retry=False)
+        if not command:return detail
+        detail['command_id']=command['id']
+        # Read only a matching local receipt. An unknown receipt never proves completion.
+        try:
+            root=self.settings.project_path(json.loads(project['body'])['project_root'])
+            path=root/'.hdrp-agent'/'bridge'/'receipts'/(command['id']+'.json')
+            if not path.resolve().is_relative_to(root.resolve()) or path.is_symlink() or path.stat().st_size>1000000:return detail
+            receipt=json.loads(path.read_text());result=receipt.get('result') or {}
+            if all(receipt.get(k)==v for k,v in [('command_id',command['id']),('payload_hash',command['payload_hash']),('bridge_epoch',command['epoch'])]) and result.get('status')=='unknown' and result.get('error',{}).get('code')=='DOMAIN_RELOAD':
+                detail.update(cause='DOMAIN_RELOAD',message='Unity reloaded its scripts during construction. The partial scene has not been verified.',next_step='Inspect the partial generated scene and reconcile the interrupted command before starting another run.')
+        except (OSError,ValueError,KeyError,AgentError):pass
+        return detail
+
     def admit(self,request):
         request=payload('AppActionRequest',request)
         if request['kind']!='generate_house':raise AgentError('INVALID_INPUT','Expected generate_house')
@@ -86,7 +111,7 @@ class HouseService:
                 session=payload('Session',dict(id=sid,state='preflight',verdict='pending',best_version=request['expected_scene_version'],current_version=request['expected_scene_version'],attempts_used=0,max_attempts=6,criteria_hash=fingerprint(request['parameters']),inspection_hash=fingerprint({}),stop_reason=None,provider_mode='live'))
                 c.execute('INSERT INTO scenes VALUES(?,?,?)',(scene,request['project_id'],canonical(dict(kind='house_v1'))))
                 c.execute('INSERT INTO sessions(id,project_id,scene_id,state,body) VALUES(?,?,?,?,?)',(sid,request['project_id'],scene,'preflight',canonical(session)))
-                checkpoint=dict(stage='queued',message='Programme de maison en attente',epoch=project['epoch'],source_version=data['scene_version'],quality_state='pending',updated_at=utc_now())
+                checkpoint=dict(stage='queued',message='House program queued',epoch=project['epoch'],source_version=data['scene_version'],quality_state='pending',updated_at=utc_now())
                 c.execute('INSERT INTO house_actions VALUES(?,?,?,?,?,?,?,?,?)',(request['action_id'],run,sid,request['project_id'],request['idempotency_key'],digest,canonical(request),'queued',canonical(checkpoint)))
                 action=request['action_id']
         return self.get(action)
@@ -94,6 +119,8 @@ class HouseService:
         row=self.row(action);r=json.loads(row['request']);cp=json.loads(row['checkpoint'])
         with closing(self.store.connect()) as c:stopped=bool(c.execute('SELECT stop_requested FROM sessions WHERE id=?',(row['session_id'],)).fetchone()[0])
         progress=dict(phase=cp['stage'],message=cp['message'],last_evidence_at=cp.get('last_evidence_at',cp['updated_at']),preview_images=0,render_receipts=len(cp.get('captures',[])),source='house_v1',correction_round=max([i['iteration'] for i in cp.get('iterations',[])]+[0]))
+        progress['activity']=self.activity(row)
+        progress['recovery']=self.recovery(row)
         native=self.settings.state/'house'/'runs'/row['run_id']/cp.get('manifest_hash','')[:12]/'progress.json'
         if cp['stage']=='building' and native.is_file() and not native.is_symlink() and native.resolve().is_relative_to(self.settings.state.resolve()) and native.stat().st_size<1000000:
             observed=json.loads(native.read_text())
@@ -118,7 +145,12 @@ class HouseService:
             if not row:return None
             c.execute("UPDATE house_actions SET state='running' WHERE id=?",(row['id'],));return row['id']
     def ask(self,row,key,text,schema,images=()):
+        self.save(row,json.loads(row['checkpoint'])['stage'],'Muse is reviewing '+key)
         value=self.provider_call(row,key,spark_request(text,list(images),schema),schema)
+        summary=model_summary(schema,value)
+        if summary:
+            with self.store.tx() as c:
+                self.store.event(c,row['id'],'house.decision',dict(stage=key,message=summary,source='structured_model_output',status='proposal_or_observation'))
         HouseMemory(self.settings.state,row['run_id']).note(key,value)
         return value
     def provider_call(self,row,key,request,schema=None):
@@ -161,7 +193,7 @@ class HouseService:
                 body=dict(run_id=row['run_id'],manifest_hash=h)
                 command=dict(id=command_id,session_id=row['session_id'],kind='build_house',expected_version=cp['source_version'],payload_hash=fingerprint(body),payload=body,deadline_utc=(datetime.now(timezone.utc)+timedelta(minutes=20)).isoformat(),bridge_epoch=cp['epoch'])
                 self.queue.enqueue(row['project_id'],command,c)
-        self.save(row,'building','Unity assemble les prefabs et contrôle la géométrie',native_command=command_id,manifest_hash=h)
+        self.save(row,'building','Unity is assembling prefabs and checking geometry',native_command=command_id,manifest_hash=h)
         while True:
             with closing(self.store.connect()) as c:command=c.execute('SELECT * FROM commands WHERE id=?',(command_id,)).fetchone()
             if command['result']:
@@ -176,7 +208,7 @@ class HouseService:
     def run(self,action):
         row=self.row(action);params=json.loads(row['request'])['parameters'];run=row['run_id']
         try:
-            self.save(row,'outline','Muse prépare les pièces et les usages demandés')
+            self.save(row,'outline','Muse is planning the requested rooms and activities')
             images=[]
             for h in params['reference_hashes']:
                 with Image.open(io.BytesIO(self.artifacts.read(h))) as im:
@@ -184,7 +216,7 @@ class HouseService:
             outline=self.ask(row,'outline','Design a complete Unity house program from this brief. Preserve every requested room and floor; never omit an unsupported need. Give distinct stable room IDs. Dimensions in metres, prefer multiples of 3 compatible with native tiles. Hidden parts are creative and must follow brief. Native prefab contact checks, circulation inspection and SAM/Muse image review are provided by this pipeline; do not list those inspection requests as unsupported building features. Return unresolved architectural or furnishing requirements explicitly. User reference data: '+canonical(params),'ModelHouseOutline',images)
             building=building_from_outline(outline);assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
             for room in outline['rooms']:
-                self.guard(row);self.save(row,'furnishing','Aménagement de '+room['purpose'],current_scope=room['id'])
+                self.guard(row);self.save(row,'furnishing','Furnishing '+room['purpose'],current_scope=room['id'])
                 design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
                 placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
@@ -193,7 +225,7 @@ class HouseService:
             program=dict(id='house',project_id=row['project_id'],run_id=run,brief=params['brief'],creative_policy=params['creative_policy'],reference_hashes=params['reference_hashes'],rooms=[dict(id=r['id'],floor_id='ground',purpose=r['purpose']) for r in outline['rooms']],requirements=requirements)
             self.houses.create(program,building)
             manifest=dict(schema_version='house-manifest.v1',run_id=run,building=building,instances=instances,access=access,interior_style=params['interior_style'],lighting='warm_interior',designs=designs,exposure_ev=6)
-            self.save(row,'building','Plan métrique prêt ; assemblage natif',unresolved=missing)
+            self.save(row,'building','Metric plan ready; native assembly',unresolved=missing)
             def zone_inspect(candidate,evidence,room,zone):
                 scoped=dict(outline,rooms=[r for r in outline['rooms'] if r['id']==room])
                 return self.inspect(row,scoped,candidate['instances'],evidence,persist=False)
@@ -207,7 +239,7 @@ class HouseService:
                 return result[:4]
             manifest,receipt,proof=assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
             instances=manifest['instances']
-            self.save(row,'inspection','Contrôle des vues et des équipements',scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],last_evidence_at=utc_now())
+            self.save(row,'inspection','Checking views and equipment',scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],last_evidence_at=utc_now())
             actual={i['id']:i for i in proof.get('instances',[])}
             resolved=[];unresolved=[]
             for r in requirements:
@@ -232,20 +264,20 @@ class HouseService:
                     c.execute('INSERT OR REPLACE INTO house_patches VALUES(?,?,?)',(run,str(index)+'-'+status,canonical(event)))
                 if status=='accepted':selected.update(receipt=candidate_receipt,proof=candidate_proof)
                 best=selected['proof']
-                self.save(row,'correcting','Correction '+str(index)+' : '+{'proposed':'essai en cours','accepted':'amélioration conservée','rejected':'régression ou absence de progrès ; candidat écarté'}[status],iterations=history,scene_path=best['scene_path'],scene_version=best['scene_version'],captures=best['captures'])
+                self.save(row,'correcting','Correction '+str(index)+' : '+{'proposed':'trial in progress','accepted':'improvement retained','rejected':'regression or no progress; candidate rejected'}[status],iterations=history,scene_path=best['scene_path'],scene_version=best['scene_version'],captures=best['captures'])
             manifest,receipt,proof,observations,stop_reason=converge(manifest,receipt,proof,observations,build=lambda candidate:self.native(row,candidate),inspect=inspect_candidate,enrich=lambda m,p,o,a:self.enrich(row,outline,assets,m,p,o,a),record=record,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p))
             blockers=[]
             for observation in observations:
                 action=observation.get('suggested_action','none')
-                reason=('Opération '+action+' non implémentée dans la boucle de correction' if action in {'replace','reframe','measure'} else 'Éclairage/bake non qualifié ; une correction d’exposition seule ne suffit pas' if observation.get('kind')=='lighting' else 'Aucune nouvelle proposition sûre après contrôles et replanification')
+                reason=('Operation '+action+' is not implemented in the correction loop' if action in {'replace','reframe','measure'} else 'Lighting/bake not qualified; exposure correction alone is insufficient' if observation.get('kind')=='lighting' else 'No new safe proposal after checks and replanning')
                 blockers.append(dict(room_id=observation['room_id'],instance_id=observation.get('instance_id'),defect=observation['message'],reason=reason))
-            self.save(row,'correcting','Bilan des corrections et blocages restants',correction_blockers=blockers)
+            self.save(row,'correcting','Correction summary and remaining blockers',correction_blockers=blockers)
             self.reconcile_selected(row,receipt,proof,observations)
             segmentation_hash=json.loads(row['checkpoint']).get('segmentation_receipts',{}).get(proof['scene_version'])
-            self.save(row,'inspection','Restauration des preuves du candidat retenu',segmentations=json.loads(self.artifacts.read(segmentation_hash)) if segmentation_hash else [])
-            self.save(row,'inspection','Dernier candidat retenu après corrections',scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],manifest_hash=proof['manifest_hash'],stop_reason=stop_reason)
+            self.save(row,'inspection','Restoring evidence for the retained candidate',segmentations=json.loads(self.artifacts.read(segmentation_hash)) if segmentation_hash else [])
+            self.save(row,'inspection','Latest candidate retained after corrections',scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],manifest_hash=proof['manifest_hash'],stop_reason=stop_reason)
             quality=self.houses.finish(run)
-            self.save(row,'finished',('Arrêt sans convergence : aucune nouvelle correction sûre ; consulter les besoins et défauts restants' if quality=='incomplete' else 'Corrections vérifiées ; revue artistique requise'),execution_state='stalled' if quality=='incomplete' else 'finished',quality_state=quality)
+            self.save(row,'finished',('Stopped without convergence: no new safe correction; review remaining requirements and defects' if quality=='incomplete' else 'Corrections verified; artistic review required'),execution_state='stalled' if quality=='incomplete' else 'finished',quality_state=quality)
             with self.store.tx() as c:
                 c.execute("UPDATE house_actions SET state='completed' WHERE id=?",(action,));self.store.update_session(c,row['session_id'],state='completed',verdict='inconclusive',stop_reason='House quality: '+quality)
         except Exception as exc:
@@ -266,7 +298,7 @@ class HouseService:
                 if persist:self.houses.defect(run,dict(id='coverage-'+room['id'],scope_id=room['id'],severity='blocking',gate='coverage',message='No usable interior observation',evidence_ids=[]))
                 observations.append(dict(room_id=room['id'],instance_id='',kind='occlusion',severity='blocking',message='No usable interior observation',suggested_action='reframe',translation_m=[0,0,0],yaw_delta=0,evidence_ids=[]));continue
             for c in captures:
-                self.save(row,'inspection','SAM analyse les objets visibles : '+room['id']+' / '+c['key'],current_scope=room['id'])
+                self.save(row,'inspection','SAM is analyzing visible objects: '+room['id']+' / '+c['key'],current_scope=room['id'])
                 binary=self.artifacts.read(c['artifact_hash'])
                 with Image.open(io.BytesIO(binary)) as im:width,height=im.size
                 local=[i for i in instances if i['room_id']==room['id']]
@@ -284,7 +316,7 @@ class HouseService:
                         destination=self.settings.state/'house'/'runs'/run/relative.parent/('sam-'+relative.name)
                         destination.parent.mkdir(parents=True,exist_ok=True)
                         temporary=destination.with_suffix('.tmp');temporary.write_bytes(composite);temporary.replace(destination)
-                self.save(row,'inspection','Masques SAM enregistrés : '+room['id'],segmentations=segments,last_evidence_at=utc_now())
+                self.save(row,'inspection','SAM masks saved: '+room['id'],segmentations=segments,last_evidence_at=utc_now())
             # Twelve is the provider transport maximum, never a semantic truncation.
             for batch_index,(batch,images) in enumerate(inspection_batches(captures,lambda h:overlays.get(h) or self.artifacts.read(h))):
                 hashes=[c['artifact_hash'] for c in batch]
@@ -296,7 +328,7 @@ class HouseService:
                     if persist:self.houses.defect(run,dict(id='vision-'+room['id']+'-'+str(batch_index)+'-'+str(index),scope_id=room['id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=hashes))
         saved=json.loads(row['checkpoint']).get('segmentation_receipts',{})
         saved[proof['scene_version']]=self.artifacts.put(canonical(segments).encode(),'application/json')
-        self.save(row,'inspection','Inspection visuelle enregistrée',segmentation_receipts=saved)
+        self.save(row,'inspection','Visual inspection saved',segmentation_receipts=saved)
         return observations
 
     def replan_repairs(self,row,outline,assets,manifest,proof):
@@ -309,7 +341,7 @@ class HouseService:
             captures=[c for c in proof.get('captures',[]) if c.get('room_id')==room['id'] and c.get('usable')]
             for index,(batch,images) in enumerate(inspection_batches(captures,self.artifacts.read)):
                 request=dict(room=room,scene_version=proof['scene_version'],lighting_reference=self.reference_context(row),geometry=manifest['building'],instances=local,context=context)
-                self.save(row,'correcting','Replanification ciblée des défauts : '+room['id'],current_scope=room['id'])
+                self.save(row,'correcting','Targeted defect replanning: '+room['id'],current_scope=room['id'])
                 review=self.ask(row,'repair-'+fingerprint(request)[:24]+'-'+str(index),
                     'Previous observed defects had no executable repair or regressed. Reinspect the supplied current evidence and propose DIFFERENT concrete corrections. Use exact instance_id from the inventory. Move/rotate controls move the WHOLE functional group with supported children, not just one prop. translation_m is a world-space delta, horizontal only, and yaw_delta rotates about the group anchor. Preserve room boundaries, doors and circulation and account for all other groups. Do not recommend the same rejected pose. Report missing/composition needs for additions; unsupported lighting bake, wall mounting or mesh/material edits must stay unresolved, not claim success. No corrected defect may be dismissed without visual evidence. '+canonical(request),'ModelHouseInspection',images)
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Repair room identity differs')
@@ -332,7 +364,7 @@ class HouseService:
             placed=place_groups(manifest['building'],addition,assets,existing=manifest['instances'],access_points=access,detail_offset=offset)
             self.houses.extend_requirements(row['run_id'],placed['requirements'])
             if addition['unresolved'] or placed['missing']:
-                cp=json.loads(row['checkpoint']);self.save(row,'correcting','Compléments évalués ; certains besoins restent indisponibles',unresolved=cp.get('unresolved',[])+addition['unresolved']+placed['missing'])
+                cp=json.loads(row['checkpoint']);self.save(row,'correcting','Additions evaluated; some requirements remain unavailable',unresolved=cp.get('unresolved',[])+addition['unresolved']+placed['missing'])
             if not placed['instances']:continue
             candidate=deepcopy(manifest);candidate['instances'].extend(placed['instances'])
             candidate['access']=[a for a in candidate['access'] if a['room_id']!=room['id']]+[dict(room_id=room['id'],points=placed['access_points'])]
@@ -367,6 +399,6 @@ class HouseService:
     def recover_startup(self):
         with self.store.tx() as c:
             for row in c.execute("SELECT * FROM house_actions WHERE state='running'").fetchall():
-                cp=json.loads(row['checkpoint']);cp.update(stage='paused',message='Redémarrage : vérification des reçus requise',execution_state='paused')
+                cp=json.loads(row['checkpoint']);cp.update(stage='paused',message='Restart: receipt verification required',execution_state='paused')
                 c.execute("UPDATE house_actions SET state='recovery_required',checkpoint=? WHERE id=?",(canonical(cp),row['id']))
                 self.store.update_session(c,row['session_id'],state='recovery_required',stop_reason='House resume requires native and provider reconciliation')

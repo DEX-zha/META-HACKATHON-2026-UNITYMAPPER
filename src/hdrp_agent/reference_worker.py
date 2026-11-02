@@ -267,11 +267,11 @@ class ReferenceWorker:
             while not file.exists():
                 conflict=(directory/'native-conflict.json').exists()
                 if conflict and paused_at is None:
-                    paused_at=time.monotonic();self.status(job,'paused','Modification de scène détectée : mesure en pause, modifications conservées. Reprise disponible dans Unity après vérification de la version.')
+                    paused_at=time.monotonic();self.status(job,'paused','Scene edit detected: measurement paused, edits preserved. Resume in Unity after verifying the version.')
                 if not conflict and paused_at is not None:
                     from datetime import timedelta
                     job['deadline_utc']=(datetime.fromisoformat(job['deadline_utc'])+timedelta(seconds=time.monotonic()-paused_at)).isoformat()
-                    paused_at=None;self.status(job,'rendering','Reprise de la mesure hors écran ; aucun appel modèle rejoué.')
+                    paused_at=None;self.status(job,'rendering','Resuming offscreen measurement; no model calls replayed.')
                 self.guard(sid);time.sleep(.25)
             result=json.loads(file.read_text());self.guard(sid)
             if result['ordinal']!=ordinal:raise AgentError('STALE_VERSION','Native reference receipt ordinal differs')
@@ -323,7 +323,7 @@ class ReferenceWorker:
         request=dict(ordinal=ordinal,version=native['version'],scene_path=native['scene_path'],views=views,objects=[dict(key=o['key'],support_key=o['support_key'],residual=residual(o['key'])) for o in analysis['objects']])
         if job.get('fidelity_policy'):job.setdefault('decisions',[]).append(dict(action='observing',reason='geometric_residual_and_missing_coverage',ordinal=ordinal,version=native['version'],target_keys=list(dict.fromkeys(v['object_key'] for v in views))))
         attempt['inspection_targets']=views;self.save(job)
-        self.status(job,'inspecting','La caméra Scene observe les objets incertains de près…')
+        self.status(job,'inspecting','The Scene camera is inspecting uncertain objects up close…')
         atomic(directory/f'inspection-request-{ordinal}.json',request)
         output=directory/f'inspection-{ordinal}'
         while not (output/'result.json').exists():
@@ -340,7 +340,7 @@ class ReferenceWorker:
     def acquire_pose_geometry(self,job,analysis,catalogue):
         if not job['bundle'].get('pose_geometry'):return []
         ids=sorted({o['asset_id'] for o in analysis['objects'] if o['asset_id'] is not None})
-        directory=self.root/job['id'];self.status(job,'geometry','Préparation des silhouettes des prefabs candidats…')
+        directory=self.root/job['id'];self.status(job,'geometry','Preparing candidate prefab silhouettes…')
         atomic(directory/'geometry-request.json',dict(catalogue_sha256=job['catalogue_sha256'],asset_ids=ids))
         result=directory/'geometry-result.json'
         while not result.exists():self.guard(job['session_id']);time.sleep(.25)
@@ -374,7 +374,7 @@ class ReferenceWorker:
             details=original_crops(analysis,frames,self.artifacts)
             job['detail_limit']='Crops use available source pixels; no unseen detail or additional camera coverage is recovered.'
         else:
-            self.status(job,'analysing','Enregistrement de gros plans réels par objet : face, dos et dessus…')
+            self.status(job,'analysing','Recording actual object close-ups: front, back, and top…')
             atomic(directory/'detail-request.json',dict(input_bundle_sha256=job['input_bundle_sha256'],objects=[{k:item[k] for k in ['key','view_boxes']} for item in analysis['objects']]))
             def wait(sid,cleanup=False):
                 while not (directory/'detail-result.json').exists():self.guard(sid);time.sleep(.25)
@@ -428,7 +428,7 @@ class ReferenceWorker:
         for group in groups:group['size_evidence']=size_evidence(group,frames,segments)
         job['asset_size_evidence']=[dict(object_key=g['object_key'],scores=g['size_evidence']) for g in groups];self.save(job)
         directory=self.root/job['id'];ids=list(dict.fromkeys(a['asset_id'] for group in groups for a in group['candidates']))
-        self.status(job,'previewing','Comparaison des variantes de meubles et de sol avec leurs aperçus Unity…')
+        self.status(job,'previewing','Comparing furniture and floor variants using Unity previews…')
         atomic(directory/'preview-request.json',dict(asset_ids=ids,catalogue_sha256=job['catalogue_sha256']))
         while not (directory/'preview-result.json').exists():self.guard(job['session_id']);time.sleep(.25)
         previews=json.loads((directory/'preview-result.json').read_text())
@@ -491,7 +491,7 @@ class ReferenceWorker:
             job=self.resume_claim(path) if resuming else self.claim(path);sid=job['session_id'];directory=self.root/job['id'];bundle=job['bundle']
             brief=bundle['brief']
             if bundle.get('building_policy')=='atmospheric-house':brief='[building-prefabs-required] '+brief+' Interior family '+bundle['interior_style']+'; connected '+bundle['ceiling_prefab']+' ceiling required.'
-            self.status(job,'preflight','Préparation des images et du catalogue local…')
+            self.status(job,'preflight','Preparing images and the local catalogue…')
             catalogue_path=contained(directory,directory/bundle['catalogue_file']);catalogue_raw=catalogue_path.read_bytes()
             if len(catalogue_raw)>1_000_000:raise AgentError('INVALID_CATALOGUE','Catalogue exceeds native handoff limit')
             catalogue=json.loads(catalogue_raw);frames=job['frames'] if resuming else ingest(bundle,directory,self.artifacts)
@@ -499,10 +499,10 @@ class ReferenceWorker:
             job['frames']=frames;job['catalogue_sha256']=hashlib.sha256(catalogue_raw).hexdigest();self.save(job)
             budget=SessionBudget(self,sid,Budget(self.store,load_pricing(self.settings.state/'pricing.json')))
             provider=MetaResponses(self.settings,budget,self.artifacts);planner=ReferencePlanner(provider,self.artifacts)
-            self.guard(sid);self.status(job,'analysing','Muse analyse les objets, la composition et les caméras…')
+            self.guard(sid);self.status(job,'analysing','Muse is analyzing objects, composition, and cameras…')
             analysed=job['analysis_response'] if resuming else self.checkpoint_analysis(job,frames,catalogue) if bundle.get('analysis_checkpoint_job_id') else planner.analyse(frames,catalogue,brief);validate_analysis(analysed['value'],frames,catalogue);job['analysis_response']=analysed;self.save(job);self._event(sid,'reference_analysis_reused' if resuming or bundle.get('analysis_checkpoint_job_id') else 'reference_analysis',analysed)
             details=self.acquire_details(job,analysed['value'],frames) if bundle.get('asset_visual_matching') else []
-            self.status(job,'segmenting','SAM mesure chaque objet, la vue du dessus et les gros plans…')
+            self.status(job,'segmenting','SAM is measuring each object, the top view and close-ups…')
             def save_segments(partial):
                 self.guard(sid);job['segments']=partial;self.save(job)
             segments=planner.segment(analysed['value'],frames,cached_only=resuming or bundle.get('cached_sam_only',False),details=details,comprehensive=bundle.get('autonomous_refinement',False),checkpoint=save_segments,extra_angles=bundle.get('fidelity_mode')=='1.0');job['segments']=segments;self.save(job)
@@ -532,13 +532,13 @@ class ReferenceWorker:
             composition_plan=None
             if composition_requested:
                 from .floorplan import extract,optimize,build_plan,checkpoint as save_composition
-                self.status(job,'composition','Extraction des pièces et optimisation des contraintes de placement…')
+                self.status(job,'composition','Extracting rooms and optimizing placement constraints…')
                 composition_evidence=fingerprint(dict(frames=frames,catalogue=job['catalogue_sha256'],analysis=effective,segments=segments,brief=brief,solver_version='native-segments-5'))
                 saved=prior.get('composition',{})
                 def record_extraction(response,error):
                     name='composition-extraction-'+str(response.get('call_id') or fingerprint(response['value']))+'.json'
                     atomic(directory/name,dict(response=response,validation_error=error))
-                    if error:self.status(job,'composition_repair','Topologie à corriger : '+error)
+                    if error:self.status(job,'composition_repair','Topology needs correction: '+error)
                 observation=saved['observation'] if saved.get('evidence_hash')==composition_evidence else extract(provider,self.artifacts,frames,effective,catalogue,segments,brief,on_response=record_extraction,guard=lambda:self.guard(sid))
                 fit=optimize(observation['value'],guard=lambda:self.guard(sid))
                 composition_plan,composition=build_plan(observation['value'],fit,effective,catalogue,frames[0])
@@ -564,7 +564,7 @@ class ReferenceWorker:
             relative_search=GeometryEvaluator(pose_frames,segments,geometry,self.artifacts,width=256,guard=lambda:self.guard(sid)) if policy and geometry else None
             stopping='candidate_limit'
             for ordinal in range(bundle['max_iterations']):
-                self.guard(sid);self.status(job,'planning',f'Muse prépare la composition et les lumières ({ordinal+1}/{bundle["max_iterations"]})…')
+                self.guard(sid);self.status(job,'planning',f'Muse is planning composition and lighting ({ordinal+1}/{bundle["max_iterations"]})…')
                 decision=(dict(action='baseline' if ordinal==0 else 'image_refinement',reason='uncalibrated_image_joint_visual_fit') if external_visual else next_action(job['attempts'],best,policy) if policy else dict(action=phase_for(ordinal),reason='legacy_fixed_phases'))
                 job.setdefault('decisions',[]).append(decision);self.save(job)
                 if decision['action']=='stop':stopping=decision['reason'];break
@@ -610,7 +610,7 @@ class ReferenceWorker:
                     for row in base['native']['contacts']['checks']:
                         edge=next((e for e in supports if e['object_key']==row['object_key']),None)
                         if edge is not None and edge['support_key'] is None:edge['support_key']=row['support_key']
-                    self.status(job,'fitting','Ajustement des poses relatives aux supports, échelles verrouillées…')
+                    self.status(job,'fitting','Adjusting poses relative to supports, with scales locked…')
                     plan,fit=fit_relative_poses(plan,relative_search,supports,policy,guard=lambda:self.guard(sid));fits.append(fit)
                 elif policy and phase=='scaling' and relative_search:
                     from .reference_scale import fit_evidenced_scale
@@ -619,7 +619,7 @@ class ReferenceWorker:
                 if composition_plan is None and ordinal==0 and seed is None:plan,fits=fit_initial_positions(plan,effective,frames,catalogue,segments)
                 if not policy and geometry and phase=='placement':
                     from .reference_pose import fit_mask_poses
-                    self.status(job,'fitting','Ajustement des silhouettes sur les masques SAM de plusieurs vues…')
+                    self.status(job,'fitting','Fitting silhouettes to SAM masks from multiple views…')
                     plan,pose_fits=fit_mask_poses(plan,pose_frames,segments,geometry,self.artifacts,guard=lambda:self.guard(sid),fine=bundle.get('autonomous_refinement',False));fits.extend(pose_fits)
                 if policy and phase!='appearance':
                     from .reference_geometry import native_pose_precision
@@ -655,7 +655,7 @@ class ReferenceWorker:
                 job['attempts'].append(attempt);self.save(job)
                 with self.store.tx() as c:self.store.update_session(c,sid,state='applying',attempts_used=ordinal+1)
                 self.guard(sid);atomic(directory/f'plan-{ordinal}.json',command)
-                self.status(job,'rendering',f'Unity construit et vérifie le candidat {ordinal+1}/{bundle["max_iterations"]}…')
+                self.status(job,'rendering',f'Unity is building and checking candidate {ordinal+1}/{bundle["max_iterations"]}…')
                 native,capture=self.wait_render(job,ordinal)
                 plan=validate_native_placement(native,plan,effective,frames,catalogue,support_policies=command['supports'])
                 attempt['applied_plan']=plan
@@ -676,7 +676,7 @@ class ReferenceWorker:
                         native_poses={o['object_key']:pose(o['bbox_xyxy']) for o in native['composition_proof']['projected_objects']}
                         asset_names={a['asset_id']:a.get('name','') for a in catalogue}
                         names={o['key']:asset_names.get(o['asset_id'],'') for o in effective['objects']}
-                        self.status(job,'validating','Vérification des passages entre les portes et des accès aux meubles…')
+                        self.status(job,'validating','Checking door-to-door routes and furniture access…')
                         metrics['composition']['circulation']=check_circulation(job['composition']['layout_observation'],native_poses,job['composition']['screen_width_m'],job['composition']['screen_height_m'],names)
                     structure=native.get('room_finish',{}).get('architecture',{})
                     metrics['composition']['architecture']=structure
@@ -699,7 +699,7 @@ class ReferenceWorker:
                     from .reference_appearance import measure_capture_pair
                     metrics['appearance']=measure_capture_pair(appearance_reference,capture,effective,noise=job.get('capture_noise'))
                 if evaluation:
-                    self.status(job,'measuring','Mesures géométriques sur les poses réellement appliquées…')
+                    self.status(job,'measuring','Measuring geometry using the actual applied poses…')
                     job.setdefault('decisions',[]).append(dict(action='verifying',reason='after_native_contacts',ordinal=ordinal,version=native['version']))
                     metrics['geometry']=evaluation.measure(plan,native['version'])
                     payload('GeometryMetrics',metrics['geometry'])
@@ -712,7 +712,7 @@ class ReferenceWorker:
                 attempt.update(state='rendered',native=native,candidate_frames=candidates,metrics=metrics,performance=capture['result']['performance'])
                 if policy and ordinal==0 and evaluation and not metrics['geometry']['coverage_complete']:
                     from .reference_observation import acquire_observations
-                    self.status(job,'observing','Recherche bornée d’observations fiables pour les objets insuffisamment couverts…')
+                    self.status(job,'observing','Bounded search for reliable observations of insufficiently covered objects…')
                     def retain_observation(updated,proof):
                         job['segments']=updated;job['observation_followup']=proof;self.save(job)
                     updated,proof=acquire_observations(provider,self.artifacts,effective,frames,details,segments,metrics['geometry'],lambda:self.guard(sid),retain_observation)
@@ -759,7 +759,7 @@ class ReferenceWorker:
                 # the retained baseline and becomes evidence for the next one.
                 previous=best['applied_plan'];previous_frames=best['candidate_frames'];metrics=best['metrics']
             job['stop_reason']=stopping
-            self.status(job,'completed',('Parcours autonome terminé ; meilleur candidat conservé, écarts résiduels consignés. Fidélité exacte non démontrée.' if best['metrics']['contacts']['passed'] else 'Essai terminé avec contacts non résolus ; candidat conservé pour diagnostic, reproduction non validée.'),best_scene_path=best['native']['scene_path'],best_ordinal=best['ordinal'],best_score=best['metrics']['score'],fidelity_verified=False,contacts_passed=best['metrics']['contacts']['passed'])
+            self.status(job,'completed',('Autonomous workflow finished; best candidate retained and residual differences recorded. Exact fidelity has not been demonstrated.' if best['metrics']['contacts']['passed'] else 'Trial finished with unresolved contacts; candidate retained for diagnosis, reconstruction not validated.'),best_scene_path=best['native']['scene_path'],best_ordinal=best['ordinal'],best_score=best['metrics']['score'],fidelity_verified=False,contacts_passed=best['metrics']['contacts']['passed'])
             with self.store.tx() as c:self.store.update_session(c,sid,state='completed',verdict='inconclusive',stop_reason='Reference reproduction rendered; human fidelity review and invisible geometry remain unverified')
             self.export(job)
         except Exception as error:
@@ -791,47 +791,47 @@ class ReferenceWorker:
         atomic(directory/'report.json',report)
         rendered=[a for a in job['attempts'] if a['state']=='rendered']
         best=next((a for a in rendered if a['ordinal']==job.get('retained_ordinal',job.get('best_ordinal'))),None) or (min(rendered,key=candidate_rank) if rendered else None)
-        header='<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reproduction de la référence</title><style>body{background:#11151d;color:#edf2fa;font:16px system-ui;max-width:1400px;margin:30px auto;padding:20px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}img{width:100%}figure{margin:0}pre{white-space:pre-wrap}section{margin:28px 0}@media(max-width:700px){.pair{grid-template-columns:1fr}}</style><h1>Reproduction depuis la référence</h1>'
-        html=header+'<p>'+escape(job.get('message','En cours'))+'</p><p>La comparaison montre des rendus Unity originaux. La fidélité reste à apprécier ; le score mesure des écarts de pixels.</p>'
+        header='<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Reference reconstruction</title><style>body{background:#11151d;color:#edf2fa;font:16px system-ui;max-width:1400px;margin:30px auto;padding:20px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}img{width:100%}figure{margin:0}pre{white-space:pre-wrap}section{margin:28px 0}@media(max-width:700px){.pair{grid-template-columns:1fr}}</style><h1>Reconstruction from reference</h1>'
+        html=header+'<p>'+escape(job.get('message','In progress'))+'</p><p>The comparison shows original Unity renders. Fidelity still needs review; the score measures pixel differences.</p>'
         if job.get('composition'):
-            html+='<p>Composition mesurée dans Unity avec une caméra orthographique fixe. Le classement utilise les contraintes géométriques ; les boîtes ne certifient pas les silhouettes ni les ouvertures.</p>'
-            html+='<table><tr><th>Candidat</th><th>Erreur de placement</th><th>Contraintes des boîtes</th><th>Décision</th></tr>'
+            html+='<p>Composition measured in Unity using a fixed orthographic camera. Ranking uses geometric constraints; bounds do not certify silhouettes or openings.</p>'
+            html+='<table><tr><th>Candidate</th><th>Placement error</th><th>Bounding box constraints</th><th>Decision</th></tr>'
             for row in rendered:
                 measured=row['metrics'].get('composition',{});loss=(measured.get('objective') or {}).get('loss')
-                html+='<tr><td>'+str(row['ordinal']+1)+'</td><td>'+('non mesurée' if loss is None else f'{loss:.6g}')+'</td><td>'+('respectées' if measured.get('bounds_admissible') else 'écarts non résolus')+'</td><td>'+('retenu' if row.get('retained') else 'rejeté')+'</td></tr>'
-            html+='</table><p>Portes, silhouettes, identité des assets et surfaces cachées : non qualifiées.</p>'
+                html+='<tr><td>'+str(row['ordinal']+1)+'</td><td>'+('not measured' if loss is None else f'{loss:.6g}')+'</td><td>'+('satisfied' if measured.get('bounds_admissible') else 'unresolved differences')+'</td><td>'+('retained' if row.get('retained') else 'rejected')+'</td></tr>'
+            html+='</table><p>Doors, silhouettes, asset identity, and hidden surfaces: not qualified.</p>'
         if job.get('fidelity_policy'):
-            html+='<p>Classement géométrique indépendant de la couleur ; mesures après contacts Unity. Motif de fin : '+escape(job.get('stop_reason','essai en cours'))+'.</p>'
-            html+='<table><tr><th>Candidat</th><th>Expérience</th><th>Erreur de silhouettes</th><th>Décision</th></tr>'
+            html+='<p>Geometry ranking independent of color; measurements taken after Unity contact checks. Stop reason: '+escape(job.get('stop_reason','trial in progress'))+'.</p>'
+            html+='<table><tr><th>Candidate</th><th>Experiment</th><th>Silhouette error</th><th>Decision</th></tr>'
             for row in rendered:
                 geometry=row['metrics'].get('geometry',{});value=geometry.get('score')
                 reasons=', '.join(r['kind']+(' : '+r['object_key'] if r.get('object_key') else '') for r in row.get('regressions',[]))
-                html+='<tr><td>'+str(row['ordinal'])+'</td><td>'+escape(row.get('phase',''))+'</td><td>'+('non mesurée' if value is None else f'{value:.4f}')+'</td><td>'+escape('retenu à cette étape' if row.get('retained') else reasons or 'non retenu')+'</td></tr>'
+                html+='<tr><td>'+str(row['ordinal'])+'</td><td>'+escape(row.get('phase',''))+'</td><td>'+('not measured' if value is None else f'{value:.4f}')+'</td><td>'+escape('retained at this stage' if row.get('retained') else reasons or 'not retained')+'</td></tr>'
             html+='</table>'
             if best and best['metrics'].get('geometry'):
-                html+='<table><tr><th>Objet</th><th>IoU visible</th><th>Erreur de contour (px)</th><th>Couverture</th></tr>'
+                html+='<table><tr><th>Object</th><th>IoU visible</th><th>Erreur de contour (px)</th><th>Couverture</th></tr>'
                 for key,row in best['metrics']['geometry']['per_object'].items():
                     iou=row['mean_iou'];contour=row['contour_error_px']
-                    html+='<tr><td>'+escape(key)+'</td><td>'+('non mesurée' if iou is None else f'{iou:.3f}')+'</td><td>'+('non mesurée' if contour is None else f'{contour:.2f}')+'</td><td>'+escape('observations disponibles' if row['covered'] else ', '.join(row['missing_reasons']))+'</td></tr>'
-                html+='</table><p>Les silhouettes ne certifient ni les surfaces cachées ni une pose exacte.</p>'
+                    html+='<tr><td>'+escape(key)+'</td><td>'+('not measured' if iou is None else f'{iou:.3f}')+'</td><td>'+('not measured' if contour is None else f'{contour:.2f}')+'</td><td>'+escape('observations available' if row['covered'] else ', '.join(row['missing_reasons']))+'</td></tr>'
+                html+='</table><p>Silhouettes do not certify hidden surfaces or an exact pose.</p>'
         if job.get('memory'):
-            html+='<p>Vue prioritaire : '+escape(job['memory']['priority_view'])+'. <a href="memory.json">Mémoire des mesures et essais</a>. Les écarts restent non résolus tant que leur absence n’est pas démontrée.</p>'
+            html+='<p>Priority view: '+escape(job['memory']['priority_view'])+'. <a href="memory.json">Measurement and trial memory</a>. Differences remain unresolved until evidence shows they are absent.</p>'
         if best:
-            html+='<table><tr><th>Objet</th><th>Écart moyen de couleur — dessus</th><th>Support</th><th>Vues avec masque</th></tr>'
+            html+='<table><tr><th>Object</th><th>Mean color difference — top view</th><th>Support</th><th>Views with masks</th></tr>'
             for key,measured in best['metrics'].get('per_object',{}).items():
                 error=measured.get('priority_rgb_mae');contact=measured.get('support_contact')
-                html+='<tr><td>'+escape(key)+'</td><td>'+('non mesuré' if error is None else f'{100*error:.1f} %')+'</td><td>'+('contact contrôlé' if contact and contact['status']=='contact' else 'non certifié')+'</td><td>'+str(len(measured.get('mask_views',[])))+'</td></tr>'
-            html+='</table><p>Ces mesures décrivent les écarts ; elles ne constituent pas un pourcentage de fidélité.</p>'
+                html+='<tr><td>'+escape(key)+'</td><td>'+('not measured' if error is None else f'{100*error:.1f} %')+'</td><td>'+('contact checked' if contact and contact['status']=='contact' else 'not certified')+'</td><td>'+str(len(measured.get('mask_views',[])))+'</td></tr>'
+            html+='</table><p>These measurements describe differences; they are not a fidelity percentage.</p>'
             right={frame['key']:frame for frame in best['candidate_frames']}
             for frame in sorted(job['frames'],key=lambda f:f['key']!=job.get('memory',{}).get('priority_view')):
                 html+='<section><h2>'+escape(frame['key'])+'</h2><div class="pair">'
-                for name,item in [('Référence',frame),('Reconstruction — candidat '+str(best['ordinal']+1),right[frame['key']])]:
+                for name,item in [('Reference',frame),('Reconstruction — candidate '+str(best['ordinal']+1),right[frame['key']])]:
                     encoded=base64.b64encode(self.artifacts.read(item['artifact_hash'])).decode();html+='<figure><figcaption>'+escape(name)+'</figcaption><img src="data:image/png;base64,'+encoded+'"></figure>'
                 html+='</div></section>'
-            html+='<details><summary>Mesures et limites</summary><pre>'+escape(json.dumps(best['metrics'],ensure_ascii=False,indent=2))+'</pre></details>'
+            html+='<details><summary>Measurements et limites</summary><pre>'+escape(json.dumps(best['metrics'],ensure_ascii=False,indent=2))+'</pre></details>'
         if job.get('detail_frames'):
-            html+='<p><a href="details.html">Voir les gros plans par objet et les variantes retenues</a></p>'
-            detail_html=header+'<p>Gros plans originaux associés aux objets observés. Une association par région peut rester ambiguë en cas d’occlusion.</p>'
+            html+='<p><a href="details.html">View object close-ups and retained variants</a></p>'
+            detail_html=header+'<p>Original close-ups linked to observed objects. Region associations may remain ambiguous under occlusion.</p>'
             preview_file=directory/'preview-result.json';previews=json.loads(preview_file.read_text()) if preview_file.exists() else []
             catalogue_file=directory/job['bundle']['catalogue_file'];asset_names={a['asset_id']:a['name'] for a in json.loads(catalogue_file.read_text())}
             effective=job.get('effective_analysis',job.get('analysis_response',{}).get('value',{}))
@@ -843,8 +843,8 @@ class ReferenceWorker:
                     encoded=base64.b64encode(self.artifacts.read(frame['artifact_hash'])).decode();detail_html+='<figure><figcaption>'+escape(frame.get('angle',frame['acquisition']))+'</figcaption><img src="data:image/png;base64,'+encoded+'"></figure>'
                 preview=next((p for p in previews if p['asset_id']==item['asset_id'] and p.get('file')),None)
                 if preview:
-                    path=contained(directory,directory/preview['file']);encoded=base64.b64encode(path.read_bytes()).decode();detail_html+='<figure><figcaption>Variante retenue : '+escape(asset_names.get(item['asset_id'],item['asset_id']))+'</figcaption><img src="data:image/png;base64,'+encoded+'"></figure>'
+                    path=contained(directory,directory/preview['file']);encoded=base64.b64encode(path.read_bytes()).decode();detail_html+='<figure><figcaption>Retained variant: '+escape(asset_names.get(item['asset_id'],item['asset_id']))+'</figcaption><img src="data:image/png;base64,'+encoded+'"></figure>'
                 detail_html+='</div></section>'
             temp=directory/'details.html.writing';temp.write_text(detail_html+'</html>');temp.replace(directory/'details.html')
-        html+='<p>Appels réglés : '+str(report['settled_usd_micro']/1e6)+' $ ; engagements conservés : '+str(report['reserved_usd_micro']/1e6)+' $.</p></html>'
+        html+='<p>Settled calls: '+str(report['settled_usd_micro']/1e6)+' $ ; retained reservations: '+str(report['reserved_usd_micro']/1e6)+' $.</p></html>'
         temp=directory/'comparison.html.writing';temp.write_text(html);temp.replace(directory/'comparison.html')

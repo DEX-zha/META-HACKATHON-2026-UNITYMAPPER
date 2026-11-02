@@ -250,3 +250,9 @@ Limites actuelles : ce socle n'est pas encore branché à la génération du cha
 ## House v1 — jalon exécutable du 1 novembre 2026
 
 Admission chat et assemblage isolé reliés, contrôles natifs de supports/parcours, inspection SAM/Muse et premiers détails sur supports qualifiés. **337 tests Python**, suites Go et cinq cas natifs de parcours passent. Le bureau avec huit équipements/accessoires a été exécuté dans Unity ; source préservée. La génération de maison complète, la boucle native de corrections, les étages et l'ambiance finale restent ouverts. État détaillé : [house-implementation-tests.md](house-implementation-tests.md) ; tâches T228 cochée, autres tâches seulement selon leurs preuves existantes.
+
+## Public activity and reload diagnosis (2026-11-02)
+
+The chat exposes a persistent chronological activity journal. It distinguishes structured model proposals/observations from execution stages; it does not expose private model reasoning or imply a proposal was applied. Entries survive service restarts and include room dimensions, selected prefabs, group descriptions and visual defects. Existing correction receipts remain the evidence for acceptance.
+
+A recovery diagnostic reads only an identity-matching local native receipt. `DOMAIN_RELOAD` is now explained in the chat; an unknown command remains unknown and is never silently replayed or marked successful. Native commands defer assembly reload until their terminal receipt is written. This prevents recompilation during a command, but does not implement recovery across editor crashes or between-command reloads. Explicit receipt/scene reconciliation (T065) remains unfinished; the interrupted historical run has not been resumed.

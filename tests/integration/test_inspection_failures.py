@@ -154,7 +154,7 @@ def test_comparison_escapes_model_text_and_labels_offline_evidence(scenario):
     runner.run(sid)
     html=comparison_html(runner.store,runner.artifacts,sid)
     assert '<script>' not in html and '&lt;script&gt;' in html
-    assert 'Médias offline ou de test' in html
+    assert 'Offline or test media' in html
     assert 'hidden-corner' in html  # operator report includes controls; planner never does
     assert 'data:image/png;base64,' in html
 
@@ -164,7 +164,7 @@ def test_zero_patch_report_identifies_the_current_failure_without_old_candidate_
     runner,sid,commands,diagnosis,proposal,version=scenario
     runner._update(sid,state='interrupted',verdict='inconclusive',stop_reason='PROVIDER_OUTCOME_UNKNOWN <script>unsafe</script>')
     html=comparison_html(runner.store,runner.artifacts,sid)
-    assert sid in html and 'Aucun candidat à comparer' in html and 'PROVIDER_OUTCOME_UNKNOWN' in html
+    assert sid in html and 'No candidate to compare' in html and 'PROVIDER_OUTCOME_UNKNOWN' in html
     assert '<img' not in html and 'data:image/png' not in html
     assert '<script>' not in html and '&lt;script&gt;' in html
     report=build(runner.store,runner.artifacts,sid)
@@ -184,6 +184,6 @@ def test_pending_artistic_feedback_is_visible_without_approving_a_candidate(scen
     assert data['repair_validated'] is False
     assert any('Corner leak' in item for item in data['unresolved'])
     html=comparison_html(runner.store,runner.artifacts,sid)
-    assert 'Avis artistique en attente' in html and 'Corner leak' in html
+    assert 'Pending artistic review' in html and 'Corner leak' in html
     assert '<script>' not in html and '&lt;script&gt;' in html
     assert runner.store.get('sessions',sid)['verdict']=='inconclusive'

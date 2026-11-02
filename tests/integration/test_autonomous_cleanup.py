@@ -234,7 +234,7 @@ def test_rejected_later_patch_preserves_the_earlier_provisional_candidate(tmp_pa
     assert body['automatic_pass']['candidate_version']=='v1'
     assert body['automatic_pass']['human_review_required'] is True
     assert any('Residual defect' in item for item in body['unresolved'])
-    assert 'Candidat v1' in comparison_html(runner.store,runner.artifacts,sid)
+    assert 'Candidate v1' in comparison_html(runner.store,runner.artifacts,sid)
 
 
 def test_unknown_technical_evidence_stops_without_chaining_candidates(tmp_path,monkeypatch):

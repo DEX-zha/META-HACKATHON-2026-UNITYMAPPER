@@ -94,3 +94,43 @@ def test_house_run_rebuilds_reinspects_and_persists_selected_candidate(tmp_path,
     assert result['house']['requirements'][0]['status']=='satisfied'
     # Gate evidence is not fabricated just because a correction improved exposure.
     assert result['quality_state']=='incomplete' and result['execution_state']=='stalled'
+
+
+def test_public_activity_preserves_order_and_survives_service_reload(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id'])
+    h.save(row,'outline','Planning rooms')
+    value=dict(title='Office',rooms=[dict(purpose='Office',width_m=6,depth_m=3,floor_index=0,brief='Keep a clear route')],unresolved=[])
+    monkeypatch.setattr(h,'provider_call',lambda *args:value)
+    h.ask(row,'outline','test','ModelHouseOutline')
+    progress=h.get(r['action_id'])['progress'];events=progress['activity']
+    assert [e['kind'] for e in events]==['house.progress','house.progress','house.decision']
+    assert 'Keep a clear route' in events[-1]['message']
+    assert events[-1]['status']=='proposal_or_observation'
+    fresh=HouseService(h.settings,h.store,h.queue,h.artifacts,threading.Event())
+    assert fresh.get(r['action_id'])['progress']['activity']==events
+
+
+def test_recovery_does_not_claim_success_or_replay(tmp_path):
+    h,r=house_setup(tmp_path);h.admit(r)
+    h.next_ready();h.recover_startup()
+    diagnostic=h.get(r['action_id'])['progress']['recovery']
+    assert diagnostic['automatic_retry'] is False
+    assert diagnostic['cause']=='UNVERIFIED_NATIVE_OUTCOME'
+    assert h.next_ready() is None
+
+
+def test_recovery_diagnosis_requires_matching_native_receipt(tmp_path):
+    import json
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id'])
+    with h.store.tx() as c:
+        project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()
+        c.execute("UPDATE house_actions SET state='recovery_required' WHERE id=?",(row['id'],))
+        c.execute('INSERT INTO commands(id,session_id,project_id,epoch,kind,status,body,payload_hash) VALUES(?,?,?,?,?,?,?,?)',('native-test',row['session_id'],row['project_id'],project['epoch'],'build_house','unknown','{}','a'*64))
+    root=h.settings.project_path(json.loads(project['body'])['project_root'])
+    path=root/'.hdrp-agent/bridge/receipts/native-test.json';path.parent.mkdir(parents=True,exist_ok=True)
+    receipt=dict(command_id='native-test',payload_hash='a'*64,bridge_epoch=project['epoch'],result=dict(status='unknown',error=dict(code='DOMAIN_RELOAD')))
+    path.write_text(json.dumps(receipt))
+    assert h.get(r['action_id'])['progress']['recovery']['cause']=='DOMAIN_RELOAD'
+    receipt['payload_hash']='b'*64;path.write_text(json.dumps(receipt))
+    assert h.get(r['action_id'])['progress']['recovery']['cause']=='UNVERIFIED_NATIVE_OUTCOME'
+    with h.store.connect() as c:assert c.execute("SELECT status,result FROM commands WHERE id='native-test'").fetchone()['status']=='unknown'

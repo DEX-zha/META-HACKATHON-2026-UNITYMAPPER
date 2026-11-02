@@ -7,7 +7,7 @@ from hdrp_agent.providers.meta_responses import strict_schema
 
 
 def action():
-    return dict(schema_version='1.0',action_id='a1',project_id='p1',conversation_id='c1',message_id='m1',kind='reconstruct_reference',expected_scene_version='v1',artifact_hashes=['a'*64],parameters=dict(brief='Reproduis cette pièce',reference_hashes=['a'*64],building_policy='atmospheric-house',interior_style='B',ceiling_prefab='Ceiling_3x3'),idempotency_key='k1')
+    return dict(schema_version='1.0',action_id='a1',project_id='p1',conversation_id='c1',message_id='m1',kind='reconstruct_reference',expected_scene_version='v1',artifact_hashes=['a'*64],parameters=dict(brief='Recreate this room',reference_hashes=['a'*64],building_policy='atmospheric-house',interior_style='B',ceiling_prefab='Ceiling_3x3'),idempotency_key='k1')
 
 
 def test_typed_reconstruction_contract():

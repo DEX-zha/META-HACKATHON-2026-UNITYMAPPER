@@ -20,7 +20,7 @@ PY
 if ! healthy; then
   .venv/bin/hdrp-agent --env-file .env serve --provider-mode live >.hdrp-agent/chat/backend.log 2>&1 &
   backend_pid=$!
-  for _ in {1..30}; do if healthy; then break; fi; if ! kill -0 "$backend_pid" 2>/dev/null; then echo 'Le service Python ne démarre pas ; consulter .hdrp-agent/chat/backend.log.' >&2; exit 1; fi; sleep 1; done
+  for _ in {1..30}; do if healthy; then break; fi; if ! kill -0 "$backend_pid" 2>/dev/null; then echo 'The Python service did not start; check .hdrp-agent/chat/backend.log.' >&2; exit 1; fi; sleep 1; done
   healthy || { echo 'Service Python indisponible.' >&2; exit 1; }
 fi
 (cd apps/unitymapper && go build -o "$workspace/.hdrp-agent/unitymapper" ./cmd/unitymapper)

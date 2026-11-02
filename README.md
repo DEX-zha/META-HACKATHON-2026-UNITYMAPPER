@@ -1,52 +1,66 @@
 # UnityMapper
 
-Agent local de construction et d’inspection visuelle de scènes Unity HDRP, avec Muse Spark et SAM 3.1. Le socle fonctionne avec un adaptateur Unity et un service Python ; le serveur Go et son stockage sont implémentés. **Le chat Muse est connecté : conversations persistantes, références PNG/JPEG et lancement de reconstruction Unity.**
+A local agent for building and visually inspecting Unity HDRP scenes with Muse Spark and SAM 3.1. A Go chat application connects to a Python execution service and a Unity editor package.
 
-## État et plan
+Describe a room or attach a reference image. The agent selects project prefabs, proposes a layout, assembles and inspects functional zones, and attempts corrections while retaining evidence and unresolved requirements.
 
-- [Spécification](specs/003-hdrp-scene-agent/spec.md)
-- [Plan principal](specs/003-hdrp-scene-agent/plan.md)
-- [Application Go et chat projet](specs/003-hdrp-scene-agent/chat-plan.md)
-- [Tâches](specs/003-hdrp-scene-agent/tasks.md) — livraison suivante T151–T190
-- [État d’implémentation et limites](specs/003-hdrp-scene-agent/implementation-status.md)
+## Current capabilities
 
-La fidélité absolue à une image n’est pas démontrée. Les inspections de pièce utilisent des vues natives, des mesures géométriques et des masques SAM ; une bonne métrique ne suffit pas à conclure à une reproduction exacte.
+- Project-scoped conversations, SQLite history, and PNG/JPEG references.
+- House generation from a brief and the legacy reference-reconstruction workflow.
+- Native prefab placement, support and circulation checks, and progressive zone inspection.
+- Live Unity inspection streams, saved captures, and actual SAM mask overlays.
+- Persistent Markdown memory and targeted replanning when a correction cannot be executed.
+- Native lighting-reference data exported from `House_clean_day.unity`.
 
-## Installation du socle
+Exact reconstruction fidelity and artistic quality are not guaranteed. Passing geometric checks does not establish a faithful or finished render. Automated baking, some asset replacement and wall-mounting operations, and visual catalogue browsing remain incomplete. The full progressive Unity/SAM/Muse workflow still needs release qualification.
 
-Prérequis : macOS Apple Silicon pour la recette actuelle, Unity **6000.3.23f1**, HDRP **17.3.0**, `uv`, Python 3.12 et FFmpeg. Go 1.27.3 sera utilisé pour l’application.
+## Plans and implementation status
+
+- [Specification](specs/003-hdrp-scene-agent/spec.md)
+- [Main plan](specs/003-hdrp-scene-agent/plan.md)
+- [House generation plan](specs/003-hdrp-scene-agent/house-plan.md)
+- [Go application and project chat](specs/003-hdrp-scene-agent/chat-plan.md)
+- [Tasks](specs/003-hdrp-scene-agent/tasks.md)
+- [Implementation status and limitations](specs/003-hdrp-scene-agent/implementation-status.md)
+
+## Setup
+
+The current validation environment uses macOS on Apple Silicon, Unity **6000.3.23f1**, HDRP **17.3.0**, Python 3.12, `uv`, FFmpeg, and Go 1.27.3.
 
 ```sh
 uv sync --locked
 cp .env.example .env
-# Renseigner la clé dans .env, jamais dans les sources ou le navigateur.
+# Set the API key in .env, never in source files or the browser.
 .venv/bin/hdrp-agent --env-file .env serve --provider-mode live
 ```
 
-Ouvrir `unity/HDRPValidation` dans Unity. Le package local est situé dans `unity/Packages/com.hackathon.hdrp-agent`. Installer le pack AtmosphericHouse dans `Assets/AtmosphericHouse` pour les recettes de reconstruction ; ses modèles et textures ne sont pas inclus dans ce dépôt. Les scènes `gp.unity` et les prefabs référencés nécessitent ce pack.
+Open `unity/HDRPValidation` in Unity. The local package is in `unity/Packages/com.hackathon.hdrp-agent`. Install AtmosphericHouse under `Assets/AtmosphericHouse`; its models and textures are not included in this repository. The `gp.unity` scene and referenced prefabs require that asset pack.
 
-Consulter le [guide du socle](specs/003-hdrp-scene-agent/quickstart.md) pour configurer le budget initial, les capacités et les recettes. Le grand livre global local ne doit jamais être réinitialisé à chaque lancement. Le dépôt ne contient ni clé, ni solde privé, ni captures/run locaux.
+See the [backend quickstart](specs/003-hdrp-scene-agent/quickstart.md) for budget setup, capabilities, and validation procedures. Never reset the global local ledger on startup. This repository contains no API keys, private balances, or local run captures.
 
-## Vérification
+## Local chat
 
-```sh
-.venv/bin/pytest -q
-```
-
-Les tests Unity utilisent le Test Runner et le pont de recette du package. Les preuves locales vont dans `.hdrp-agent/reports/`, ignoré par Git. Les scènes expérimentales sous `Assets/AgentWorkspace` et les caches Unity sont également exclus.
-
-Le parcours et les limites sont décrits dans [chat-quickstart.md](specs/003-hdrp-scene-agent/chat-quickstart.md).
-
-## Chat local
-
-Depuis la racine :
+From the repository root:
 
 ```sh
 ./scripts/run-chat.sh
 ```
 
-Le lanceur réutilise le service Python existant ou le démarre, construit Go et ouvre le navigateur avec une session locale privée. Dans Unity, activer **Window → HDRP Agent → Connect Local Service**. Choisir le projet, joindre une image PNG/JPEG et demander une analyse ou une reconstruction avec les prefabs du projet.
+The launcher reuses an existing Python service or starts one, builds the Go application, and opens an authenticated local browser session. In Unity, enable **Window → HDRP Agent → Connect Local Service**. Select the project, describe a scene, and optionally attach PNG/JPEG references.
 
-Les conversations survivent au redémarrage. Une livraison inconnue n’est jamais rejouée automatiquement. Les coûts passent par le grand livre Python existant ; le chat a une enveloppe initiale de 2 USD. Les actions de reconstruction ont leur admission budgétaire existante. Ctrl+C ferme Go et uniquement le backend démarré par ce lanceur.
+Conversations survive restarts. Unknown deliveries are never replayed automatically. Costs use the existing Python ledger; the chat has an initial 2 USD allowance within the shared budget. Generation actions use their own existing budget admission checks. Ctrl+C closes Go and only the backend started by this launcher.
 
-Cette version accepte jusqu’à trois images de 10 Mo, affiche les actions et propose leur arrêt. Le suivi utilise une interrogation toutes les deux secondes. La vidéo, les corrections conversationnelles d’un run, les preuves visuelles intégrées et la mémoire résumée restent à livrer. Le lancement d’une action ne constitue pas une validation de fidélité.
+The interface accepts up to three images of 10 MB each. Action status is polled every two seconds. The visual inspector streams the camera while Unity is rendering and keeps saved captures and segmentation evidence. A started or completed action is not proof of fidelity or artistic acceptance.
+
+See [chat-quickstart.md](specs/003-hdrp-scene-agent/chat-quickstart.md) for validation scenarios and limitations.
+
+## Verification
+
+```sh
+.venv/bin/pytest -q
+cd apps/unitymapper
+go test ./...
+```
+
+Unity tests use the Test Runner and the package validation bridge. Local evidence is written to `.hdrp-agent/reports/`, which Git ignores. Experimental scenes under `Assets/AgentWorkspace` and Unity caches are also excluded.

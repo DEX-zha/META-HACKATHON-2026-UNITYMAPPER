@@ -32,7 +32,7 @@ func TestConversationDispatchPersistenceAndAction(t *testing.T) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			time.Sleep(40 * time.Millisecond)
-			json.NewEncoder(w).Encode(map[string]any{"turn_id": body["turn_id"], "project_id": "p", "conversation_id": "c", "message_id": "m", "state": "complete", "response": map[string]any{"text": "Préparation demandée.", "tools": []map[string]any{{"kind": "reconstruct_reference", "parameters": map[string]any{"brief": "x"}}}}})
+			json.NewEncoder(w).Encode(map[string]any{"turn_id": body["turn_id"], "project_id": "p", "conversation_id": "c", "message_id": "m", "state": "complete", "response": map[string]any{"text": "Preparation requested.", "tools": []map[string]any{{"kind": "reconstruct_reference", "parameters": map[string]any{"brief": "x"}}}}})
 		case "/v1/app/actions":
 			actions.Add(1)
 			json.NewEncoder(w).Encode(map[string]any{"state": "preparing", "run_id": "run"})
@@ -86,7 +86,7 @@ func TestConversationDispatchPersistenceAndAction(t *testing.T) {
 	}
 	defer db.Close()
 	messages, _ := db.Messages(ctx, "c")
-	if len(messages) != 2 || messages[1].Text != "Préparation demandée." {
+	if len(messages) != 2 || messages[1].Text != "Preparation requested." {
 		t.Fatal(messages)
 	}
 	a, _ := db.Actions(ctx, "c")
@@ -112,7 +112,7 @@ func TestActionRejectionPreservesBackendCode(t *testing.T) {
 			var body map[string]any
 			json.NewDecoder(r.Body).Decode(&body)
 			time.Sleep(40 * time.Millisecond)
-			json.NewEncoder(w).Encode(map[string]any{"turn_id": body["turn_id"], "project_id": "p", "conversation_id": "c", "message_id": "m", "state": "complete", "response": map[string]any{"text": "Préparation demandée.", "tools": []map[string]any{{"kind": "reconstruct_reference", "parameters": map[string]any{"brief": "x"}}}}})
+			json.NewEncoder(w).Encode(map[string]any{"turn_id": body["turn_id"], "project_id": "p", "conversation_id": "c", "message_id": "m", "state": "complete", "response": map[string]any{"text": "Preparation requested.", "tools": []map[string]any{{"kind": "reconstruct_reference", "parameters": map[string]any{"brief": "x"}}}}})
 		case "/v1/app/actions":
 			actions.Add(1)
 			w.WriteHeader(http.StatusConflict)
@@ -167,7 +167,7 @@ func TestActionRejectionPreservesBackendCode(t *testing.T) {
 	}
 	defer db.Close()
 	messages, _ := db.Messages(ctx, "c")
-	if len(messages) != 2 || messages[1].Text != "Préparation demandée." {
+	if len(messages) != 2 || messages[1].Text != "Preparation requested." {
 		t.Fatal(messages)
 	}
 	a, _ := db.Actions(ctx, "c")

@@ -98,7 +98,7 @@ func (s *Server) Handler() http.Handler {
 			return
 		}
 		var result json.RawMessage
-		if e := s.Service.Agent.Do(r.Context(), "POST", "/v1/app/actions/"+id+"/stop", map[string]string{"reason": "Arrêt demandé depuis le chat"}, &result); e != nil {
+		if e := s.Service.Agent.Do(r.Context(), "POST", "/v1/app/actions/"+id+"/stop", map[string]string{"reason": "Stop requested from chat"}, &result); e != nil {
 			failure(w, 502, "stop_unconfirmed")
 			return
 		}
