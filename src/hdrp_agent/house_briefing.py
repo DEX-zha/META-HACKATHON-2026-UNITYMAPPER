@@ -3,7 +3,8 @@ from .domain import canonical
 from .house_planning import RECIPES
 from .house_floor_details import floor_detail
 
-ROOM_POLICY = '''Design an inhabited room, not just the single furniture item named by its purpose.
+ROOM_POLICY = '''The native architecture builder supplies walls, floor, ceiling tiles and visible Lamp_ceiling_round ceiling lights with HDRP sources for every room. Ceiling_3x3 is a ceiling TILE, not a lamp. Do not invent an unsupported custom furnishing requirement for these built-in architectural elements. A specifically requested desk lamp or other fixture remains a separate need.
+Design an inhabited room, not just the single furniture item named by its purpose.
 First fulfil explicit requests and exclusions. Furnished is the default unless the user asks for empty,
 minimal, shell-only, or an exact inventory. Infer useful complementary activities from the room purpose:
 - office: work equipment, library/storage with books, greenery, and a reading or visitor corner when space allows;
