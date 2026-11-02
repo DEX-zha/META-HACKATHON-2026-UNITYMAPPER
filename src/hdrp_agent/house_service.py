@@ -7,6 +7,8 @@ import time
 import uuid
 from copy import deepcopy
 from .house_convergence import converge, signature
+from .house_media import inspection_batches
+from .house_memory import HouseMemory
 from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
 from .store import utc_now
@@ -48,6 +50,7 @@ class HouseService:
         with self.store.tx() as c:
             c.execute('UPDATE house_actions SET checkpoint=? WHERE id=?',(row['checkpoint'],row['id']))
             self.store.event(c,row['id'],'house.progress',dict(run_id=row['run_id'],stage=stage,message=message))
+        HouseMemory(self.settings.state,row['run_id']).state(checkpoint)
         return checkpoint
     def admit(self,request):
         request=payload('AppActionRequest',request)
@@ -111,7 +114,9 @@ class HouseService:
             if not row:return None
             c.execute("UPDATE house_actions SET state='running' WHERE id=?",(row['id'],));return row['id']
     def ask(self,row,key,text,schema,images=()):
-        return self.provider_call(row,key,spark_request(text,list(images),schema),schema)
+        value=self.provider_call(row,key,spark_request(text,list(images),schema),schema)
+        HouseMemory(self.settings.state,row['run_id']).note(key,value)
+        return value
     def provider_call(self,row,key,request,schema=None):
         self.guard(row);digest=fingerprint(request)
         with self.store.tx() as c:
@@ -242,10 +247,10 @@ class HouseService:
                 segments.append(dict(capture_hash=c['artifact_hash'],scene_version=proof['scene_version'],room_id=room['id'],concept='furniture',regions=regions))
                 self.save(row,'inspection','Segmentation enregistrée : '+room['id'],segmentations=segments,last_evidence_at=utc_now())
             # Twelve is the provider transport maximum, never a semantic truncation.
-            for batch_index,start in enumerate(range(0,len(captures),12)):
-                batch=captures[start:start+12];hashes=[c['artifact_hash'] for c in batch]
-                context=self.houses.context(run,room['id'])
-                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(context)[:12]+'-'+str(batch_index),'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. '+canonical(dict(room=room,instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',[self.artifacts.read(h) for h in hashes])
+            for batch_index,(batch,images) in enumerate(inspection_batches(captures,self.artifacts.read)):
+                hashes=[c['artifact_hash'] for c in batch]
+                context=HouseMemory(self.settings.state,run).compact(room['id'],self.houses.context(run,room['id']))
+                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(context)[:12]+'-'+str(batch_index),'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. '+canonical(dict(room=room,instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Inspection room identity differs')
                 for index,defect in enumerate(review['observations']):
                     observations.append(dict(defect,room_id=room['id'],evidence_ids=hashes))
@@ -259,7 +264,7 @@ class HouseService:
         for room in outline['rooms']:
             local=[o for o in observations if o['room_id']==room['id'] and o['kind'] in {'missing','composition'}]
             if not local:continue
-            context=self.houses.context(row['run_id'],room['id'])
+            context=HouseMemory(self.settings.state,row['run_id']).compact(room['id'],self.houses.context(row['run_id'],room['id']))
             key='enrich-'+room['id']+'-'+fingerprint(dict(manifest=signature(manifest),context=context))[:16]
             supports=[dict(instance_id=i['id'],prefab_name=name,regions=a.get('support_regions',[]),surfaces=[dict(id=s['id'],height_m=s.get('height_m')) for s in a.get('surfaces',[])],children=[child['id'] for child in manifest['instances'] if child['support_id']==i['id']]) for i in manifest['instances'] if i['room_id']==room['id'] for name,a in assets.items() if a['prefab_guid']==i['prefab_guid'] and a.get('support_regions')]
             addition=self.ask(row,key,'Propose ONLY additions to repair the reported missing equipment or sparse composition. Keep every existing instance. Return empty groups/detail_assets when no qualified safe addition can address these defects; explain unsupported needs in unresolved. Do not substitute random props for missing rugs, lamps or paintings. When storage is too empty, plan a complete coherent enrichment across several shelf compartments in this pass, not a token single book. Repeated book-cluster prefabs are allowed. Use measured support capacity and occupied children; keep some calm/empty space. Return all proposed detail_assets, without a fixed item quota. '+room_prompt(room,json.loads(row['request'])['parameters']['brief'],assets)+' Current instances, defects and persistent requirements: '+canonical(dict(instances=[i for i in manifest['instances'] if i['room_id']==room['id']],observations=local,context=context,supports=supports)),'ModelHouseRoom')

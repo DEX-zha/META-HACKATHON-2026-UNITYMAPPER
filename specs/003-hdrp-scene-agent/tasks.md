@@ -762,3 +762,6 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 ### Boucle après constat de défauts
 
 - [x] T255 Relier inspection, corrections de groupes/exposition et compléments de pièce dans une boucle sans quota d'essais ; conserver le meilleur candidat et l'inventaire, réinspecter chaque candidat, rejeter les régressions et exposer passes/motifs d'arrêt. Tester au-delà de six passes, rollback, enrichissement avec mobilier existant et un essai Unity.
+
+- [x] T256 Corriger le HTTP 413 d’inspection par lots dimensionnés en octets sans supprimer de vues ; assembler des luminaires plafond entiers avec sources HDRP et reçus, puis tester la compilation native et une pièce. Contrôler explicitement les zones encore vides/éclairage fonctionnel. Le bake et la recette artistique restent T240–T243.
+- [x] T257 Ajouter des mémoires Markdown persistantes (état, pièce, analyses), compacter le contexte par pièce sans perdre besoins/rejets ni archives de preuves ; vérifier la persistance et leur injection dans les appels modèle.
