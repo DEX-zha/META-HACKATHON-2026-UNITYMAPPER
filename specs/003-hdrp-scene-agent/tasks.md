@@ -849,3 +849,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T315 Add typed, visually qualified wall/window attachments for posters and curtains, with native-scale bounds, opening/collision checks, native contact receipts and source preservation; demonstrate them in an autonomous inhabited bedroom.
 
 - [x] T316 Route measured explicit group floor coverings through floor-detail placement, preserving intent and requirements without rejecting independent furniture. Native-size fit, identity/priority, unresolved floor space and spoofed/non-walkable asset tests pass; full Python suite: 428 passed. Offline replay of attempt 5 preflight 3 retains all 19 instances with no missing requirements or internal collisions. Native qualification remains pending.
+
+- [ ] T317 Qualify upper wall/ceiling trim closure with dedicated native seam/grazing-ray measurements and matched lighting comparisons; distinguish opaque single-sided source materials from actual geometry gaps and shadow leakage, preserving native prefabs and user assets. Prioritize the user's 2026-11-03 observation; extends T308.
