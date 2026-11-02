@@ -233,3 +233,12 @@ The goal is a furnished bedroom comparable to House_clean_day, produced autonomo
 Do not declare the goal complete while lighting is unqualified, essential furnishings are absent, visible defects remain, or only one run has been evaluated.
 
 T281 evidence: native `Test volume profile persistence` passed after unloading components/profile and forcing reimport; the file contains both component records, exposure 6.25 and ACES, and both loaded components resolve to the owned asset path. Report: `.hdrp-agent/reports/profile-persistence.json`. Existing historical `Lighting 5.asset` in run e523a50d4782482cb5c7cd6bac4c58c5 contains two null component references and was left unchanged. Unity compilation and 381 Python tests passed. This establishes persistence, not visual equivalence or bake quality.
+
+
+### Visual resource discovery evidence
+
+The native incremental exporter now renders both project prefab roots into `.hdrp-agent/house/visual-catalogue`, preserving GUID, dependency hash and image hash. It completed 1,029 two-angle previews; six non-renderable light/controller prefabs have explicit failures. Active scene path and dirty state remained unchanged. Reload interruption is resumable by starting the exporter again; ready matching files are reused.
+
+Room planning now chooses relevant resource families, reviews every page of their actual images with Muse, validates that selections belong to the observed page, and carries the selected IDs, visual notes and provenance into composition and Markdown memory. Pages contain four prefabs each at 1280×720 to meet the existing image transport contract; pagination does not truncate the selected families. Preview appearance never upgrades front/support qualification. The catalogue remains available beyond the selected shortlist.
+
+A budget-accounted live test selected Bed_twin for a child bedroom and rejected Sofa_3seat and the oversized Bed_king, describing their visible materials and measured dimensions. Evidence: `.hdrp-agent/reports/catalogue-live/result.json` and `page.png`; cost USD 0.0003649. This validates image delivery and one grounded selection, not whole-room composition. The running backend still needs the new code loaded before the next end-to-end campaign. Full suite: 385 passed before two additional browsing tests; final targeted catalogue suite: 6 passed.

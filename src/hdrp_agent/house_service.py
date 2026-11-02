@@ -10,6 +10,7 @@ from pathlib import Path
 from .house_convergence import converge, signature
 from .house_media import inspection_batches
 from .house_memory import HouseMemory
+from .house_visual_catalogue import load_previews, pages as visual_pages, family as visual_family
 from .house_activity import model_summary
 from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
@@ -187,6 +188,31 @@ class HouseService:
                 if name in assets and assets[name]['dependency_hash']!=a['dependency_hash']:raise AgentError('SEMANTICS_UNQUALIFIED','Multiple catalogue versions need remeasurement: '+name)
                 assets[name]=a
         return assets
+    def browse_assets(self,row,room,brief,assets):
+        """Review real prefab appearances before composing; keep missing previews explicit."""
+        ready,unavailable=load_previews(self.settings.state/'house/visual-catalogue',assets)
+        if not ready:
+            return dict(status='unavailable',unavailable_previews=unavailable,warning='No visual catalogue available; appearance is unverified')
+        families={}
+        for name,a in assets.items():
+            if '/Building/' not in a['prefab_path'] and '/Doors_drawers/' not in a['prefab_path']:
+                families.setdefault(visual_family(a),[]).append(name)
+        prefix='catalogue-'+room['id']
+        choice=self.ask(row,prefix+'-families','Choose resource families to inspect visually for this room. Include the primary function, storage, textiles, lighting, wall details, greenery and small personal objects where appropriate to the brief. Select exact family IDs from the inventory; no arbitrary quota. Explain the intended coherent style and uses. This is resource discovery, not placement. '+canonical(dict(room=room,brief=brief,families=families)),'ModelHouseCatalogueChoice')
+        if set(choice['selected'])-families.keys():raise AgentError('INVALID_MODEL_OUTPUT','Unknown visual catalogue family')
+        names=sorted({n for f in choice['selected'] for n in families[f] if n in ready})
+        notes=[];selected=[];evidence=[]
+        for index,page in enumerate(visual_pages(ready,names)):
+            self.guard(row)
+            allowed={a['asset_id'] for a in page['assets']}
+            decision=self.ask(row,prefix+'-page-'+str(index),'Inspect these actual two-angle prefab previews. Select exact asset_id values suitable for the room, including distinctive furnishings and small details that support its purpose. Read the key-to-asset mapping; do not infer a functional front or safe support from appearance alone. Select alternatives when useful, omit unsuitable items, and explain their visual roles/style and uncertainty. Avoid generic adult lounge furniture in a child bedroom unless justified by the brief. '+canonical(dict(room=room,brief=brief,style_intent=choice['summary'],page=page['assets'])),'ModelHouseCatalogueChoice',[page['image']])
+            if set(decision['selected'])-allowed:raise AgentError('INVALID_MODEL_OUTPUT','Visual selection leaves inspected page')
+            selected.extend(decision['selected']);notes.append(decision['summary'])
+            evidence.extend(page['assets'])
+        result=dict(status='reviewed',selected_assets=sorted(set(selected)),visual_notes=notes,preview_evidence=evidence,unavailable_previews=[n for f in choice['selected'] for n in families[f] if n not in ready],semantic_qualified=False)
+        HouseMemory(self.settings.state,row['run_id']).note(prefix+'-selection',result)
+        return result
+
     def native(self,row,manifest):
         self.guard(row);cp=json.loads(row['checkpoint']);manifest=deepcopy(manifest)
         manifest['inspection_targets']=cp.get('inspection_targets',[])
@@ -222,7 +248,8 @@ class HouseService:
             building=building_from_outline(outline);assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
             for room in outline['rooms']:
                 self.guard(row);self.save(row,'furnishing','Furnishing '+room['purpose'],current_scope=room['id'])
-                design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
+                visual_selection=self.browse_assets(row,room,params['brief'],assets)
+                design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Visually reviewed resource selection (prefer suitable reviewed assets; do not confuse appearance with qualified supports): '+canonical(visual_selection)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
                 if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
                 placed=place_groups(building,design,assets);designs.append(dict(design=design,placement=placed))
                 requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))

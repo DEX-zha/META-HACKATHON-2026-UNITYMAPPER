@@ -803,3 +803,7 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T282 Qualify reopened candidate-owned daylight/GI and lighting resources against clean-day reference evidence (extends T265–T266).
 - [ ] T283 Integrate visual asset selection and persistent whole-room corrective interaction with critical functional, support and traversal gates (extends T271/T280).
 - [ ] T284 Demonstrate three autonomous, distinctly arranged, fully furnished bedrooms with native and visual evidence comparable to House_clean_day; retain failed attempts and API costs.
+
+- [x] T285 Export the full native two-angle prefab catalogue incrementally with hash-bound identities; verify source scene state and inspect rendered pages.
+- [x] T286 Connect family discovery and paginated visual asset review to initial room planning, persist decisions/provenance, reject selections outside observed pages, and verify a budget-accounted live selection.
+- [ ] T287 Deploy the visual browsing path and qualify complete room composition and corrective enrichment with the expanded catalogue. T271 remains open for support/material qualification and end-to-end evidence.
