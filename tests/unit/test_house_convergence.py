@@ -45,6 +45,18 @@ def test_unusable_views_cannot_erase_visual_defects():
     assert not passed
 
 
+def test_measured_native_repair_counts_only_without_other_regressions():
+    from hdrp_agent.house_convergence import acceptable
+    before=proof(dict(instances=[dict(id='desk')],exposure_ev=14),[dict(kind='support',instance_id='desk')])
+    after=deepcopy(before);after['defects']=[]
+    assert acceptable(before,after,[],[],dict(kind='transform_group'))==(True,'Native defect resolved')
+    after['instances']=[]
+    assert not acceptable(before,after,[],[],dict(kind='transform_group'))[0]
+    after=deepcopy(before);after['defects']=[]
+    new=[dict(room_id='house',instance_id='desk',kind='collision',severity='blocking')]
+    assert not acceptable(before,after,[],new,dict(kind='transform_group'))[0]
+
+
 def test_enrichment_cannot_upgrade_warning_to_blocking():
     from hdrp_agent.house_convergence import acceptable
     before=proof(dict(instances=[dict(id='desk')],exposure_ev=14));after=deepcopy(before);after['instances'].append(dict(id='book',connected=True,native_scale=True,support_passed=True))

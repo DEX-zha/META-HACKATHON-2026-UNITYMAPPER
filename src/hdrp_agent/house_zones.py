@@ -3,6 +3,33 @@ from copy import deepcopy
 from .house_convergence import native_failures
 
 
+def repairable_native(proof):
+    """Only layout faults may enter recovery; isolation/identity faults stay fatal."""
+    failures=native_failures(proof)
+    return bool(failures) and all(kind in {'native','instance'} for kind,_ in failures) and all(
+        i.get('connected') and i.get('native_scale') for i in proof.get('instances',[])
+    ) and all(d.get('kind') in {'support','passage'} for d in proof.get('defects',[]))
+
+
+def native_observations(proof, receipt, room):
+    """Preserve measured faults for replanning without inventing a movement delta."""
+    instances={i['id']:i for i in proof.get('instances',[])}
+    defects=list(proof.get('defects',[]))
+    reported={d.get('instance_id') for d in defects if d.get('kind')=='support'}
+    defects.extend(dict(kind='support',instance_id=i['id'],message='Native support check failed')
+                   for i in instances.values() if not i.get('support_passed') and i['id'] not in reported)
+    result=[]
+    for d in defects:
+        if d.get('kind') not in {'support','passage'}:continue
+        scope=d.get('room_id') or d.get('target',{}).get('room_id') or instances.get(d.get('instance_id'),{}).get('room_id')
+        if scope and scope!=room:continue
+        result.append(dict(room_id=scope or room,instance_id=d.get('instance_id',''),kind=d['kind'],
+            severity='blocking',message='Native measurement: '+d.get('message',d['kind']),
+            suggested_action='none',translation_m=[0,0,0],yaw_delta=0,
+            evidence_ids=[receipt['details_artifact_hash']] if receipt.get('details_artifact_hash') else []))
+    return result
+
+
 def batches(instances):
     by_id={i['id']:i for i in instances};zones={}
     for item in instances:
@@ -30,9 +57,11 @@ def assemble(manifest, *, build, inspect, repair, record, guard):
         record(room,zone,'building',None)
         candidate_receipt,candidate_proof=build(candidate)
         baseline=native_failures(proof) if proof else set()
-        if native_failures(candidate_proof)-baseline:
+        native_regression=native_failures(candidate_proof)-baseline
+        if native_regression and not repairable_native(candidate_proof):
             record(room,zone,'rejected_native',candidate_proof);continue
         observations=inspect(candidate,candidate_proof,room,zone)
+        observations+=native_observations(candidate_proof,candidate_receipt,room)
         hard=lambda obs:[o for o in obs if o.get('kind') in {'collision','support','passage','orientation'}]
         if hard(observations):
             candidate,candidate_receipt,candidate_proof,observations=repair(candidate,candidate_receipt,candidate_proof,observations,room,zone)

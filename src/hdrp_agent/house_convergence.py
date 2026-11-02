@@ -85,6 +85,7 @@ def acceptable(before,after,old_observations,new_observations,patch):
     old_blocking=[o for o in old_observations if o['severity']=='blocking']
     new_blocking=[o for o in new_observations if o['severity']=='blocking']
     if unmatched(old_blocking,new_blocking):return False,'Visual defect severity increased'
+    if native_failures(before)-native_failures(after):return True,'Native defect resolved'
     if unmatched(new_observations,old_observations):return True,'Visual defect resolved'
     if len(after.get('instances',[]))>len(before.get('instances',[])):return True,'Additional supported equipment'
     return False,'No measured progress'
