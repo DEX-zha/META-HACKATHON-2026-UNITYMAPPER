@@ -2,8 +2,9 @@
 from copy import deepcopy
 from statistics import median
 import re
+import math
 from difflib import SequenceMatcher
-from .domain import fingerprint
+from .domain import fingerprint, AgentError
 from .house_repairs import propose
 
 
@@ -37,7 +38,23 @@ def unmatched(old,new):
 
 
 def signature(manifest):
-    return fingerprint(dict(instances=manifest['instances'],exposure_ev=manifest.get('exposure_ev',6)))
+    return fingerprint(dict(instances=manifest['instances'],exposure_ev=manifest.get('exposure_ev',6),calibrate_exposure=manifest.get('calibrate_exposure',False),lighting=manifest.get('lighting')))
+
+
+def observed_controls(manifest,proof):
+    """Use measured exposure for new trials without rewriting historical input."""
+    if not manifest.get('calibrate_exposure'):return manifest
+    calibration=proof.get('exposure_calibration') or {}
+    ev=calibration.get('locked_ev100')
+    if not calibration.get('fixed_readback_verified') or type(ev) not in (int,float) or not math.isfinite(ev) or not -4<=ev<=16:
+        raise AgentError('EVIDENCE_MISSING','Calibrated exposure requires a verified native EV100 receipt')
+    for capture in proof.get('captures',[]):
+        state=capture.get('render_request_state') or {}
+        if state.get('status')!='observed' or state.get('exposure_mode')!='Fixed' or not isinstance(state.get('exposure_ev'),(int,float)) or abs(state['exposure_ev']-ev)>.05:
+            raise AgentError('EVIDENCE_MISSING','Capture exposure does not match the locked calibration')
+    if not proof.get('captures'):raise AgentError('EVIDENCE_MISSING','Exposure calibration has no subsequent captures')
+    candidate=deepcopy(manifest);candidate.update(exposure_ev=ev,calibrate_exposure=False)
+    return candidate
 
 
 def exposure_proposal(manifest,proof,attempted):
@@ -82,11 +99,13 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
     attempted={signature(manifest)};attempted_poses={fingerprint(manifest['instances'])};round_index=0;rejections=0;reconsidered=set();planning_observations=observations
     while True:
         guard()
-        proposal=exposure_proposal(manifest,proof,attempted)
+        baseline=observed_controls(manifest,proof)
+        attempted.add(signature(baseline))
+        proposal=exposure_proposal(baseline,proof,attempted)
         if proposal is None:
-            movement=propose(manifest,planning_observations,attempted_poses)
+            movement=propose(baseline,planning_observations,attempted_poses)
             if movement and signature(movement[0]) not in attempted:proposal=movement
-        if proposal is None:proposal=enrich(manifest,proof,observations,attempted)
+        if proposal is None:proposal=enrich(baseline,proof,observations,attempted)
         if proposal is None:
             reason_key=fingerprint(dict(manifest=signature(manifest),observations=observations,rejections=rejections))
             if reconsider is not None and (observations or rejections) and reason_key not in reconsidered:

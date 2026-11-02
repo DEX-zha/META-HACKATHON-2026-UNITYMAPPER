@@ -91,3 +91,23 @@ def test_absence_relabeling_does_not_create_regression_but_new_collision_does():
     assert acceptable(before,after,old,new,dict(kind='enrich_room'))[0]
     new.append(dict(room_id='house',instance_id='books',kind='collision',severity='blocking',message='Books intersect the wardrobe.'))
     assert not acceptable(before,after,old,new,dict(kind='enrich_room'))[0]
+
+
+def test_calibrated_exposure_is_locked_for_future_trials_without_rewriting_evidence():
+    from hdrp_agent.house_convergence import observed_controls,exposure_proposal
+    m=dict(instances=[],exposure_ev=6,calibrate_exposure=True)
+    p=dict(exposure_calibration=dict(fixed_readback_verified=True,locked_ev100=2.5),captures=[dict(mean_rgb=.02,render_request_state=dict(status='observed',exposure_mode='Fixed',exposure_ev=2.5))])
+    locked=observed_controls(m,p)
+    candidate,patch=exposure_proposal(locked,p,set())
+    assert candidate['exposure_ev']==1.5 and candidate['calibrate_exposure'] is False
+    assert patch['before']==2.5
+    assert m['exposure_ev']==6 and m['calibrate_exposure'] is True
+
+
+def test_calibration_cannot_be_used_with_different_capture_exposure():
+    import pytest
+    from hdrp_agent.domain import AgentError
+    from hdrp_agent.house_convergence import observed_controls
+    m=dict(instances=[],exposure_ev=6,calibrate_exposure=True)
+    p=dict(exposure_calibration=dict(fixed_readback_verified=True,locked_ev100=2.5),captures=[dict(render_request_state=dict(status='observed',exposure_mode='Fixed',exposure_ev=6))])
+    with pytest.raises(AgentError,match='Capture exposure'):observed_controls(m,p)

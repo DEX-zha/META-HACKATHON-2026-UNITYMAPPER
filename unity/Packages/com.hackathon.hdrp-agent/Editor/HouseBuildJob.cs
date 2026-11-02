@@ -14,6 +14,7 @@ namespace HdrpAgent.Editor {
 [InitializeOnLoad] public sealed class HouseBuildJob : ICommandJob {
  static HouseBuildJob(){CommandExecutor.Register("build_house",c=>new HouseBuildJob(c));}
  readonly BridgeCommand command;readonly string before;readonly Scene userScene;readonly bool userDirty;string userSignature;readonly JObject userState;readonly string userFileHash;
+ HouseExposure calibration;
  HouseCandidateBake bake;bool bakeSaved,ownedLightingContext;string deferredCode,deferredMessage,deferredStatus;
  Scene scene;GameObject root;Camera camera;RenderTexture target;VolumeProfile profile;
  JObject manifest,proof;string directory,scenePath;bool started,waiting,cancelled,built;int viewIndex,warm;double lastLiveFrame=-1,viewStarted;Quaternion viewRotation;
@@ -87,6 +88,11 @@ namespace HdrpAgent.Editor {
     foreach(var l in root.GetComponentsInChildren<Light>(true))l.cullingMask=1<<layer;
     proof["scene_version"]=BridgeJson.Hash(File.ReadAllBytes(scenePath));bake.CloseCreatedLightingWindows();bakeSaved=true;
    }
+   if(calibration!=null&&proof["exposure_calibration"]==null){
+    bool done=calibration.Tick(camera,target,profile);PublishLive();Publish(calibration.Progress);if(!done)return;
+    proof["exposure_calibration"]=calibration.Receipt.DeepClone();
+    proof["lighting_profile_sha256"]=BridgeJson.Hash(File.ReadAllBytes(AssetDatabase.GetAssetPath(profile)));return;
+   }
    if(viewIndex==0&&warm==0&&proof["lightmap_bindings"]==null){
     proof["lightmap_bindings"]=new JArray(root.GetComponentsInChildren<MeshRenderer>().Select(r=>new JObject{["name"]=r.name,["receive_gi"]=r.receiveGI.ToString(),["lightmap_index"]=r.lightmapIndex,["scale_offset"]=new JArray(r.lightmapScaleOffset.x,r.lightmapScaleOffset.y,r.lightmapScaleOffset.z,r.lightmapScaleOffset.w)}));
     proof["loaded_lightmaps"]=new JArray(LightmapSettings.lightmaps.Select(m=>AssetDatabase.GetAssetPath(m.lightmapColor)));
@@ -128,7 +134,7 @@ namespace HdrpAgent.Editor {
   }finally{RenderTexture.active=previous;UnityEngine.Object.DestroyImmediate(image);}
  }
  void Build(){
-  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev","inspection_targets");
+  BridgeJson.Closed(manifest,"schema_version","run_id","building","instances","access","interior_style","lighting","designs","exposure_ev","inspection_targets","calibrate_exposure");
   if((string)manifest["schema_version"]!="house-manifest.v1"||(string)manifest["run_id"]!=(string)command.payload["run_id"])throw new InvalidDataException("House manifest identity differs");
   string run=(string)manifest["run_id"];if(run.Length!=32||run.Any(c=>!Uri.IsHexDigit(c)))throw new InvalidDataException("Invalid run ID");
   directory=Path.Combine(BridgeClient.ResolveWorkspace(),".hdrp-agent/house/runs",run,((string)command.payload["manifest_hash"]).Substring(0,12));Directory.CreateDirectory(directory);
@@ -146,6 +152,7 @@ namespace HdrpAgent.Editor {
    var centre=new Vector3((x0+x1)/2,1.6f,(z0+z1)/2);for(int angle=0;angle<360;angle+=90)views.Add(Tuple.Create((string)room["id"],centre,Quaternion.Euler(0,angle,0)));
    views.Add(Tuple.Create((string)room["id"],centre,Quaternion.Euler(55,0,0)));views.Add(Tuple.Create((string)room["id"],centre,Quaternion.Euler(-55,0,0)));
   }
+  if((bool?)manifest["calibrate_exposure"]==true)calibration=new HouseExposure(views.Where((v,i)=>i%6<4));
   var architecture=ReferenceArchitecture.Build(root,new JObject{["walls"]=walls,["height_m"]=2.8f,["thickness_m"]=.2f,["lighting"]="warm_interior",["surfaces"]=surfaces},(string)manifest["interior_style"]);
   var lighting=HouseLighting.Build(root,building);
   var instances=new JArray();var defects=new JArray();var objects=new Dictionary<string,GameObject>();

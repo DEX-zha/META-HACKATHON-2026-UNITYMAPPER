@@ -246,13 +246,17 @@ def place_details(room_id,names,assets,instances,requirements,missing,*,offset=0
     existing children in world space so decoration never overlaps equipment.
     """
     by_guid={a['prefab_guid']:a for a in assets.values()}
-    supports=[i for i in instances if i.get('role')!='floor_covering']
+    supports=[i for i in instances if i.get('room_id')==room_id and i.get('role')!='floor_covering']
     for index,name in enumerate(names,offset):
         key=f'{room_id}-detail-{index}'
         requirements.append(dict(id=key,scope_id=room_id,role=name,quantity=1,priority='preferred',provenance='creative'))
         asset=assets.get(name);placed=False
         if asset and asset['front_status'] in {'qualified','not_applicable'}:
-            candidates=sorted(supports,key=lambda i:0 if name.startswith('Book_') and i['role']=='bookshelf' else 1)
+            # Explicit designs use arbitrary slot IDs (e.g. shelf01) as roles.
+            # Prefer reviewed book-support semantics, not a particular slot name.
+            candidates=sorted(supports,key=lambda i:0 if name.startswith('Book_') and (
+                i.get('role')=='bookshelf' or any('books' in r.get('roles',[]) for r in by_guid[i['prefab_guid']].get('support_regions',[]))
+            ) else 1)
             for parent in candidates:
                 support=by_guid[parent['prefab_guid']]
                 def occupancy(region):

@@ -198,3 +198,20 @@ def test_wardrobe_cannot_claim_access_from_its_side_when_front_faces_wall():
     delta=[point[0]-item['center'][0],point[1]-item['center'][2]]
     assert sum(a*b for a,b in zip(front,delta))==pytest.approx(1.15)
     assert item['center'][0]!=pytest.approx(5.4) or item['yaw']!=0
+
+
+def test_explicit_slot_names_do_not_send_library_books_to_bedside_or_another_room():
+    from copy import deepcopy
+    from hdrp_agent.house_planning import place_details
+    triangles=[[[0,.5,0],[1,.5,0],[1,.5,1]],[[0,.5,0],[1,.5,1],[0,.5,1]]]
+    shelf=dict(prefab_guid='shelf',bounds_center=[.5,.5,.5],bounds_size=[1,1,1],surfaces=[dict(id='s',triangles=triangles)],support_regions=[dict(surface_id='s',rectangle_xz=[0,0,1,1],roles=['books'])])
+    table=deepcopy(shelf);table.update(prefab_guid='table');table['support_regions'][0]['roles']=['decor']
+    book=dict(prefab_guid='books',dependency_hash='a'*32,front_status='qualified',bounds_center=[0,.1,0],bounds_size=[.2,.2,.2])
+    def support(id,room,guid,x):return dict(id=id,room_id=room,group_id=id,role=id,prefab_guid=guid,position=[x,0,0],center=[x+.5,.5,.5],bounds_size=[1,1,1],yaw=0)
+    instances=[support('foreignShelf','other','shelf',10),support('bedside01','bedroom','table',3),support('shelf01','bedroom','shelf',0)]
+    assets={'Bookshelf':shelf,'Nightstand':table,'Book_set_A':book}
+    place_details('bedroom',['Book_set_A'],assets,instances,[],[])
+    assert instances[-1]['support_id']=='shelf01'
+    only_foreign=instances[:1];missing=[]
+    place_details('bedroom',['Book_set_A'],assets,only_foreign,[],missing)
+    assert len(only_foreign)==1 and len(missing)==1
