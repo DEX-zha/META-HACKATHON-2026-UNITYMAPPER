@@ -20,7 +20,12 @@ def strict_schema(name,bindings=None):
         if '$ref' in value:return expand(deepcopy(DOMAIN['$defs'][value['$ref'].split('/')[-1]]))
         # Muse's strict output dialect rejects uniqueItems. Local payload
         # validation still enforces it before any downstream operation.
-        return {('anyOf' if k=='oneOf' else k):expand(v) for k,v in value.items() if k!='uniqueItems'}
+        result={('anyOf' if k=='oneOf' else k):expand(v) for k,v in value.items() if k!='uniqueItems'}
+        # Strict provider output must include every property, even fields that
+        # remain optional locally for compatibility with historical records.
+        if result.get('type')=='object' and 'properties' in result:
+            result['required']=list(result['properties'])
+        return result
     schema=expand(DOMAIN['$defs'][name])
     if schema.get('type')!='object':raise AgentError('INVALID_SCHEMA','Provider root must be an object',422)
     for field,value in (bindings or {}).items():

@@ -215,3 +215,22 @@ def test_visual_catalogue_choice_is_bound_to_supplied_identifiers():
         jsonschema.validate(dict(selected=['Bed_twin'],summary='Wrong identifier level'),schema)
     value={'format':dict(type='json_schema',name='hdrp_modelhousecataloguechoice',strict=True,schema=schema)}
     assert reviewed_format('ModelHouseCatalogueChoice',value)
+
+
+def test_all_model_provider_objects_require_every_property():
+    from hdrp_agent.domain import DOMAIN
+    from hdrp_agent.providers.meta_responses import strict_schema
+
+    def check(value):
+        if isinstance(value, list):
+            for child in value: check(child)
+        elif isinstance(value, dict):
+            if value.get('type') == 'object' and 'properties' in value:
+                assert set(value['required']) == set(value['properties'])
+            for child in value.values(): check(child)
+
+    for name in DOMAIN['$defs']:
+        if name.startswith('Model') and DOMAIN['$defs'][name].get('type') == 'object':
+            check(strict_schema(name))
+    item = strict_schema('ModelHouseRoomV2')['properties']['groups']['items']['properties']['items']['items']
+    assert 'priority' in item['required']

@@ -857,3 +857,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T319 Qualify allowed placement modes from exact prefab previews, persist hash-bound evidence and reject floor placement of wall/window/supported-only objects before construction; verify dependency invalidation and replanning feedback. Complete actual wall/window mounting through T315, rather than treating rejection as the final feature.
 
 - [ ] T320 Preserve per-item priorities inside functional groups so inferred accessories do not inherit mandatory core-furniture status; retain explicit mandatory items across repairs and regression-test unsupported optional accessories without suppressing their needs.
+
+- [x] T321 Require every declared property in provider-facing strict model schemas while preserving local historical optional fields; reproduce and prevent attempt 7's HTTP 400 for missing `priority`, then restart the live service. Full Python suite: 443 passed. Autonomous candidate qualification remains T284.
