@@ -11,11 +11,12 @@ namespace HdrpAgent.Editor {
 // Meter actual HDRP exposure, then lock one EV for comparable observations.
 internal sealed class HouseExposure {
  readonly List<Tuple<string,Vector3,Quaternion>> views;
+ readonly string directory;
  readonly List<float> samples=new List<float>();
  readonly JArray observations=new JArray();
  int index,warm;bool verified;
  internal JObject Receipt{get;private set;}
- internal HouseExposure(IEnumerable<Tuple<string,Vector3,Quaternion>> overview){views=overview.ToList();if(views.Count==0)throw new InvalidDataException("Exposure calibration requires overview views");}
+ internal HouseExposure(IEnumerable<Tuple<string,Vector3,Quaternion>> overview,string reportDirectory){directory=reportDirectory;views=overview.ToList();if(views.Count==0)throw new InvalidDataException("Exposure calibration requires overview views");}
  internal string Progress=>verified?"Metering observation exposure "+index+" / "+views.Count:"Verifying HDRP exposure readback";
  internal static HDCamera RequestCamera(Camera camera){
   var field=typeof(HDCamera).GetField("s_Cameras",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
@@ -43,7 +44,10 @@ internal sealed class HouseExposure {
   if(++warm<32)return false;warm=0;
   float observed=ReadEv(camera);
   if(!verified){
-   if(Mathf.Abs(observed-exposure.fixedExposure.value)>.05f)throw new InvalidDataException("Exposure history readback differs from the fixed verification value");
+   var stack=RequestCamera(camera)?.volumeStack.GetComponent<Exposure>();
+   var check=new JObject{["requested_ev100"]=exposure.fixedExposure.value,["observed_ev100"]=observed,["stack_mode"]=stack?.mode.value.ToString(),["stack_ev100"]=stack?.fixedExposure.value,["camera_layer_mask"]=camera.GetComponent<HDAdditionalCameraData>().volumeLayerMask.value};
+   ReferenceWorkflow.Atomic(Path.Combine(directory,"exposure-readback.json"),check);
+   if(Mathf.Abs(observed-exposure.fixedExposure.value)>.05f)throw new InvalidDataException("Exposure history readback differs from fixed verification: "+check.ToString(Newtonsoft.Json.Formatting.None));
    observations.Add(new JObject{["kind"]="fixed_readback_check",["requested_ev100"]=exposure.fixedExposure.value,["observed_ev100"]=observed});verified=true;
    exposure.mode.Override(ExposureMode.AutomaticHistogram);exposure.adaptationMode.Override(AdaptationMode.Fixed);exposure.limitMin.Override(-4);exposure.limitMax.Override(16);
    return false;

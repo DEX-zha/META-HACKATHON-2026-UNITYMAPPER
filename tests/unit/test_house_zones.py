@@ -74,3 +74,19 @@ def test_native_observations_keep_scope_and_do_not_invent_a_delta():
     obs=native_observations(p,{'details_artifact_hash':'receipt'},'room')
     assert [o['kind'] for o in obs]==['passage','support']
     assert all(o['room_id']=='room' and o['translation_m']==[0,0,0] for o in obs)
+
+
+def test_partial_inspection_defers_only_explicit_future_missing_instances():
+    from hdrp_agent.house_zones import inspection_scope, scoped_observations
+    planned=dict(instances=[item('bed','sleep'),item('desk','work'),dict(item('other-bed','sleep'),room_id='other')])
+    candidate=dict(instances=[item('bed','sleep')])
+    scope=inspection_scope(planned,candidate,'room','sleep')
+    assert scope['expected_instance_ids']==['bed']
+    assert scope['deferred_instance_ids']==['desk']
+    obs=[dict(kind='missing',instance_id='desk'),dict(kind='passage',instance_id='bed'),
+         dict(kind='missing',instance_id='bed'),dict(kind='missing',instance_id='unplanned'),
+         dict(kind='lighting',instance_id='bed')]
+    assert scoped_observations(obs,scope)==obs[1:]
+    # Final whole-room inspection must recover every missing-equipment check.
+    assert scoped_observations(obs,None)==obs
+    assert planned['instances'][1]['id']=='desk'

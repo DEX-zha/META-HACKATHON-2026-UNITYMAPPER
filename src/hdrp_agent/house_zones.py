@@ -73,3 +73,27 @@ def assemble(manifest, *, build, inspect, repair, record, guard):
         # Keep an inspected shell, never pretend rejected furniture exists.
         accepted['access']=[];receipt,proof=build(accepted)
     return accepted,receipt,proof
+
+
+def inspection_scope(planned, candidate, room, zone):
+    """Future planned furniture is not a missing item in an intermediate zone."""
+    current={i['id'] for i in candidate['instances'] if i['room_id']==room}
+    return dict(phase='progressive_zone', room_id=room, zone_id=zone,
+                expected_instance_ids=sorted(current),
+                deferred_instance_ids=sorted(i['id'] for i in planned['instances']
+                                             if i['room_id']==room and i['id'] not in current))
+
+
+def scoped_observations(observations, scope):
+    if not scope:return observations
+    deferred=set(scope['deferred_instance_ids'])
+    return [o for o in observations if not (o.get('kind')=='missing' and o.get('instance_id') in deferred)]
+
+
+ZONE_REVIEW_POLICY = ('Read inspection_scope before judging completeness. During progressive_zone, '
+    'inspect placement, supports, access and orientation of the expected current instances. '
+    'deferred_instance_ids are planned furniture for later assembly, not missing defects in this stage. '
+    'Do not demand whole-room furnishing or decorations before those zones are built. '
+    'Still report real defects of current objects, native failures and unsafe architecture. '
+    'When inspection_scope is null this is a whole-room review: report ALL unmet requirements, '
+    'including previously deferred furniture that is still absent. ')

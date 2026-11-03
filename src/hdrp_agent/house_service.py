@@ -24,7 +24,7 @@ from .house_store import HouseStore
 from .house_planning import building_from_outline, place_groups, namespace_addition
 from .house_briefing import room_prompt, RENDER_REFERENCE_POLICY
 from .house_lighting_reference import load_reference, candidate_evidence
-from .house_zones import assemble as assemble_zones
+from .house_zones import assemble as assemble_zones, inspection_scope, scoped_observations, ZONE_REVIEW_POLICY
 from .house_vision import concepts as segmentation_concepts, overlay as segmentation_overlay
 from .budget import Budget
 from .budget_cli import load_pricing
@@ -344,14 +344,14 @@ class HouseService:
             self.save(row,'building','Metric plan ready; native assembly',unresolved=missing)
             def zone_inspect(candidate,evidence,room,zone):
                 scoped=dict(outline,rooms=[r for r in outline['rooms'] if r['id']==room])
-                return self.inspect(row,scoped,candidate['instances'],evidence,persist=False)
+                return self.inspect(row,scoped,candidate['instances'],evidence,persist=False,stage_scope=inspection_scope(manifest,candidate,room,zone))
             def zone_record(room,zone,status,evidence):
                 cp=json.loads(row['checkpoint']);history=cp.get('zone_history',[])
                 history.append(dict(room_id=room,zone_id=zone,status=status,scene_path=(evidence or {}).get('scene_path')))
                 self.save(row,'building','Zone '+zone+' : '+status,current_scope=room,zone_history=history)
             def zone_repair(candidate,receipt,evidence,observations,room,zone):
                 def audit(index,status,patch,r,p):zone_record(room,zone,'repair_'+status,p)
-                result=converge(candidate,receipt,evidence,observations,build=lambda c:self.native(row,c),inspect=lambda c,p:zone_inspect(c,p,room,zone),enrich=lambda *a:None,record=audit,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p))
+                result=converge(candidate,receipt,evidence,observations,build=lambda c:self.native(row,c),inspect=lambda c,p:zone_inspect(c,p,room,zone),enrich=lambda *a:None,record=audit,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p,stage_scope=inspection_scope(manifest,c,room,zone)))
                 return result[:4]
             manifest,receipt,proof=assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
             instances=manifest['instances']
@@ -405,7 +405,7 @@ class HouseService:
                 state='recovery_required' if uncertain else 'failed'
                 c.execute('UPDATE house_actions SET state=? WHERE id=?',(state,action))
                 self.store.update_session(c,row['session_id'],state='recovery_required' if uncertain else 'interrupted',verdict='inconclusive',stop_reason=code+': '+message)
-    def inspect(self,row,outline,instances,proof,*,persist=True):
+    def inspect(self,row,outline,instances,proof,*,persist=True,stage_scope=None):
         from .providers.sam_decoder import decode
         run=row['run_id'];segments=[];observations=[];assets=self.catalogue();overlays={}
         for room in outline['rooms']:
@@ -443,9 +443,9 @@ class HouseService:
             for batch_index,(batch,images) in enumerate(inspection_batches(captures,lambda h:overlays.get(h) or self.artifacts.read(h))):
                 hashes=[c['artifact_hash'] for c in batch]
                 context=HouseMemory(self.settings.state,run).compact(room['id'],self.houses.context(run,room['id']))
-                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(context)[:12]+'-'+str(batch_index),RENDER_REFERENCE_POLICY+'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. Read candidate_lighting for actual native bake/exposure evidence; a completed bake does not prove artistic quality, and an unattractive image does not invalidate a verified bake receipt. Images show translucent raster-mask overlays from SAM. Uncoloured pixels are NOT proof of absence: SAM can miss, merge or occlude objects. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. Use adjust_item to reposition or rotate one floor furniture item (for example a bedside table or plant) with its supported descendants, leaving unrelated furniture fixed. Use move/rotate only when the whole functional group should move. translation_m is a horizontal world-space delta and yaw_delta rotates about the selected item centre for adjust_item, or the group anchor otherwise. Supported small props and floor coverings need separate placement; do not use adjust_item to detach them. '+canonical(dict(room=room,lighting_reference=self.reference_context(row),candidate_lighting=candidate_evidence(proof,room['id']),instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
+                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(dict(context=context,inspection_scope=stage_scope))[:12]+'-'+str(batch_index),ZONE_REVIEW_POLICY+RENDER_REFERENCE_POLICY+'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. Read candidate_lighting for actual native bake/exposure evidence; a completed bake does not prove artistic quality, and an unattractive image does not invalidate a verified bake receipt. Images show translucent raster-mask overlays from SAM. Uncoloured pixels are NOT proof of absence: SAM can miss, merge or occlude objects. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. Use adjust_item to reposition or rotate one floor furniture item (for example a bedside table or plant) with its supported descendants, leaving unrelated furniture fixed. Use move/rotate only when the whole functional group should move. translation_m is a horizontal world-space delta and yaw_delta rotates about the selected item centre for adjust_item, or the group anchor otherwise. Supported small props and floor coverings need separate placement; do not use adjust_item to detach them. '+canonical(dict(room=room,inspection_scope=stage_scope,lighting_reference=self.reference_context(row),candidate_lighting=candidate_evidence(proof,room['id']),instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Inspection room identity differs')
-                for index,defect in enumerate(review['observations']):
+                for index,defect in enumerate(scoped_observations(review['observations'],stage_scope)):
                     observations.append(dict(defect,room_id=room['id'],evidence_ids=hashes))
                     if persist:self.houses.defect(run,dict(id='vision-'+room['id']+'-'+str(batch_index)+'-'+str(index),scope_id=room['id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=hashes))
         saved=json.loads(row['checkpoint']).get('segmentation_receipts',{})
@@ -453,7 +453,7 @@ class HouseService:
         self.save(row,'inspection','Visual inspection saved',segmentation_receipts=saved,inspection_targets=list(dict.fromkeys(o.get('instance_id') for o in observations if o.get('instance_id') in {i['id'] for i in instances})))
         return observations
 
-    def replan_repairs(self,row,outline,assets,manifest,proof):
+    def replan_repairs(self,row,outline,assets,manifest,proof,*,stage_scope=None):
         """Ask for actionable local repairs when the initial observation cannot execute."""
         observations=[]
         for room in outline['rooms']:
@@ -462,12 +462,12 @@ class HouseService:
             context=HouseMemory(self.settings.state,row['run_id']).compact(room['id'],self.houses.context(row['run_id'],room['id']))
             captures=[c for c in proof.get('captures',[]) if c.get('room_id')==room['id'] and c.get('usable')]
             for index,(batch,images) in enumerate(inspection_batches(captures,self.artifacts.read)):
-                request=dict(room=room,scene_version=proof['scene_version'],lighting_reference=self.reference_context(row),candidate_lighting=candidate_evidence(proof,room['id']),geometry=manifest['building'],instances=local,native_defects=proof.get('defects',[]),native_instances=proof.get('instances',[]),context=context)
+                request=dict(room=room,inspection_scope=stage_scope,scene_version=proof['scene_version'],lighting_reference=self.reference_context(row),candidate_lighting=candidate_evidence(proof,room['id']),geometry=manifest['building'],instances=local,native_defects=proof.get('defects',[]),native_instances=proof.get('instances',[]),context=context)
                 self.save(row,'correcting','Targeted defect replanning: '+room['id'],current_scope=room['id'])
                 review=self.ask(row,'repair-'+fingerprint(request)[:24]+'-'+str(index),
-                    'Previous observed defects had no executable repair or regressed. Reinspect the supplied current evidence and propose DIFFERENT concrete corrections. Use exact instance_id from the inventory. Move/rotate controls move the WHOLE functional group with supported children. Use adjust_item for one selected floor furniture item and its transitive supported descendants, keeping unrelated group furniture fixed; this is appropriate for a misplaced plant or bedside table. Do not detach supported props or move floor coverings with adjust_item. translation_m is a world-space delta, horizontal only; yaw_delta rotates about the selected item centre for adjust_item or the group anchor for move/rotate. Preserve room boundaries, doors and circulation and account for all other groups. Do not recommend the same rejected pose. Report missing/composition needs for additions; unsupported lighting bake, wall mounting or mesh/material edits must stay unresolved, not claim success. No corrected defect may be dismissed without visual evidence. '+canonical(request),'ModelHouseInspection',images)
+                    ZONE_REVIEW_POLICY+'Previous observed defects had no executable repair or regressed. Reinspect the supplied current evidence and propose DIFFERENT concrete corrections. Use exact instance_id from the inventory. Move/rotate controls move the WHOLE functional group with supported children. Use adjust_item for one selected floor furniture item and its transitive supported descendants, keeping unrelated group furniture fixed; this is appropriate for a misplaced plant or bedside table. Do not detach supported props or move floor coverings with adjust_item. translation_m is a world-space delta, horizontal only; yaw_delta rotates about the selected item centre for adjust_item or the group anchor for move/rotate. Preserve room boundaries, doors and circulation and account for all other groups. Do not recommend the same rejected pose. Report missing/composition needs for additions; unsupported lighting bake, wall mounting or mesh/material edits must stay unresolved, not claim success. No corrected defect may be dismissed without visual evidence. '+canonical(request),'ModelHouseInspection',images)
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Repair room identity differs')
-                observations.extend(dict(o,room_id=room['id'],evidence_ids=[c['artifact_hash'] for c in batch]) for o in review['observations'])
+                observations.extend(dict(o,room_id=room['id'],evidence_ids=[c['artifact_hash'] for c in batch]) for o in scoped_observations(review['observations'],stage_scope))
         return observations
 
     def enrich(self,row,outline,assets,manifest,proof,observations,attempted):
