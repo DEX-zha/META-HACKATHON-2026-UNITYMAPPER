@@ -9,8 +9,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace HdrpAgent.Editor {
-// Staged outside Unity until the active generation releases its session.
-// Invoke from HouseReopenAudit after opening its owned, isolated candidate.
+// Read-only export from HouseReopenAudit's owned, isolated candidate.
 internal static class HouseSeamGeometry {
  static JArray A(Vector3 v)=>new JArray(v.x,v.y,v.z);
  internal static void Export(Scene scene,string directory){

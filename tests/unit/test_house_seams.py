@@ -43,6 +43,7 @@ def test_shared_wall_probes_each_rooms_side_and_narrow_top_band():
     rooms=[dict(id='left',polygon=[[0,0],[1,0],[1,2],[0,2]]),dict(id='right',polygon=[[1,0],[2,0],[2,2],[1,2]])]
     rays=seam_rays([wall],rooms)
     assert all(2.749<=r['origin'][1]<=2.795 for r in rays)
+    assert all(abs(r['origin'][0]-1)>=.25 for r in rays)
     assert all((r['origin'][0]<1 and r['direction'][0]>0) if r['room_id']=='left' else (r['origin'][0]>1 and r['direction'][0]<0) for r in rays)
     assert {r['below_ceiling_m'] for r in rays}=={.005,.02,.05}
     assert any(r['origin'][2]<.01 for r in rays) and any(r['origin'][2]>1.99 for r in rays)
@@ -55,10 +56,20 @@ def test_bad_geometry_or_ray_is_rejected():
 
 def test_geometry_layout_and_source_preservation_require_matching_native_receipt():
     from hdrp_agent.house_seams import validate_source
-    from hdrp_agent.domain import fingerprint
+    from hdrp_agent.domain import fingerprint,canonical
     m=dict(run_id='run',building={})
     g=dict(method='editor_read_only_submesh_triangles_world_metres',meshes=[plane()],scene_sha256='hash',scene_path='candidate')
     p=dict(run_id='run',manifest_hash=fingerprint(m),scene_version='hash',scene_path='candidate',source_scene_unchanged=True)
-    validate_source(g,m,p)
+    validate_source(g,canonical(m).encode(),p)
     for changed in (dict(scene_version='other'),dict(manifest_hash='other'),dict(source_scene_unchanged=False),dict(run_id='other')):
-        with pytest.raises(ValueError):validate_source(g,m,dict(p,**changed))
+        with pytest.raises(ValueError):validate_source(g,canonical(m).encode(),dict(p,**changed))
+
+
+def test_manifest_provenance_uses_exact_artifact_bytes_not_reserialization():
+    import json,hashlib
+    from hdrp_agent.house_seams import validate_source
+    m=dict(run_id='run',building={});raw=json.dumps(m,indent=2).encode()
+    g=dict(method='editor_read_only_submesh_triangles_world_metres',meshes=[plane()],scene_sha256='hash',scene_path='candidate')
+    p=dict(run_id='run',manifest_hash=hashlib.sha256(raw).hexdigest(),scene_version='hash',scene_path='candidate',source_scene_unchanged=True)
+    assert validate_source(g,raw,p)==m
+    with pytest.raises(ValueError):validate_source(g,json.dumps(m).encode(),p)

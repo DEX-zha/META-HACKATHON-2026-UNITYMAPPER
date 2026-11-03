@@ -12,8 +12,8 @@ def main():
     parser.add_argument('native_receipt',type=Path)
     parser.add_argument('output',type=Path)
     args=parser.parse_args()
-    geometry=json.loads(args.geometry.read_text());manifest=json.loads(args.manifest.read_text())
-    proof=json.loads(args.native_receipt.read_text());validate_source(geometry,manifest,proof)
+    geometry=json.loads(args.geometry.read_text());manifest_bytes=args.manifest.read_bytes()
+    proof=json.loads(args.native_receipt.read_text());manifest=validate_source(geometry,manifest_bytes,proof)
     building=manifest['building'];report=audit(geometry['meshes'],seam_rays(building['boundaries'],building['rooms']))
     report.update(scene_path=geometry['scene_path'],scene_sha256=geometry['scene_sha256'],geometry_file=str(args.geometry),manifest_file=str(args.manifest),native_receipt_file=str(args.native_receipt),manifest_hash=proof['manifest_hash'])
     # Never overwrite a previous diagnostic report.

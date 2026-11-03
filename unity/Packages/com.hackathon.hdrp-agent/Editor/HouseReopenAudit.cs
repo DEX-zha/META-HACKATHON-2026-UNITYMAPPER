@@ -35,8 +35,24 @@ namespace HdrpAgent.Editor {
    var roots=scene.GetRootGameObjects();foreach(var t in roots.SelectMany(g=>g.GetComponentsInChildren<Transform>(true)))t.gameObject.layer=layer;
    foreach(var light in roots.SelectMany(g=>g.GetComponentsInChildren<Light>(true)))light.cullingMask=1<<layer;
    sun=roots.SelectMany(g=>g.GetComponentsInChildren<Light>(true)).Single(l=>l.type==LightType.Directional);
+   if((bool?)request["zero_sun_shadow_bias"]==true){
+    var hdSun=sun.GetComponent<HDAdditionalLightData>();
+    report["temporary_sun_bias_override"]=new JObject{["normal_before"]=hdSun.normalBias,["slope_before"]=hdSun.slopeBias,["normal_after"]=0,["slope_after"]=0};
+    hdSun.normalBias=0;hdSun.slopeBias=0;
+   }
    var go=new GameObject("Reopened lighting observation"){hideFlags=HideFlags.HideAndDontSave};SceneManager.MoveGameObjectToScene(go,scene);camera=go.AddComponent<Camera>();camera.enabled=false;camera.nearClipPlane=.05f;camera.farClipPlane=100;camera.fieldOfView=75;camera.aspect=1280f/720;camera.cullingMask=1<<layer;camera.overrideSceneCullingMask=mask;var hd=go.AddComponent<HDAdditionalCameraData>();hd.volumeLayerMask=1<<layer;hd.antialiasing=HDAdditionalCameraData.AntialiasingMode.None;hd.allowDynamicResolution=false;
    target=new RenderTexture(1280,720,24,RenderTextureFormat.ARGB32,RenderTextureReadWrite.sRGB){hideFlags=HideFlags.HideAndDontSave};target.Create();
+   if((bool?)request["two_sided_architecture_shadows"]==true){
+    var changed=new JArray();
+    foreach(var renderer in roots.SelectMany(g=>g.GetComponentsInChildren<MeshRenderer>())){
+     string prefab=PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(renderer.gameObject);
+     if(!prefab.StartsWith("Assets/AtmosphericHouse/Prefabs/Building/",StringComparison.Ordinal))continue;
+     changed.Add(new JObject{["prefab"]=prefab,["before"]=renderer.shadowCastingMode.ToString(),["after"]="TwoSided"});
+     renderer.shadowCastingMode=ShadowCastingMode.TwoSided;
+    }
+    report["temporary_shadow_override"]=changed;
+   }
+   HouseSeamGeometry.Export(scene,directory);
    report["lightmaps"]=new JArray(LightmapSettings.lightmaps.Select(m=>AssetDatabase.GetAssetPath(m.lightmapColor)));
    ReferenceWorkflow.Atomic(Path.Combine(directory,"report.json"),report);
   }catch(Exception e){report["error"]=e.Message;Finish("failed");}

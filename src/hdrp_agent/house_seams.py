@@ -5,19 +5,22 @@ HDRP shadow maps or certify lighting quality; matched native renders are require
 Input vertices must be measured in world metres, without changing mesh imports.
 """
 from math import isfinite, sqrt
-from .domain import fingerprint
+import hashlib
+import json
 
 
-def validate_source(geometry,manifest,proof):
+def validate_source(geometry,manifest_bytes,proof):
     """Reject unrelated geometry, layouts and native receipts before sampling."""
     if geometry.get('method')!='editor_read_only_submesh_triangles_world_metres' or not geometry.get('meshes'):
         raise ValueError('Native read-only world geometry export required')
     if not geometry.get('scene_sha256') or geometry.get('scene_sha256')!=proof.get('scene_version') or geometry.get('scene_path')!=proof.get('scene_path'):
         raise ValueError('Geometry and native scene receipt differ')
-    if fingerprint(manifest)!=proof.get('manifest_hash') or manifest.get('run_id')!=proof.get('run_id'):
+    manifest=json.loads(manifest_bytes)
+    if hashlib.sha256(manifest_bytes).hexdigest()!=proof.get('manifest_hash') or manifest.get('run_id')!=proof.get('run_id'):
         raise ValueError('Native receipt belongs to a different manifest')
     if proof.get('source_scene_unchanged') is not True:
         raise ValueError('Source preservation is unverified')
+    return manifest
 
 
 def vector(value):
@@ -50,14 +53,14 @@ def intersection(origin,direction,triangle):
     return distance,det>0
 
 
-def seam_rays(boundaries,rooms,*,height=2.8,step=.15):
+def seam_rays(boundaries,rooms,*,height=2.8,step=.15,wall_inset_m=.3):
     """Probe within 5 cm of each room's upper perimeter, including both corners.
 
-    Rays go outward and upward through the seam. Each room gets its own side of
+    Rays originate inside the room beyond the native wall/trim thickness, then go outward and upward through the seam. Each room gets its own side of
     a shared boundary. World-space vertices/room polygons determine the side.
     """
-    if not isfinite(height) or height<=.06 or not isfinite(step) or step<=0:
-        raise ValueError('Positive seam height and spacing required')
+    if not isfinite(height) or height<=.06 or not isfinite(step) or step<=0 or not isfinite(wall_inset_m) or wall_inset_m<.25:
+        raise ValueError('Positive seam dimensions and an interior inset of at least 25 cm required')
     result=[];by_id={r['id']:r for r in rooms}
     for wall in boundaries:
         ax,az=wall['start'];bx,bz=wall['end'];delta=vector((bx-ax,0,bz-az));length=sqrt(dot(delta,delta))
@@ -70,8 +73,8 @@ def seam_rays(boundaries,rooms,*,height=2.8,step=.15):
             for i in range(count+1):
                 along=min(length-.005,max(.005,length*i/count))
                 for below in (.005,.02,.05):
-                    origin=(ax+tangent[0]*along+inward[0]*.02,height-below,az+tangent[2]*along+inward[2]*.02)
-                    for rise in (.1,1,4):
+                    origin=(ax+tangent[0]*along+inward[0]*wall_inset_m,height-below,az+tangent[2]*along+inward[2]*wall_inset_m)
+                    for rise in (.01,.1,1,4):
                         result.append(dict(room_id=room_id,boundary_id=wall['id'],origin=list(origin),
                             direction=list(unit((-inward[0],rise,-inward[2]))),below_ceiling_m=below))
     return result
