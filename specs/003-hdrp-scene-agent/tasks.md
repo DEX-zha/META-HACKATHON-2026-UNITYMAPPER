@@ -859,3 +859,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T320 Preserve per-item priorities inside functional groups so inferred accessories do not inherit mandatory core-furniture status; retain explicit mandatory items across repairs and regression-test unsupported optional accessories without suppressing their needs.
 
 - [x] T321 Require every declared property in provider-facing strict model schemas while preserving local historical optional fields; reproduce and prevent attempt 7's HTTP 400 for missing `priority`, then restart the live service. Full Python suite: 443 passed. Autonomous candidate qualification remains T284.
+
+- [ ] T322 Isolate candidate APV baking from other loaded scenes without saving or discarding user edits. Attempt 8 stopped because an already loaded generated scene belonged to another baking set; its scene-mode ProbeVolume also recomputed sub-micrometre bounds and triggered CONCURRENT_EDIT. Preserve actual edit detection, restore loaded/active scene state, and qualify the full native run before acceptance.
