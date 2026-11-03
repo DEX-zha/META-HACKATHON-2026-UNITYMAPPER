@@ -855,3 +855,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T318 Let corrective inspection adjust one selected furniture item with its supported descendants, keeping unrelated group furniture fixed; preserve native scale, contacts, circulation, equipment and visual non-regression. Verify bedside/plant placement corrections in the two-bedroom campaign.
 
 - [ ] T319 Qualify allowed placement modes from exact prefab previews, persist hash-bound evidence and reject floor placement of wall/window/supported-only objects before construction; verify dependency invalidation and replanning feedback. Complete actual wall/window mounting through T315, rather than treating rejection as the final feature.
+
+- [ ] T320 Preserve per-item priorities inside functional groups so inferred accessories do not inherit mandatory core-furniture status; retain explicit mandatory items across repairs and regression-test unsupported optional accessories without suppressing their needs.

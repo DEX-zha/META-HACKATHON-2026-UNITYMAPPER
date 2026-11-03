@@ -21,3 +21,15 @@ def test_unknown_mode_cannot_authorize_floor_placement():
     import pytest
     with pytest.raises(ValueError):
         AssetSemantics(prefab_guid='a'*32,dependency_hash='b'*32,prefab_path='Assets/Object.prefab',bounds_center=[0,0,0],bounds_size=[1,1,1],placement_modes=['unknown','floor'],placement_evidence=['review'])
+
+
+def test_optional_unsupported_pillow_does_not_inherit_mandatory_bed_priority():
+    building=building_from_outline(dict(rooms=[dict(id='room',floor_index=0,width_m=6,depth_m=6)]))
+    bed=dict(prefab_guid='bed',dependency_hash='v1',bounds_center=[0,.4,0],bounds_size=[1,.8,2],front_status='not_applicable',surfaces=[],support_regions=[])
+    pillow=dict(prefab_guid='pillow',dependency_hash='v1',bounds_center=[0,.1,0],bounds_size=[.5,.2,.3],front_status='not_applicable',placement_modes=['horizontal_support'])
+    design=dict(room_id='room',groups=[dict(id='sleep',recipe='bedroom',description='Sleep',priority='mandatory',anchor_m=[3,3],yaw_deg=0,items=[dict(slot='bed',asset='bed',offset_m=[0,0],yaw_deg=0,support_slot=None),dict(slot='pillow',asset='pillow',priority='optional',offset_m=[0,0],yaw_deg=0,support_slot='bed')])],detail_assets=[])
+    payload('ModelHouseRoomV2',dict(design,unresolved=[]))
+    result=place_groups(building,design,{'bed':bed,'pillow':pillow})
+    assert [i['prefab_guid'] for i in result['instances']]==['bed']
+    assert [(r['role'],r['priority']) for r in result['requirements']]==[('bed','mandatory'),('pillow','optional')]
+    assert result['missing'][0]['priority']=='optional'

@@ -287,3 +287,19 @@ def test_layout_repair_cannot_win_by_dropping_mandatory_furniture(tmp_path,monke
     monkeypatch.setattr(h,'ask',lambda *args:empty)
     selected,placed=h.place_reviewed_design(row,room,design,{},dict(rooms=[room],portals=[]),'Bedroom with wardrobe')
     assert selected==design and placed['missing']
+
+
+def test_optional_accessory_can_remain_unresolved_without_becoming_retained_mandatory_asset(tmp_path,monkeypatch):
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id']);room=dict(id='bedroom')
+    bed=dict(asset='Bed',priority='mandatory');pillow=dict(asset='Pillow',priority='optional')
+    design=dict(room_id='bedroom',groups=[dict(id='sleep',priority='mandatory',items=[bed,pillow])],detail_assets=[],unresolved=[])
+    revised=dict(design,groups=[dict(id='sleep',priority='mandatory',items=[bed])],unresolved=['Optional pillow needs an appropriate support'])
+    monkeypatch.setattr(h,'refine_reviewed_design',lambda row,room,design,*args:design)
+    def place(building,design,assets):
+        missing=[dict(id='pillow',priority='optional',reason='No qualified support')] if len(design['groups'][0]['items'])==2 else []
+        return dict(instances=[],requirements=[],missing=missing)
+    monkeypatch.setattr('hdrp_agent.house_service.place_groups',place)
+    monkeypatch.setattr('hdrp_agent.house_service.layout_feedback',lambda *args:{})
+    monkeypatch.setattr(h,'ask',lambda *args:revised)
+    selected,placed=h.place_reviewed_design(row,room,design,{},dict(rooms=[room],portals=[]),'Bedroom')
+    assert selected==revised and not placed['missing'] and selected['unresolved']

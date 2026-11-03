@@ -6747,6 +6747,13 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "priority": {
+                        "enum": [
+                          "mandatory",
+                          "preferred",
+                          "optional"
+                        ]
                       }
                     },
                     "required": [

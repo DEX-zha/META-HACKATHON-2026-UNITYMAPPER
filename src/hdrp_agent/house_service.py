@@ -264,7 +264,7 @@ class HouseService:
         while fingerprint(design) not in seen:
             seen.add(fingerprint(design))
             design=self.refine_reviewed_design(row,room,design,assets,building,brief)
-            planned=Counter(item['asset'] for group in design['groups'] if group['priority']=='mandatory' for item in group.get('items',[]))
+            planned=Counter(item['asset'] for group in design['groups'] for item in group.get('items',[]) if item.get('priority',group['priority'])=='mandatory')
             if required_assets is None:required_assets=planned.copy()
             placed=place_groups(building,design,assets)
             missing=placed['missing']
