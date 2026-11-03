@@ -15,6 +15,9 @@ def propose(manifest,observations,attempted):
         # moves floor furniture and carries its existing supported descendants.
         if individual and (target.get('support_id') is not None or target.get('role')=='floor_covering'):continue
         delta=observation['translation_m'];angle=observation['yaw_delta']
+        # Historical reviews used horizontal [x,z]. Preserve that explicit
+        # floor-plane meaning rather than silently discarding the correction.
+        if len(delta)==2:delta=[delta[0],0,delta[1]]
         if len(delta)!=3 or not all(isfinite(v) for v in delta+[angle]) or abs(delta[1])>.001 or hypot(delta[0],delta[2])>6 or abs(angle)>180:continue
         if hypot(delta[0],delta[2])<.01 and abs(angle)<.1:continue
         result=deepcopy(manifest)

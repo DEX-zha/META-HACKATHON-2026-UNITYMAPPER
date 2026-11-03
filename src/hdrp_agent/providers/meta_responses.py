@@ -66,6 +66,9 @@ def strict_schema(name,bindings=None):
         primitive['properties']['asset_id']={'type':'null'}
         primitive['properties']['primitive']=deepcopy(item['properties']['primitive']['anyOf'][0])
         schema['properties']['objects']['items']={'anyOf':[prefab,primitive]}
+    if name=='ModelHouseInspection':
+        translation=schema['properties']['observations']['items']['properties']['translation_m']
+        translation.update(minItems=3,maxItems=3,description='World-space [x, y, z] displacement in metres; y must be zero. Use [0, 0, 0] when no translation is proposed.')
     return schema
 
 

@@ -234,3 +234,14 @@ def test_all_model_provider_objects_require_every_property():
             check(strict_schema(name))
     item = strict_schema('ModelHouseRoomV2')['properties']['groups']['items']['properties']['items']['items']
     assert 'priority' in item['required']
+
+
+def test_inspection_provider_requires_explicit_xyz_translation():
+    from hdrp_agent.providers.meta_responses import strict_schema
+    from jsonschema import Draft202012Validator
+    schema=strict_schema('ModelHouseInspection')['properties']['observations']['items']['properties']['translation_m']
+    validator=Draft202012Validator(schema)
+    assert validator.is_valid([.3,0,-.4])
+    assert validator.is_valid([0,0,0])
+    assert not validator.is_valid([.3,-.4])
+    assert not validator.is_valid([])

@@ -45,3 +45,16 @@ def test_adjust_item_contract_and_floor_covering_exclusion():
     payload('ModelHouseInspection',dict(room_id='room',summary='Inspect',observations=[observation]))
     manifest=dict(instances=[dict(id='rug',role='floor_covering',support_id=None)])
     assert propose(manifest,[observation],set()) is None
+
+
+def test_historical_horizontal_delta_executes_with_three_dimensional_receipt():
+    building=building_from_outline(dict(rooms=[dict(id='room',floor_index=0,width_m=6,depth_m=6)]))
+    item=dict(id='table',room_id='room',group_id='work',center=[3,.5,3],position=[3,0,3],bounds_size=[.5,1,.5],yaw=0,support_id=None)
+    manifest=dict(building=building,instances=[item])
+    observation=dict(instance_id='table',suggested_action='adjust_item',translation_m=[.25,.25],yaw_delta=0,message='Move locally')
+    result,patch=propose(manifest,[observation],set())
+    assert result['instances'][0]['position']==[3.25,0,3.25]
+    assert patch['translation_m']==[.25,0,.25]
+    assert propose(manifest,[dict(observation,translation_m=[.25,0,.25])],set())==(result,patch)
+    for delta in ([1],[1,0,0,0],[0,1,0],[float('nan'),0]):
+        assert propose(manifest,[dict(observation,translation_m=delta)],set()) is None
