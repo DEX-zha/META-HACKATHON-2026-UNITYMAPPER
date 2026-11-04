@@ -370,6 +370,22 @@ class HouseService:
                 if receipt.get('details_artifact_hash')==digest:return manifest,receipt,proof
         raise AgentError('RECOVERY_REQUIRED','Selected native result is not verified')
 
+    def pending_enrichment(self,row,manifest):
+        """Recover a captured, unreviewed trial without another native build."""
+        cp=json.loads(row['checkpoint']);history=cp.get('iterations',[])
+        if not history or history[-1]['status']!='proposed' or history[-1]['patch']['kind']!='enrich_room':return None
+        with closing(self.store.connect()) as c:
+            command=c.execute("SELECT result FROM commands WHERE id=? AND session_id=? AND status='succeeded'",(cp.get('native_command'),row['session_id'])).fetchone()
+        if not command:return None
+        receipt=json.loads(command['result']);proof=json.loads(self.artifacts.read(receipt['details_artifact_hash']))
+        if proof['scene_version']==cp.get('scene_version'):return None
+        candidate=json.loads(self.artifacts.read(proof['manifest_hash']))
+        previous={i['id']:i for i in manifest['instances']};current={i['id']:i for i in candidate['instances']}
+        patch=history[-1]['patch']
+        if set(current)-set(previous)!=set(patch['added_ids']) or any(current.get(k)!=v for k,v in previous.items()):return None
+        self.verify_saved_candidate(row,proof)
+        return candidate,receipt,proof,dict(patch,reused_native_receipt=receipt['details_artifact_hash'])
+
     def planned_run(self,row,params):
         run=row['run_id'];cp=json.loads(row['checkpoint'])
         frozen=cp.get('planned_run_hash')
@@ -435,6 +451,7 @@ class HouseService:
                 return result[:4]
             restored=self.correction_candidate(row)
             manifest,receipt,proof=restored or assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
+            pending_trial=self.pending_enrichment(row,manifest) if restored else None
             instances=manifest['instances']
             self.save(row,'inspection','Checking views and equipment',correction_receipt_hash=receipt['details_artifact_hash'],scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],last_evidence_at=utc_now())
             actual={i['id']:i for i in proof.get('instances',[])}
@@ -462,7 +479,7 @@ class HouseService:
                 if status=='accepted':selected.update(receipt=candidate_receipt,proof=candidate_proof)
                 best=selected['proof']
                 self.save(row,'correcting','Correction '+str(index)+' : '+{'proposed':'trial in progress','accepted':'improvement retained','rejected':'regression or no progress; candidate rejected'}[status],correction_receipt_hash=selected['receipt']['details_artifact_hash'],iterations=history,scene_path=best['scene_path'],scene_version=best['scene_version'],captures=best['captures'])
-            manifest,receipt,proof,observations,stop_reason=converge(manifest,receipt,proof,observations,build=lambda candidate:self.native(row,candidate),inspect=inspect_candidate,enrich=lambda m,p,o,a:self.enrich(row,outline,assets,m,p,o,a),record=record,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p))
+            manifest,receipt,proof,observations,stop_reason=converge(manifest,receipt,proof,observations,build=lambda candidate:self.native(row,candidate),inspect=inspect_candidate,enrich=lambda m,p,o,a:self.enrich(row,outline,assets,m,p,o,a),record=record,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p),pending_trial=pending_trial)
             blockers=[]
             for observation in observations:
                 action=observation.get('suggested_action','none')

@@ -155,3 +155,29 @@ def test_counterfactual_never_excuses_moved_new_or_physical_targets():
     assert counterfactual_candidates(before,before,[],[dict(defect,kind='collision')])==[]
     assert counterfactual_candidates(before,before,[],[dict(defect,kind='lighting')])==[]
     assert counterfactual_candidates(before,before,[],[dict(defect,instance_id='new')])==[]
+
+
+def test_severity_drift_requires_matching_baseline_severity():
+    m=dict(instances=[dict(id='shelf',position=[0,0,0],yaw=0)],exposure_ev=14)
+    warning=dict(room_id='house',instance_id='shelf',kind='composition',severity='warning',message='Shelf sparse',suggested_action='none')
+    blocking=dict(warning,severity='blocking')
+    for baseline_severity in ('warning','blocking'):
+        events=[];reviews=[]
+        def enrich(current,*args):
+            if len(current['instances'])>1 or events:return None
+            candidate=deepcopy(current);candidate['instances'].append(dict(id='book'))
+            return candidate,dict(kind='enrich_room')
+        def inspect(current,evidence):
+            reviews.append(len(current['instances']))
+            return [blocking if len(current['instances'])>1 else dict(warning,severity=baseline_severity)]
+        result=converge(m,{},proof(m),[warning],build=lambda c:({},proof(c)),inspect=inspect,enrich=enrich,record=lambda n,s,*a:events.append(s) if s!='proposed' else None,guard=lambda:None)
+        assert reviews==[2,1]
+        assert len(result[0]['instances'])==(2 if baseline_severity=='blocking' else 1)
+
+
+def test_captured_pending_enrichment_is_reviewed_without_rebuilding():
+    m=dict(instances=[dict(id='desk')],exposure_ev=14);candidate=deepcopy(m);candidate['instances'].append(dict(id='book'))
+    evidence=proof(candidate);reviews=[]
+    result=converge(m,{},proof(m),[],build=lambda *a:(_ for _ in ()).throw(AssertionError('Recorded build must not repeat')),inspect=lambda c,p:reviews.append(p) or [],enrich=lambda *a:None,record=lambda *a:None,guard=lambda:None,pending_trial=(candidate,dict(saved=True),evidence,dict(kind='enrich_room')))
+    assert len(result[0]['instances'])==2 and result[1]==dict(saved=True)
+    assert reviews==[evidence]

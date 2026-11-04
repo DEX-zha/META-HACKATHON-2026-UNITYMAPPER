@@ -40,7 +40,11 @@ def unmatched(old,new):
 def counterfactual_candidates(before,after,old,new):
     """Only pre-existing furnishing targets can have pre-existing sparse content."""
     previous={i['id']:i for i in before['instances']};current={i['id']:i for i in after['instances']}
-    return [o for o in unmatched(old,new) if o['kind'] in {'composition','missing'}
+    candidates=unmatched(old,new)
+    candidates.extend(o for o in new if o['severity']=='blocking' and o not in candidates
+                      and any(same_defect(previous,o) for previous in old)
+                      and not any(previous['severity']=='blocking' and same_defect(previous,o) for previous in old))
+    return [o for o in candidates if o['kind'] in {'composition','missing'}
             and o.get('instance_id') in previous and o.get('instance_id') in current
             and all(previous[o['instance_id']].get(k)==current[o['instance_id']].get(k)
                     for k in ('prefab_guid','position','center','yaw','scale','support_id'))]
@@ -100,7 +104,7 @@ def acceptable(before,after,old_observations,new_observations,patch):
     return False,'No measured progress'
 
 
-def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,guard,reconsider=None):
+def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,guard,reconsider=None,pending_trial=None):
     """No iteration quota: stop on no safe proposal, repeated state, budget or user stop.
 
     Each candidate is saved separately by Unity. Rejection keeps the accepted scene
@@ -111,7 +115,8 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
         guard()
         baseline=observed_controls(manifest,proof)
         attempted.add(signature(baseline))
-        proposal=exposure_proposal(baseline,proof,attempted)
+        restored=pending_trial;pending_trial=None
+        proposal=(restored[0],restored[3]) if restored else exposure_proposal(baseline,proof,attempted)
         if proposal is None:
             movement=propose(baseline,planning_observations,attempted_poses)
             if movement and signature(movement[0]) not in attempted:proposal=movement
@@ -129,7 +134,7 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
         if key in attempted:return manifest,receipt,proof,observations,'REPEATED_STATE'
         attempted.add(key);attempted_poses.add(fingerprint(candidate["instances"]));round_index+=1
         record(round_index,'proposed',patch,receipt,proof)
-        candidate_receipt,candidate_proof=build(candidate)
+        candidate_receipt,candidate_proof=restored[1:3] if restored else build(candidate)
         # Avoid paying for review of a native regression.
         if native_failures(candidate_proof)-native_failures(proof):
             record(round_index,'rejected',dict(patch,rejection='Native regression',native_defects=candidate_proof.get('defects',[])),candidate_receipt,candidate_proof);rejections+=1;continue
@@ -143,7 +148,8 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
             if verified:
                 # Preserve the defect in both scenes; do not label an old absence
                 # as damage caused by a new, supported accessory elsewhere.
-                observations=observations+unmatched(observations,verified)
+                observations=observations+[o for o in verified if not any(
+                    same_defect(previous,o) and previous['severity']==o['severity'] for previous in observations)]
                 planning_observations=observations
                 patch=dict(patch,existing_defects_verified=verified,baseline_scene_path=proof['scene_path'])
         passed,reason=acceptable(proof,candidate_proof,observations,candidate_observations,patch)
