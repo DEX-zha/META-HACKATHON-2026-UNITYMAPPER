@@ -77,11 +77,11 @@ def pages(previews, names=None):
 
 
 def batches(items):
-    """Transport batches cover every page; the model's image endpoint accepts twelve."""
+    """Smaller uploads cover every page without exhausting slow connections."""
     batch=[]
     for item in items:
         batch.append(item)
-        if len(batch)==12:
+        if len(batch)==4:
             yield batch
             batch=[]
     if batch:

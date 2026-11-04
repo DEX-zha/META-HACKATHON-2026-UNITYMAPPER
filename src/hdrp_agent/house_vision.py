@@ -1,6 +1,22 @@
 """Evidence-linked SAM concepts and actual raster-mask overlays."""
 import io
+from concurrent.futures import ThreadPoolExecutor
+from .domain import AgentError
 from PIL import Image
+
+
+def observe_concepts(concepts, observe):
+    """Retain independent evidence when a provider outcome is unknown; never resend."""
+    def one(concept):
+        try:
+            return dict(concept=concept, status='observed', value=observe(concept))
+        except AgentError as error:
+            if error.code != 'PROVIDER_OUTCOME_UNKNOWN':
+                raise
+            return dict(concept=concept, status='unavailable', error_code=error.code)
+    # Context manager joins all admitted calls, including on a fatal error.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        return list(pool.map(one, concepts))
 
 
 def concepts(instances, assets):

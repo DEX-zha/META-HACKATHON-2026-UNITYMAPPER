@@ -866,3 +866,8 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [x] T324 Refresh HDRP Volume registration after transient inspection/save layer changes, retain exact exposure readback diagnostics, and qualify repeated candidate builds. The failed attempt 9 candidate passes native bake/exposure and eight captures with source restoration; attempt 10 subsequently completed three autonomous zone builds without the previous exposure failure. Artistic acceptance remains T284.
 
 - [x] T325 Fix silent rejection of model horizontal `[x,z]` corrections: request strict `[x,0,z]` from new provider inspections, normalize historical horizontal pairs, preserve finite/vertical/distance/collision/access checks, and supply measured world bounds separately from local prefab dimensions. Full Python suite: 446 passed. Exact recorded bedside correction passes native construction, bake, exposure and ten captures; table and lamp move together, bed unchanged, no native defects, source restored.
+
+- [ ] T326 Preserve successful SAM concepts when one provider outcome is unknown, explicitly report unavailable evidence to visual review, never retransmit or settle an unknown call, and keep stop/budget/invalid-output failures fatal. Qualify with tests and a live presentation run.
+- [ ] T327 Capture an autonomous detailed bedroom demonstration with the exact prompt, ordered native images, actual SAM masks, progress evidence and short presentation clips. Distinguish montage from continuous camera recordings and report final quality honestly.
+
+- [ ] T328 Reduce catalogue upload batches to four images without dropping pages and reuse only exact settled, validated house responses across fresh runs. Preserve failed attempt 12 and unknown billing reservations.

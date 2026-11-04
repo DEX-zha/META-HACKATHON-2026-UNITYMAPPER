@@ -1,7 +1,6 @@
 """House v1 admission and durable execution, separate from the legacy reconstructor."""
 from contextlib import closing
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import io
 import json
@@ -25,7 +24,7 @@ from .house_planning import building_from_outline, place_groups, namespace_addit
 from .house_briefing import room_prompt, RENDER_REFERENCE_POLICY
 from .house_lighting_reference import load_reference, candidate_evidence
 from .house_zones import assemble as assemble_zones, inspection_scope, scoped_observations, ZONE_REVIEW_POLICY
-from .house_vision import concepts as segmentation_concepts, overlay as segmentation_overlay
+from .house_vision import concepts as segmentation_concepts, overlay as segmentation_overlay, observe_concepts
 from .budget import Budget
 from .budget_cli import load_pricing
 from .providers.meta_responses import MetaResponses, spark_request, sam_request
@@ -173,7 +172,17 @@ class HouseService:
         try:
             if prior and prior['call_id']:
                 response=provider.recover_completed(prior['call_id'],request,schema)
-            else:response=provider.send(request,schema)
+            else:
+                # Only exact, settled requests can be reused. Unknown calls retain
+                # their independent reservations and are never selected as cache hits.
+                with closing(self.store.connect()) as c:
+                    cached=c.execute("SELECT calls.id FROM calls JOIN house_calls ON house_calls.call_id=calls.id WHERE calls.payload_hash=? AND calls.status='settled' AND house_calls.value IS NOT NULL ORDER BY calls.created_at DESC LIMIT 1",(digest,)).fetchone()
+                if cached:
+                    response=provider.recover_completed(cached['id'],request,schema)
+                    with self.store.tx() as c:
+                        c.execute('UPDATE house_calls SET call_id=? WHERE run_id=? AND key=?',(cached['id'],row['run_id'],key))
+                        self.store.event(c,row['id'],'house.response_reused',dict(key=key,call_id=cached['id'],network_sent=False))
+                else:response=provider.send(request,schema)
             with self.store.tx() as c:c.execute('UPDATE house_calls SET value=? WHERE run_id=? AND key=?',(canonical(response['value']),row['run_id'],key))
             return response['value']
         finally:provider.client.close()
@@ -424,10 +433,15 @@ class HouseService:
                     return self.provider_call(row,'sam-'+c['artifact_hash']+'-'+fingerprint(concept)[:12],sam_request(concept,binary))
                 # Independent concepts share neither provider clients nor reservations.
                 # Join in-flight calls on failure/stop so no paid response is abandoned.
-                with ThreadPoolExecutor(max_workers=4) as pool:
-                    results=list(pool.map(segment,concepts))
-                for concept,text in zip(concepts,results):
-                    regions=decode(text,width,height)
+                results=observe_concepts(concepts,segment)
+                for result in results:
+                    concept=result['concept']
+                    if result['status']=='unavailable':
+                        segments.append(dict(capture_hash=c['artifact_hash'],scene_version=proof['scene_version'],room_id=room['id'],concept=concept,regions=[],status='unavailable',error_code=result['error_code']))
+                        with self.store.tx() as connection:
+                            self.store.event(connection,row['id'],'house.decision',dict(stage='inspection',message='SAM evidence unavailable for '+concept+' in '+c['key']+'; inspect original pixels and native geometry. No retry; reservation retained.',source='provider_status',status='incomplete_evidence'))
+                        continue
+                    regions=decode(result['value'],width,height)
                     for region in regions:region['mask_artifact_hash']=self.artifacts.put(region.pop('mask_png'),'image/png')
                     segments.append(dict(capture_hash=c['artifact_hash'],scene_version=proof['scene_version'],room_id=room['id'],concept=concept,regions=regions))
                 composite=segmentation_overlay(binary,[r for s in segments if s['capture_hash']==c['artifact_hash'] for r in s['regions']],self.artifacts.read)
@@ -443,7 +457,7 @@ class HouseService:
             for batch_index,(batch,images) in enumerate(inspection_batches(captures,lambda h:overlays.get(h) or self.artifacts.read(h))):
                 hashes=[c['artifact_hash'] for c in batch]
                 context=HouseMemory(self.settings.state,run).compact(room['id'],self.houses.context(run,room['id']))
-                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(dict(context=context,inspection_scope=stage_scope))[:12]+'-'+str(batch_index),ZONE_REVIEW_POLICY+RENDER_REFERENCE_POLICY+'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. Use native_instances bounds_center/bounds_size as measured WORLD-axis-aligned bounds. Planned instances bounds_size are LOCAL prefab dimensions: never treat them as world dimensions without applying yaw. Read candidate_lighting for actual native bake/exposure evidence; a completed bake does not prove artistic quality, and an unattractive image does not invalidate a verified bake receipt. Images show translucent raster-mask overlays from SAM. Uncoloured pixels are NOT proof of absence: SAM can miss, merge or occlude objects. SAM regions are uncertain observations, not prefab identities. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. Use adjust_item to reposition or rotate one floor furniture item (for example a bedside table or plant) with its supported descendants, leaving unrelated furniture fixed. Use move/rotate only when the whole functional group should move. translation_m is exactly three coordinates [x, 0, z] in metres, a horizontal world-space delta and yaw_delta rotates about the selected item centre for adjust_item, or the group anchor otherwise. Supported small props and floor coverings need separate placement; do not use adjust_item to detach them. '+canonical(dict(room=room,inspection_scope=stage_scope,lighting_reference=self.reference_context(row),candidate_lighting=candidate_evidence(proof,room['id']),native_instances=[i for i in proof.get('instances',[]) if i.get('room_id')==room['id']],instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
+                review=self.ask(row,'inspect-'+room['id']+'-'+proof['scene_version'][:12]+'-'+fingerprint(dict(context=context,inspection_scope=stage_scope))[:12]+'-'+str(batch_index),ZONE_REVIEW_POLICY+RENDER_REFERENCE_POLICY+'Inspect this generated Unity room. Report concrete orientation, support, access, missing equipment, lighting and composition defects. Check every functional zone: primary activity, storage contents, secondary activity when appropriate, greenery, wall treatment and motivated light sources. An empty library, unused work surface or unlit task zone is a specific missing/composition defect even when the core furniture exists. Respect explicit minimalist/empty briefs and circulation; do not demand arbitrary clutter. Distinguish functional lighting from mere exposure; identify which zone lacks light or suffers glare. Use native_instances bounds_center/bounds_size as measured WORLD-axis-aligned bounds. Planned instances bounds_size are LOCAL prefab dimensions: never treat them as world dimensions without applying yaw. Read candidate_lighting for actual native bake/exposure evidence; a completed bake does not prove artistic quality, and an unattractive image does not invalidate a verified bake receipt. Images show translucent raster-mask overlays from SAM. Uncoloured pixels are NOT proof of absence: SAM can miss, merge or occlude objects. SAM regions are uncertain observations, not prefab identities. A segmentation with status unavailable is missing provider evidence, never an empty detection or proof of absence; inspect original image pixels and native measurements and report uncertainty where needed. Pending requirements and archived defects are bookkeeping from earlier passes, not proof of absence: independently re-evaluate against the current instances and images. Use rejected_attempts to propose a different safe correction rather than repeating a rejected placement. Suggested actions are proposals, not executed changes. Use adjust_item to reposition or rotate one floor furniture item (for example a bedside table or plant) with its supported descendants, leaving unrelated furniture fixed. Use move/rotate only when the whole functional group should move. translation_m is exactly three coordinates [x, 0, z] in metres, a horizontal world-space delta and yaw_delta rotates about the selected item centre for adjust_item, or the group anchor otherwise. Supported small props and floor coverings need separate placement; do not use adjust_item to detach them. '+canonical(dict(room=room,inspection_scope=stage_scope,lighting_reference=self.reference_context(row),candidate_lighting=candidate_evidence(proof,room['id']),native_instances=[i for i in proof.get('instances',[]) if i.get('room_id')==room['id']],instances=[i for i in instances if i['room_id']==room['id']],requirements=context,segmentations=[s for s in segments if s['capture_hash'] in hashes])),'ModelHouseInspection',images)
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Inspection room identity differs')
                 for index,defect in enumerate(scoped_observations(review['observations'],stage_scope)):
                     observations.append(dict(defect,room_id=room['id'],evidence_ids=hashes))

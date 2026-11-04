@@ -303,3 +303,25 @@ def test_optional_accessory_can_remain_unresolved_without_becoming_retained_mand
     monkeypatch.setattr(h,'ask',lambda *args:revised)
     selected,placed=h.place_reviewed_design(row,room,design,{},dict(rooms=[room],portals=[]),'Bedroom')
     assert selected==revised and not placed['missing'] and selected['unresolved']
+
+
+@pytest.mark.parametrize('status,validated,expected',[('settled',True,'recover'),('unknown',True,'send'),('settled',False,'send')])
+def test_exact_response_reuse_requires_settlement_and_validated_house_value(tmp_path,monkeypatch,status,validated,expected):
+    from types import SimpleNamespace
+    from hdrp_agent.domain import fingerprint
+    h,r=house_setup(tmp_path);h.admit(r);row=h.row(r['action_id']);request={'model':'test','input':'same'}
+    digest=fingerprint(request);calls=[]
+    with h.store.tx() as c:
+        c.execute('INSERT INTO calls VALUES(?,?,?,?,?,?,?,?)',('old-call','test',digest,status,10,5 if status=='settled' else None,'{}','2026-01-01'))
+        c.execute('INSERT INTO house_calls VALUES(?,?,?,?,?)',('old-run','old-key',digest,'old-call','{"answer":1}' if validated else None))
+    class Provider:
+        client=SimpleNamespace(close=lambda:None)
+        def __init__(self,*args):pass
+        def recover_completed(self,*args):calls.append('recover');return {'value':{'answer':1}}
+        def send(self,*args):calls.append('send');return {'value':{'answer':2}}
+    monkeypatch.setattr('hdrp_agent.house_service.HouseCallBudget',lambda *args:None)
+    h.provider_factory=Provider
+    h.provider_call(row,'new-key',request)
+    assert calls==[expected]
+    with h.store.connect() as c:
+        assert c.execute('SELECT status,reserved FROM calls WHERE id=?',('old-call',)).fetchone()[:]==(status,10)

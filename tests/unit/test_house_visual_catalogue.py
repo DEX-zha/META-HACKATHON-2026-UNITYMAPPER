@@ -87,7 +87,7 @@ def test_room_browsing_retains_visual_decisions_and_provenance(tmp_path):
 def test_transport_batches_cover_all_pages():
     from hdrp_agent.house_visual_catalogue import batches
     result=list(batches(iter(range(29))))
-    assert [len(b) for b in result]==[12,12,5]
+    assert [len(b) for b in result]==[4,4,4,4,4,4,4,1]
     assert sum(result,[])==list(range(29))
 
 
