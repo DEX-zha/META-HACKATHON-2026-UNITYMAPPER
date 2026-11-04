@@ -63,9 +63,32 @@ def assemble(manifest, *, build, inspect, repair, record, guard):
         observations=inspect(candidate,candidate_proof,room,zone)
         observations+=native_observations(candidate_proof,candidate_receipt,room)
         hard=lambda obs:[o for o in obs if o.get('kind') in {'collision','support','passage','orientation'}]
-        if hard(observations):
+        previous_observations=None
+        def new_hard(current, evidence, observations):
+            nonlocal previous_observations
+            remaining=hard(observations)
+            if not remaining or proof is None or native_failures(evidence)-baseline:return remaining
+            # Counterfactual review: an unchanged, previously accepted item may
+            # already have this warning without the new zone. Never discard the
+            # new furniture merely because the current view reveals it again.
+            from .house_convergence import same_defect
+            previous_items={i['id']:i for i in accepted['instances']}
+            current_items={i['id']:i for i in current['instances']}
+            def unchanged(key):
+                return key in previous_items and key in current_items and all(previous_items[key].get(field)==current_items[key].get(field) for field in ('position','center','yaw'))
+            eligible=[o for o in remaining if o.get('severity')=='warning' and o.get('kind') in {'passage','orientation'} and unchanged(o.get('instance_id'))]
+            if not eligible:return remaining
+            if previous_observations is None:
+                guard();previous_observations=inspect(accepted,proof,room,zone)
+            carried=[o for o in eligible if any(same_defect(o,old) and old.get('severity')=='warning' for old in previous_observations)]
+            if carried:
+                record(room,zone,'existing_warning_verified',dict(evidence,existing_observations=carried,baseline_scene_path=proof.get('scene_path')))
+            return [o for o in remaining if o not in carried]
+        remaining=new_hard(candidate,candidate_proof,observations)
+        if remaining:
             candidate,candidate_receipt,candidate_proof,observations=repair(candidate,candidate_receipt,candidate_proof,observations,room,zone)
-        if hard(observations) or native_failures(candidate_proof)-baseline:
+            remaining=new_hard(candidate,candidate_proof,observations)
+        if remaining or native_failures(candidate_proof)-baseline:
             record(room,zone,'unresolved',candidate_proof);continue
         accepted,receipt,proof=candidate,candidate_receipt,candidate_proof
         record(room,zone,'accepted',proof)

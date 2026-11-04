@@ -90,3 +90,27 @@ def test_partial_inspection_defers_only_explicit_future_missing_instances():
     # Final whole-room inspection must recover every missing-equipment check.
     assert scoped_observations(obs,None)==obs
     assert planned['instances'][1]['id']=='desk'
+
+
+def test_existing_warning_requires_baseline_visual_confirmation_before_retaining_new_zone():
+    warning=dict(kind='passage',severity='warning',instance_id='chair',room_id='room',message='Tight chair access')
+    manifest=dict(instances=[item('chair','work'),item('bookshelf','library')],access=[])
+    calls=[];events=[]
+    def inspect(m,p,room,zone):
+        ids=[i['id'] for i in m['instances']];calls.append((zone,ids))
+        return [warning] if zone=='library' else []
+    result=assemble(manifest,build=lambda m:({},proof(m)),inspect=inspect,repair=lambda m,r,p,o,*a:(m,r,p,o),record=lambda r,z,s,p:events.append(s),guard=lambda:None)
+    assert [i['id'] for i in result[0]['instances']]==['chair','bookshelf']
+    assert calls[-1]==('library',['chair'])
+    assert 'existing_warning_verified' in events
+
+
+def test_new_or_blocking_passage_defects_still_reject_zone():
+    for severity,baseline_has_warning in [('warning',False),('blocking',True)]:
+        warning=dict(kind='passage',severity=severity,instance_id='chair',room_id='room',message='Blocked chair access')
+        manifest=dict(instances=[item('chair','work'),item('bookshelf','library')],access=[])
+        def inspect(m,p,room,zone):
+            if zone!='library':return []
+            return [warning] if len(m['instances'])>1 or baseline_has_warning else []
+        result=assemble(manifest,build=lambda m:({},proof(m)),inspect=inspect,repair=lambda m,r,p,o,*a:(m,r,p,o),record=lambda *a:None,guard=lambda:None)
+        assert [i['id'] for i in result[0]['instances']]==['chair']

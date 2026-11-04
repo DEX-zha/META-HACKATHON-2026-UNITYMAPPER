@@ -356,10 +356,10 @@ class HouseService:
                 return self.inspect(row,scoped,candidate['instances'],evidence,persist=False,stage_scope=inspection_scope(manifest,candidate,room,zone))
             def zone_record(room,zone,status,evidence):
                 cp=json.loads(row['checkpoint']);history=cp.get('zone_history',[])
-                history.append(dict(room_id=room,zone_id=zone,status=status,scene_path=(evidence or {}).get('scene_path')))
+                history.append(dict(room_id=room,zone_id=zone,status=status,scene_path=(evidence or {}).get('scene_path'),existing_observations=(evidence or {}).get('existing_observations',[]),baseline_scene_path=(evidence or {}).get('baseline_scene_path'),repair=(evidence or {}).get('zone_repair')))
                 self.save(row,'building','Zone '+zone+' : '+status,current_scope=room,zone_history=history)
             def zone_repair(candidate,receipt,evidence,observations,room,zone):
-                def audit(index,status,patch,r,p):zone_record(room,zone,'repair_'+status,p)
+                def audit(index,status,patch,r,p):zone_record(room,zone,'repair_'+status,dict(p,zone_repair=dict(iteration=index,**patch)))
                 result=converge(candidate,receipt,evidence,observations,build=lambda c:self.native(row,c),inspect=lambda c,p:zone_inspect(c,p,room,zone),enrich=lambda *a:None,record=audit,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p,stage_scope=inspection_scope(manifest,c,room,zone)))
                 return result[:4]
             manifest,receipt,proof=assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
