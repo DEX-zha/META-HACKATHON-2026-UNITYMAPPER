@@ -3,6 +3,7 @@ from contextlib import closing
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 import io
+import hashlib
 import json
 import time
 import uuid
@@ -322,13 +323,25 @@ class HouseService:
             if not row:raise AgentError('NOT_FOUND','House action not found',404)
             cp=json.loads(row['checkpoint'])
             enrichment_conflict=cp.get('error_code')=='IDEMPOTENCY_CONFLICT' and cp.get('message')=='Enrichment changed requirement identity'
-            if row['state']!='failed' or (cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} and not enrichment_conflict) or not cp.get('planned_run_hash'):
+            stopped_correction=cp.get('error_code')=='STOP_REQUESTED' and bool(cp.get('iterations'))
+            if row['state']!='failed' or (cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} and not enrichment_conflict and not stopped_correction) or not cp.get('planned_run_hash'):
                 raise AgentError('RECOVERY_REQUIRED','Provider-interrupted frozen plan required')
             if c.execute("SELECT 1 FROM sessions WHERE id!=? AND state NOT IN ('completed','interrupted','limit_reached')",(row['session_id'],)).fetchone():raise AgentError('SESSION_ACTIVE','Another run owns Unity')
             project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()
             if project['epoch']!=cp['epoch'] or json.loads(project['body'])['scene_version']!=cp['source_version']:raise AgentError('STALE_VERSION','Source scene or editor epoch changed')
             if c.execute("SELECT 1 FROM commands WHERE session_id=? AND status!='succeeded'",(row['session_id'],)).fetchone():raise AgentError('RECOVERY_REQUIRED','Native outcomes must all be verified before provider recovery')
             if c.execute("SELECT 1 FROM house_calls h JOIN calls c ON h.call_id=c.id WHERE h.run_id=? AND c.status IN ('reserved','sent')",(row['run_id'],)).fetchone():raise AgentError('RECOVERY_REQUIRED','Provider calls are still in flight')
+            if cp.get('iterations'):
+                selected=None
+                for command in c.execute('SELECT result FROM commands WHERE session_id=?',(row['session_id'],)):
+                    result=json.loads(command['result']);digest=result.get('details_artifact_hash')
+                    if not digest:continue
+                    proof=json.loads(self.artifacts.read(digest))
+                    if proof.get('scene_path')==cp.get('scene_path') and proof.get('scene_version')==cp.get('scene_version'):
+                        selected=digest;break
+                if not selected:raise AgentError('RECOVERY_REQUIRED','Selected whole-room receipt is missing')
+                self.verify_saved_candidate(row,proof)
+                cp['correction_receipt_hash']=selected
             cp.update(stage='queued',message='Resuming frozen plan with recorded native evidence',execution_state='queued',quality_state='pending',inspection_targets=[],updated_at=utc_now())
             cp.pop('error_code',None)
             c.execute("UPDATE house_actions SET state='queued',checkpoint=? WHERE id=?",(canonical(cp),action))
@@ -336,6 +349,26 @@ class HouseService:
             self.store.update_session(c,row['session_id'],state='preflight',stop_reason=None)
             self.store.event(c,action,'house.resume_requested',dict(reason=request['reason'],planned_run_hash=cp['planned_run_hash'],unknown_calls_retried=False))
         return self.get(action)
+
+    def verify_saved_candidate(self,row,proof):
+        with closing(self.store.connect()) as c:project=c.execute('SELECT body FROM projects WHERE id=?',(row['project_id'],)).fetchone()
+        root=self.settings.project_path(json.loads(project['body'])['project_root']).resolve()
+        path=(root/proof['scene_path']).resolve()
+        if (proof.get('run_id')!=row['run_id'] or not proof.get('source_scene_unchanged') or
+            not path.is_relative_to(root/'Assets/AgentWorkspace/HouseRuns'/row['run_id']) or
+            not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=proof['scene_version']):
+            raise AgentError('STALE_EVIDENCE','Selected scene changed; correction recovery refused')
+
+    def correction_candidate(self,row):
+        digest=json.loads(row['checkpoint']).get('correction_receipt_hash')
+        if not digest:return None
+        proof=json.loads(self.artifacts.read(digest));self.verify_saved_candidate(row,proof)
+        manifest=json.loads(self.artifacts.read(proof['manifest_hash']))
+        with closing(self.store.connect()) as c:
+            for command in c.execute("SELECT result FROM commands WHERE session_id=? AND status='succeeded'",(row['session_id'],)):
+                receipt=json.loads(command['result'])
+                if receipt.get('details_artifact_hash')==digest:return manifest,receipt,proof
+        raise AgentError('RECOVERY_REQUIRED','Selected native result is not verified')
 
     def planned_run(self,row,params):
         run=row['run_id'];cp=json.loads(row['checkpoint'])
@@ -400,9 +433,10 @@ class HouseService:
                 def audit(index,status,patch,r,p):zone_record(room,zone,'repair_'+status,dict(p,zone_repair=dict(iteration=index,**patch)))
                 result=converge(candidate,receipt,evidence,observations,build=lambda c:self.native(row,c),inspect=lambda c,p:zone_inspect(c,p,room,zone),enrich=lambda *a:None,record=audit,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p,stage_scope=inspection_scope(manifest,c,room,zone)))
                 return result[:4]
-            manifest,receipt,proof=assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
+            restored=self.correction_candidate(row)
+            manifest,receipt,proof=restored or assemble_zones(manifest,build=lambda c:self.native(row,c),inspect=zone_inspect,repair=zone_repair,record=zone_record,guard=lambda:self.guard(row))
             instances=manifest['instances']
-            self.save(row,'inspection','Checking views and equipment',scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],last_evidence_at=utc_now())
+            self.save(row,'inspection','Checking views and equipment',correction_receipt_hash=receipt['details_artifact_hash'],scene_path=proof['scene_path'],scene_version=proof['scene_version'],captures=proof.get('captures',[]),evidence_hashes=receipt['artifact_hashes'],last_evidence_at=utc_now())
             actual={i['id']:i for i in proof.get('instances',[])}
             resolved=[];unresolved=[]
             for r in requirements:
@@ -427,7 +461,7 @@ class HouseService:
                     c.execute('INSERT OR REPLACE INTO house_patches VALUES(?,?,?)',(run,str(index)+'-'+status,canonical(event)))
                 if status=='accepted':selected.update(receipt=candidate_receipt,proof=candidate_proof)
                 best=selected['proof']
-                self.save(row,'correcting','Correction '+str(index)+' : '+{'proposed':'trial in progress','accepted':'improvement retained','rejected':'regression or no progress; candidate rejected'}[status],iterations=history,scene_path=best['scene_path'],scene_version=best['scene_version'],captures=best['captures'])
+                self.save(row,'correcting','Correction '+str(index)+' : '+{'proposed':'trial in progress','accepted':'improvement retained','rejected':'regression or no progress; candidate rejected'}[status],correction_receipt_hash=selected['receipt']['details_artifact_hash'],iterations=history,scene_path=best['scene_path'],scene_version=best['scene_version'],captures=best['captures'])
             manifest,receipt,proof,observations,stop_reason=converge(manifest,receipt,proof,observations,build=lambda candidate:self.native(row,candidate),inspect=inspect_candidate,enrich=lambda m,p,o,a:self.enrich(row,outline,assets,m,p,o,a),record=record,guard=lambda:self.guard(row),reconsider=lambda c,p:self.replan_repairs(row,outline,assets,c,p))
             blockers=[]
             for observation in observations:

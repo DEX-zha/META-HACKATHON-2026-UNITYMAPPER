@@ -369,3 +369,15 @@ def test_resume_only_known_enrichment_identity_conflict(tmp_path,message,allowed
     if allowed:assert h.resume(r['action_id'],dict(reason='Continue after identity fix'))['state']=='queued'
     else:
         with pytest.raises(AgentError):h.resume(r['action_id'],dict(reason='Resume'))
+
+
+def test_saved_correction_candidate_rejects_changed_or_foreign_scene(tmp_path):
+    import hashlib
+    h,r=house_setup(tmp_path);state=h.admit(r);row=h.row(r['action_id'])
+    relative='Assets/AgentWorkspace/HouseRuns/'+state['run_id']+'/House.unity'
+    path=tmp_path/'project'/relative;path.parent.mkdir(parents=True);path.write_bytes(b'candidate')
+    proof=dict(run_id=state['run_id'],scene_path=relative,scene_version=hashlib.sha256(b'candidate').hexdigest(),source_scene_unchanged=True)
+    h.verify_saved_candidate(row,proof)
+    with pytest.raises(AgentError,match='changed'):h.verify_saved_candidate(row,dict(proof,run_id='other'))
+    path.write_bytes(b'edited')
+    with pytest.raises(AgentError,match='changed'):h.verify_saved_candidate(row,proof)
