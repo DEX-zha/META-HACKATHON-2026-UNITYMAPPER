@@ -123,3 +123,35 @@ def test_calibration_cannot_be_used_with_different_capture_exposure():
     m=dict(instances=[],exposure_ev=6,calibrate_exposure=True)
     p=dict(exposure_calibration=dict(fixed_readback_verified=True,locked_ev100=2.5),captures=[dict(render_request_state=dict(status='observed',exposure_mode='Fixed',exposure_ev=6))])
     with pytest.raises(AgentError,match='Capture exposure'):observed_controls(m,p)
+
+
+def test_newly_reported_old_absence_requires_actual_baseline_review():
+    m=dict(instances=[dict(id='shelf',position=[0,0,0],yaw=0)],exposure_ev=14)
+    defect=dict(room_id='house',instance_id='shelf',kind='missing',severity='blocking',message='Shelf still sparse',suggested_action='none')
+    for baseline_has_defect in (True,False):
+        reviews=[];events=[]
+        def enrich(current,*args):
+            if len(current['instances'])>1 or events:return None
+            candidate=deepcopy(current);candidate['instances'].append(dict(id='book'))
+            return candidate,dict(kind='enrich_room')
+        def inspect(current,evidence):
+            reviews.append(len(current['instances']))
+            return [defect] if len(current['instances'])>1 or baseline_has_defect else []
+        result=converge(m,{},proof(m),[],build=lambda c:({},proof(c)),inspect=inspect,enrich=enrich,record=lambda n,s,p,*a:events.append((s,p)) if s!='proposed' else None,guard=lambda:None)
+        assert reviews==[2,1]
+        assert len(result[0]['instances'])==(2 if baseline_has_defect else 1)
+        if baseline_has_defect:
+            assert result[3]==[defect]
+            assert events[0][1]['existing_defects_verified']==[defect]
+
+
+def test_counterfactual_never_excuses_moved_new_or_physical_targets():
+    from hdrp_agent.house_convergence import counterfactual_candidates
+    before=dict(instances=[dict(id='shelf',position=[0,0,0])]);after=deepcopy(before)
+    defect=dict(room_id='house',instance_id='shelf',kind='missing',severity='blocking')
+    assert counterfactual_candidates(before,after,[],[defect])==[defect]
+    after['instances'][0]['position']=[1,0,0]
+    assert counterfactual_candidates(before,after,[],[defect])==[]
+    assert counterfactual_candidates(before,before,[],[dict(defect,kind='collision')])==[]
+    assert counterfactual_candidates(before,before,[],[dict(defect,kind='lighting')])==[]
+    assert counterfactual_candidates(before,before,[],[dict(defect,instance_id='new')])==[]

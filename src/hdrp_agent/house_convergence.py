@@ -37,6 +37,15 @@ def unmatched(old,new):
     return [o for o in new if not any(same_defect(previous,o) for previous in old)]
 
 
+def counterfactual_candidates(before,after,old,new):
+    """Only pre-existing furnishing targets can have pre-existing sparse content."""
+    previous={i['id']:i for i in before['instances']};current={i['id']:i for i in after['instances']}
+    return [o for o in unmatched(old,new) if o['kind'] in {'composition','missing'}
+            and o.get('instance_id') in previous and o.get('instance_id') in current
+            and all(previous[o['instance_id']].get(k)==current[o['instance_id']].get(k)
+                    for k in ('prefab_guid','position','center','yaw','scale','support_id'))]
+
+
 def signature(manifest):
     return fingerprint(dict(instances=manifest['instances'],exposure_ev=manifest.get('exposure_ev',6),calibrate_exposure=manifest.get('calibrate_exposure',False),lighting=manifest.get('lighting')))
 
@@ -125,6 +134,18 @@ def converge(manifest,receipt,proof,observations,*,build,inspect,enrich,record,g
         if native_failures(candidate_proof)-native_failures(proof):
             record(round_index,'rejected',dict(patch,rejection='Native regression',native_defects=candidate_proof.get('defects',[])),candidate_receipt,candidate_proof);rejections+=1;continue
         candidate_observations=inspect(candidate,candidate_proof)
+        eligible=counterfactual_candidates(manifest,candidate,observations,candidate_observations)
+        if eligible:
+            guard()
+            baseline_review=inspect(manifest,proof)
+            verified=[old for old in baseline_review if any(same_defect(old,new) and
+                      old['severity']==new['severity'] for new in eligible)]
+            if verified:
+                # Preserve the defect in both scenes; do not label an old absence
+                # as damage caused by a new, supported accessory elsewhere.
+                observations=observations+unmatched(observations,verified)
+                planning_observations=observations
+                patch=dict(patch,existing_defects_verified=verified,baseline_scene_path=proof['scene_path'])
         passed,reason=acceptable(proof,candidate_proof,observations,candidate_observations,patch)
         if passed:
             manifest,receipt,proof,observations=candidate,candidate_receipt,candidate_proof,candidate_observations

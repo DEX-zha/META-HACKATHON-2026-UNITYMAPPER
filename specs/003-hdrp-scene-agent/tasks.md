@@ -885,3 +885,5 @@ Presentation qualification evidence: attempt 15 (`b2252079f9094fd0b6e337d659ecbf
 - [x] T333 Resume whole-room correction from its last selected native receipt, rather than replaying accepted zones against changed inspection context. Verify the saved scene checksum, run-owned path and succeeded native result; retain source/epoch and unknown-call guards. Preserve earlier partial/rejected candidates as history.
 
 - [x] T334 Bind visual defect IDs to scene, evidence and observation content instead of batch/list position; repeated inspections may change defect category without corrupting earlier identities. Verify changed-category and identical-replay inspections.
+
+- [x] T335 Verify newly reported missing/composition defects on unchanged existing furniture against an actual inspection of the selected baseline before rejecting an enrichment as a regression. Preserve confirmed defects and their evidence; never excuse physical/lighting faults, moved targets or increased severity. Attempt 15 exposed persistent sparse toy/storage areas incorrectly blamed on new book clusters. Full Python suite: 461 passed; live qualification pending.
