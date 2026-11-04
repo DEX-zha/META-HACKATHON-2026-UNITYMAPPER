@@ -873,3 +873,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T328 Reduce catalogue upload batches to four images without dropping pages and reuse only exact settled, validated house responses across fresh runs. Preserve failed attempt 12 and unknown billing reservations.
 
 - [ ] T329 Before rejecting a newly built zone for a warning on previously accepted furniture, visually verify whether that same warning already exists in the previous accepted scene. Preserve the warning for whole-room correction; blocking, collision, support and native regressions remain fail-closed. Validate counterfactual inspection and final evidence.
+
+- [x] T330 Clarify the supported-item coordinate contract in the room briefing: parent-local coordinates and parent-local yaw, distinct from floor furniture group offsets. Prepared after the presentation run exposed repeated bedside-lamp placement failures; deployment follows the active run.
