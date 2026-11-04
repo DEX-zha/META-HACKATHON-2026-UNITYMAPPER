@@ -875,3 +875,5 @@ Avancement exécution House v1 : admission `generate_house` connectée de bout e
 - [ ] T329 Before rejecting a newly built zone for a warning on previously accepted furniture, visually verify whether that same warning already exists in the previous accepted scene. Preserve the warning for whole-room correction; blocking, collision, support and native regressions remain fail-closed. Validate counterfactual inspection and final evidence.
 
 - [x] T330 Clarify the supported-item coordinate contract in the room briefing: parent-local coordinates and parent-local yaw, distinct from floor furniture group offsets. Prepared after the presentation run exposed repeated bedside-lamp placement failures; deployment follows the active run.
+
+- [ ] T331 Persist the full furnishing plan before native construction and explicitly resume a provider-interrupted run without replaying unknown calls. Require unchanged epoch/source version, no competing session, no in-flight providers and only succeeded native receipts. Preserve historical evidence and budget reservations. Qualify on presentation attempt 15.

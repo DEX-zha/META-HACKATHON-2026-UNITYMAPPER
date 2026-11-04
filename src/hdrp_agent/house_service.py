@@ -171,6 +171,8 @@ class HouseService:
         provider=self.provider_factory(self.settings,HouseCallBudget(self,row['run_id'],key),self.artifacts)
         try:
             if prior and prior['call_id']:
+                with closing(self.store.connect()) as c: prior_status=c.execute('SELECT status FROM calls WHERE id=?',(prior['call_id'],)).fetchone()
+                if prior_status and prior_status['status']=='unknown':raise AgentError('PROVIDER_OUTCOME_UNKNOWN','Previously unknown provider call retained; no retransmission')
                 response=provider.recover_completed(prior['call_id'],request,schema)
             else:
                 # Only exact, settled requests can be reused. Unknown calls retain
@@ -313,44 +315,79 @@ class HouseService:
                 return result,proof
             if command['status'] in {'unknown','cancelled','failed'}:raise AgentError('RECOVERY_REQUIRED','Native command requires reconciliation')
             self.guard(row);time.sleep(.25)
+    def resume(self,action,request):
+        """Explicit recovery of a provider-interrupted run, without replaying unknown calls."""
+        with self.store.tx() as c:
+            row=c.execute('SELECT * FROM house_actions WHERE id=?',(action,)).fetchone()
+            if not row:raise AgentError('NOT_FOUND','House action not found',404)
+            cp=json.loads(row['checkpoint'])
+            if row['state']!='failed' or cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} or not cp.get('planned_run_hash'):
+                raise AgentError('RECOVERY_REQUIRED','Provider-interrupted frozen plan required')
+            if c.execute("SELECT 1 FROM sessions WHERE id!=? AND state NOT IN ('completed','interrupted','limit_reached')",(row['session_id'],)).fetchone():raise AgentError('SESSION_ACTIVE','Another run owns Unity')
+            project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()
+            if project['epoch']!=cp['epoch'] or json.loads(project['body'])['scene_version']!=cp['source_version']:raise AgentError('STALE_VERSION','Source scene or editor epoch changed')
+            if c.execute("SELECT 1 FROM commands WHERE session_id=? AND status!='succeeded'",(row['session_id'],)).fetchone():raise AgentError('RECOVERY_REQUIRED','Native outcomes must all be verified before provider recovery')
+            if c.execute("SELECT 1 FROM house_calls h JOIN calls c ON h.call_id=c.id WHERE h.run_id=? AND c.status IN ('reserved','sent')",(row['run_id'],)).fetchone():raise AgentError('RECOVERY_REQUIRED','Provider calls are still in flight')
+            cp.update(stage='queued',message='Resuming frozen plan with recorded native evidence',execution_state='queued',quality_state='pending',inspection_targets=[],updated_at=utc_now())
+            cp.pop('error_code',None)
+            c.execute("UPDATE house_actions SET state='queued',checkpoint=? WHERE id=?",(canonical(cp),action))
+            c.execute('UPDATE sessions SET stop_requested=0 WHERE id=?',(row['session_id'],))
+            self.store.update_session(c,row['session_id'],state='preflight',stop_reason=None)
+            self.store.event(c,action,'house.resume_requested',dict(reason=request['reason'],planned_run_hash=cp['planned_run_hash'],unknown_calls_retried=False))
+        return self.get(action)
+
+    def planned_run(self,row,params):
+        run=row['run_id'];cp=json.loads(row['checkpoint'])
+        frozen=cp.get('planned_run_hash')
+        if frozen:
+            value=json.loads(self.artifacts.read(frozen))
+            if value['manifest']['run_id']!=run:raise AgentError('STALE_EVIDENCE','Frozen plan belongs to another run')
+            return value
+        self.save(row,'outline','Muse is planning the requested rooms and activities')
+        images=[]
+        for h in params['reference_hashes']:
+            with Image.open(io.BytesIO(self.artifacts.read(h))) as im:
+                im=im.convert('RGB');im.thumbnail((1280,720));buf=io.BytesIO();im.save(buf,format='PNG');images.append(buf.getvalue())
+        outline=self.ask(row,'outline','Design a complete Unity house program from this brief. Preserve every requested room and floor; never omit an unsupported need. Give distinct stable room IDs. floor_index is zero-based: 0 is ground floor; an isolated single room belongs to floor 0 unless the user explicitly requests another level. Do not invent an upstairs location. Dimensions in metres, prefer multiples of 3 compatible with native tiles. Hidden parts are creative and must follow brief. Native prefab contact checks, circulation inspection and SAM/Muse image review are provided by this pipeline; do not list those inspection requests as unsupported building features. Return unresolved architectural or furnishing requirements explicitly. User reference data: '+canonical(params),'ModelHouseOutline',images)
+        seen_outlines=set()
+        while True:
+            try:
+                building=building_from_outline(outline)
+                break
+            except AgentError as error:
+                signature=fingerprint(outline)
+                if signature in seen_outlines:raise
+                seen_outlines.add(signature)
+                self.guard(row)
+                outline=self.ask(row,'outline-repair-'+str(len(seen_outlines)),'Repair the rejected room outline using this validator feedback. Preserve the original user request, dimensions and explicit floors; do not silently remove requested floors. floor_index is zero-based (ground=0). A single standalone room defaults to 0; do not invent an upper floor. If the requested architecture itself is unsupported, retain that requirement explicitly rather than claiming success. '+canonical(dict(request=params,rejected_outline=outline,validation_error=str(error))),'ModelHouseOutline',images)
+        assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
+        for room in outline['rooms']:
+            self.guard(row);self.save(row,'furnishing','Furnishing '+room['purpose'],current_scope=room['id'])
+            visual_selection=self.browse_assets(row,room,params['brief'],assets)
+            design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Visually reviewed resource selection (prefer suitable reviewed assets; do not confuse appearance with qualified supports): '+canonical(visual_selection)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
+            if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
+            design,placed=self.place_reviewed_design(row,room,design,assets,building,params['brief']);designs.append(dict(design=design,placement=placed))
+            requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
+        if not requirements:raise AgentError('PROGRAM_INCOMPLETE','No supported functional requirements')
+        lighting=self.ask(row,'lighting-intent',
+            'Choose the implemented lighting path for the user brief. Default to reference_daylight_bake: candidate-owned clean-day environment, window daylight and scene-scoped indirect bake. Choose warm_interior only when the user explicitly requests night, no daylight or a practical-light mood. That practical mode has no verified indirect bake yet; preserve such unmet requests in unresolved. Do not change night intent into day just to use the better-qualified path. Both modes meter exposure from the actual candidate. A selected mode is not proof of artistic success. '+canonical(dict(brief=params['brief'],outline=outline,reference=self.reference_context(row))),
+            'ModelHouseLightingIntent')
+        missing.extend(lighting['unresolved'])
+        self.save(row,'lighting','Lighting intent: '+lighting['reason'],lighting_intent=lighting)
+        program=dict(id='house',project_id=row['project_id'],run_id=run,brief=params['brief'],creative_policy=params['creative_policy'],reference_hashes=params['reference_hashes'],rooms=[dict(id=r['id'],floor_id='ground',purpose=r['purpose']) for r in outline['rooms']],requirements=requirements)
+        self.houses.create(program,building)
+        manifest=dict(schema_version='house-manifest.v1',run_id=run,building=building,instances=instances,access=access,interior_style=params['interior_style'],lighting=lighting['mode'],designs=designs,exposure_ev=6,calibrate_exposure=True)
+        self.save(row,'building','Metric plan ready; native assembly',unresolved=missing)
+        value=dict(outline=outline,manifest=manifest,requirements=requirements,missing=missing)
+        frozen=self.artifacts.put(canonical(value).encode(),'application/json')
+        self.save(row,'building','Frozen furnishing plan saved',planned_run_hash=frozen)
+        return value
+
     def run(self,action):
         row=self.row(action);params=json.loads(row['request'])['parameters'];run=row['run_id']
         try:
-            self.save(row,'outline','Muse is planning the requested rooms and activities')
-            images=[]
-            for h in params['reference_hashes']:
-                with Image.open(io.BytesIO(self.artifacts.read(h))) as im:
-                    im=im.convert('RGB');im.thumbnail((1280,720));buf=io.BytesIO();im.save(buf,format='PNG');images.append(buf.getvalue())
-            outline=self.ask(row,'outline','Design a complete Unity house program from this brief. Preserve every requested room and floor; never omit an unsupported need. Give distinct stable room IDs. floor_index is zero-based: 0 is ground floor; an isolated single room belongs to floor 0 unless the user explicitly requests another level. Do not invent an upstairs location. Dimensions in metres, prefer multiples of 3 compatible with native tiles. Hidden parts are creative and must follow brief. Native prefab contact checks, circulation inspection and SAM/Muse image review are provided by this pipeline; do not list those inspection requests as unsupported building features. Return unresolved architectural or furnishing requirements explicitly. User reference data: '+canonical(params),'ModelHouseOutline',images)
-            seen_outlines=set()
-            while True:
-                try:
-                    building=building_from_outline(outline)
-                    break
-                except AgentError as error:
-                    signature=fingerprint(outline)
-                    if signature in seen_outlines:raise
-                    seen_outlines.add(signature)
-                    self.guard(row)
-                    outline=self.ask(row,'outline-repair-'+str(len(seen_outlines)),'Repair the rejected room outline using this validator feedback. Preserve the original user request, dimensions and explicit floors; do not silently remove requested floors. floor_index is zero-based (ground=0). A single standalone room defaults to 0; do not invent an upper floor. If the requested architecture itself is unsupported, retain that requirement explicitly rather than claiming success. '+canonical(dict(request=params,rejected_outline=outline,validation_error=str(error))),'ModelHouseOutline',images)
-            assets=self.catalogue();designs=[];requirements=[];instances=[];missing=list(outline['unresolved']);access=[]
-            for room in outline['rooms']:
-                self.guard(row);self.save(row,'furnishing','Furnishing '+room['purpose'],current_scope=room['id'])
-                visual_selection=self.browse_assets(row,room,params['brief'],assets)
-                design=self.ask(row,'room-'+room['id'],room_prompt(dict(room,geometry=next(r for r in building['rooms'] if r['id']==room['id']),portals=building['portals']),params['brief'],assets)+' Visually reviewed resource selection (prefer suitable reviewed assets; do not confuse appearance with qualified supports): '+canonical(visual_selection)+' Native lighting reference data: '+canonical(self.reference_context(row)),'ModelHouseRoomV2',images)
-                if design['room_id']!=room['id'] or len({g['id'] for g in design['groups']})!=len(design['groups']):raise AgentError('INVALID_MODEL_OUTPUT','Room scope or group identity differs')
-                design,placed=self.place_reviewed_design(row,room,design,assets,building,params['brief']);designs.append(dict(design=design,placement=placed))
-                requirements.extend(placed['requirements']);instances.extend(placed['instances']);missing.extend(placed['missing']);missing.extend(design['unresolved']);access.append(dict(room_id=room['id'],points=placed['access_points']))
-            if not requirements:raise AgentError('PROGRAM_INCOMPLETE','No supported functional requirements')
-            lighting=self.ask(row,'lighting-intent',
-                'Choose the implemented lighting path for the user brief. Default to reference_daylight_bake: candidate-owned clean-day environment, window daylight and scene-scoped indirect bake. Choose warm_interior only when the user explicitly requests night, no daylight or a practical-light mood. That practical mode has no verified indirect bake yet; preserve such unmet requests in unresolved. Do not change night intent into day just to use the better-qualified path. Both modes meter exposure from the actual candidate. A selected mode is not proof of artistic success. '+canonical(dict(brief=params['brief'],outline=outline,reference=self.reference_context(row))),
-                'ModelHouseLightingIntent')
-            missing.extend(lighting['unresolved'])
-            self.save(row,'lighting','Lighting intent: '+lighting['reason'],lighting_intent=lighting)
-            program=dict(id='house',project_id=row['project_id'],run_id=run,brief=params['brief'],creative_policy=params['creative_policy'],reference_hashes=params['reference_hashes'],rooms=[dict(id=r['id'],floor_id='ground',purpose=r['purpose']) for r in outline['rooms']],requirements=requirements)
-            self.houses.create(program,building)
-            manifest=dict(schema_version='house-manifest.v1',run_id=run,building=building,instances=instances,access=access,interior_style=params['interior_style'],lighting=lighting['mode'],designs=designs,exposure_ev=6,calibrate_exposure=True)
-            self.save(row,'building','Metric plan ready; native assembly',unresolved=missing)
+            planned=self.planned_run(row,params)
+            outline=planned['outline'];manifest=planned['manifest'];requirements=planned['requirements'];missing=planned['missing'];assets=self.catalogue()
             def zone_inspect(candidate,evidence,room,zone):
                 scoped=dict(outline,rooms=[r for r in outline['rooms'] if r['id']==room])
                 return self.inspect(row,scoped,candidate['instances'],evidence,persist=False,stage_scope=inspection_scope(manifest,candidate,room,zone))

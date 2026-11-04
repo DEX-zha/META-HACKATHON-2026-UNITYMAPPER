@@ -207,7 +207,7 @@ class MetaResponses:
             raise AgentError('PROVIDER_OUTCOME_UNKNOWN','Request outcome is unknown; reservation retained; no automatic retry') from None
         try:data=response.json()
         except ValueError:
-            self.budget.mark_unknown(call['id']);raise AgentError('INVALID_MODEL_OUTPUT','Non-JSON provider envelope; reservation retained')
+            self.budget.mark_unknown(call['id']);raise AgentError('PROVIDER_OUTCOME_UNKNOWN','Non-JSON provider envelope; reservation retained; no automatic retry')
         if not isinstance(data,dict):
             self.budget.mark_unknown(call['id']);raise AgentError('INVALID_MODEL_OUTPUT','Provider envelope must be an object; usage unknown and reservation retained')
         clean=canonical(data)

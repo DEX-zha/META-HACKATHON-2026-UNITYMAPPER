@@ -163,6 +163,10 @@ def create_app(settings=None):
     @app.get('/v1/app/actions/{action_id}')
     def get_action(action_id: str):return (house_service if house_service.owns(action_id) else app_commands).get(action_id)
 
+    @app.post('/v1/app/actions/{action_id}/resume',status_code=202)
+    async def resume_house(action_id: str,request: Request):
+        return await asyncio.to_thread(house_service.resume,action_id,await body(request,'StopRequest'))
+
     @app.get('/v1/app/actions/{action_id}/house')
     def house_progress(action_id: str):return house_service.progress(action_id)
 

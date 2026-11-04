@@ -325,3 +325,33 @@ def test_exact_response_reuse_requires_settlement_and_validated_house_value(tmp_
     assert calls==[expected]
     with h.store.connect() as c:
         assert c.execute('SELECT status,reserved FROM calls WHERE id=?',('old-call',)).fetchone()[:]==(status,10)
+
+
+def test_provider_resume_preserves_run_and_unknown_billing(tmp_path):
+    import json
+    h,r=house_setup(tmp_path);action=h.admit(r);run=action['run_id']
+    frozen=h.artifacts.put(canonical(dict(manifest=dict(run_id=run),outline={},requirements=[],missing=[])).encode(),'application/json')
+    with h.store.tx() as c:
+        cp=json.loads(c.execute('SELECT checkpoint FROM house_actions WHERE id=?',(r['action_id'],)).fetchone()[0]);cp.update(planned_run_hash=frozen,error_code='PROVIDER_OUTCOME_UNKNOWN')
+        c.execute("UPDATE house_actions SET state='failed',checkpoint=? WHERE id=?",(canonical(cp),r['action_id']))
+        h.store.update_session(c,action['session_id'],state='interrupted')
+        c.execute('INSERT INTO calls VALUES(?,?,?,?,?,?,?,?)',('unknown-call','sam-3.1','x','unknown',2500,None,'{}','2026-01-01'))
+        c.execute('INSERT INTO house_calls VALUES(?,?,?,?,?)',(run,'sam-x','x','unknown-call',None))
+    resumed=h.resume(r['action_id'],dict(reason='Continue exact frozen plan'))
+    assert resumed['state']=='queued' and resumed['run_id']==run
+    with h.store.connect() as c:
+        assert c.execute('SELECT status,reserved FROM calls WHERE id=?',('unknown-call',)).fetchone()[:]==('unknown',2500)
+    assert h.planned_run(h.row(r['action_id']),{})['manifest']['run_id']==run
+
+
+def test_resume_rejects_missing_plan_or_changed_editor(tmp_path):
+    import json
+    h,r=house_setup(tmp_path);action=h.admit(r)
+    with h.store.tx() as c:
+        cp=json.loads(c.execute('SELECT checkpoint FROM house_actions WHERE id=?',(r['action_id'],)).fetchone()[0]);cp.update(error_code='PROVIDER_OUTCOME_UNKNOWN')
+        c.execute("UPDATE house_actions SET state='failed',checkpoint=? WHERE id=?",(canonical(cp),r['action_id']))
+        h.store.update_session(c,action['session_id'],state='interrupted')
+    with pytest.raises(AgentError,match='frozen plan'):h.resume(r['action_id'],dict(reason='Resume'))
+    cp.update(planned_run_hash='f'*64,epoch='different')
+    with h.store.tx() as c:c.execute('UPDATE house_actions SET checkpoint=? WHERE id=?',(canonical(cp),r['action_id']))
+    with pytest.raises(AgentError,match='epoch changed'):h.resume(r['action_id'],dict(reason='Resume'))
