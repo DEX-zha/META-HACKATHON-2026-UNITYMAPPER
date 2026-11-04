@@ -30,6 +30,8 @@ def export(root,run,output):
     action=c.execute('select * from house_actions where run_id=?',(run,)).fetchone()
     if not action:raise ValueError('Unknown run')
     request=json.loads(action['request']);checkpoint=json.loads(action['checkpoint'])
+    accepted_paths={item.get('scene_path') for item in checkpoint.get('zone_history',[])+checkpoint.get('iterations',[]) if item.get('status')=='accepted'}
+    accepted_paths.add(checkpoint.get('scene_path'))
     (output/'prompt.txt').write_text(request['parameters']['brief']+'\n')
     (output/'checkpoint.json').write_text(json.dumps(checkpoint,indent=2))
     events=[dict(r) for r in c.execute('select id,kind,body,created_at from events where subject=? order by id',(action['id'],))]
@@ -44,15 +46,16 @@ def export(root,run,output):
         folder=output/f'stage-{len(stages)+1:02d}';folder.mkdir(exist_ok=True)
         (folder/'native-proof.json').write_text(json.dumps(proof,indent=2))
         stage=dict(command_id=command['id'],command_status=command['status'],scene_path=proof['scene_path'],instance_count=len(proof['instances']),selected=proof['scene_path']==checkpoint.get('scene_path'),images=[],sam=[])
+        stage['accepted_stage']=proof['scene_path'] in accepted_paths
         for cap in proof.get('captures',[]):
             target=folder/(cap['key']+'.png');shutil.copyfile(artifact(cap['artifact_hash']),target);stage['images'].append(str(target.relative_to(output)))
             relative=Path(cap.get('file',''))
             overlay=state/'house/runs'/run/relative.parent/('sam-'+relative.name)
             if overlay.is_file():
                 target=folder/('sam-'+cap['key']+'.png');shutil.copyfile(overlay,target);stage['sam'].append(str(target.relative_to(output)));sam.append(target)
-        if stage['images']:evolution.append(output/stage['images'][0])
+        if stage['images'] and stage['accepted_stage']:evolution.append(output/stage['images'][0])
         segmentation_hash=checkpoint.get('segmentation_receipts',{}).get(proof['scene_version'])
-        if segmentation_hash and stage['sam']:
+        if segmentation_hash and stage['sam'] and stage['accepted_stage']:
             scores={}
             for segmentation in json.loads(artifact(segmentation_hash).read_text()):
                 for region in segmentation['regions']:
@@ -88,9 +91,9 @@ def export(root,run,output):
     (output/'manifest.json').write_text(json.dumps(summary,indent=2))
     cards=[]
     for n,stage in enumerate(stages):
-        cards.append(f'<section><h2>Stage {n+1} · {stage["instance_count"]} instances'+(' · Selected result' if stage['selected'] else ' · Candidate')+'</h2><p>'+html.escape(stage['scene_path'])+'</p><div class="grid">'+''.join('<figure><a href="'+i+'"><img loading="lazy" src="'+i+'"></a><figcaption>'+html.escape(Path(i).name)+'</figcaption></figure>' for i in stage['images']+stage['sam'])+'</div></section>')
+        cards.append(f'<section><h2>Stage {n+1} · {stage["instance_count"]} instances'+(' · Selected result' if stage['selected'] else ' · Accepted construction stage' if stage['accepted_stage'] else ' · Intermediate candidate')+'</h2><p>'+html.escape(stage['scene_path'])+'</p><div class="grid">'+''.join('<figure><a href="'+i+'"><img loading="lazy" src="'+i+'"></a><figcaption>'+html.escape(Path(i).name)+'</figcaption></figure>' for i in stage['images']+stage['sam'])+'</div></section>')
     videos=''.join('<figure><video controls preload="metadata" src="'+p.name+'"></video><figcaption>'+p.name+'</figcaption></figure>' for p in sorted(output.glob('*.mp4')))
-    (output/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>UnityMapper · Bedroom demonstration</title><style>body{background:#101722;color:#edf3fa;font:16px system-ui;margin:40px auto;max-width:1400px;padding:0 24px}h1{font-size:36px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}figure{margin:0 0 24px}img,video{width:100%;border-radius:12px}figcaption,p{color:#aebed0}section{margin-top:48px}a{color:#78b5ff}pre{white-space:pre-wrap;background:#1a2535;padding:24px;border-radius:12px}</style><h1>UnityMapper · Bedroom demonstration</h1><p>Run '+run+' · '+html.escape(str(action['state']))+' · Quality: '+html.escape(str(checkpoint.get('quality_state')))+' </p><p>Original native renders and actual SAM mask overlays. Montages show discrete views; live segments contain sampled native camera frames. Intermediate or rejected candidates are not final results.</p><p><a href="manifest.json">Evidence manifest</a> · <a href="events.json">Agent decisions and progress</a> · <a href="prompt.txt">Exact prompt</a></p><pre>'+html.escape(request['parameters']['brief'])+'</pre><div class="grid">'+videos+'</div>'+''.join(cards))
+    (output/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>UnityMapper · Bedroom demonstration</title><style>body{background:#101722;color:#edf3fa;font:16px system-ui;margin:40px auto;max-width:1400px;padding:0 24px}h1{font-size:36px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}figure{margin:0 0 24px}img,video{width:100%;border-radius:12px}figcaption,p{color:#aebed0}section{margin-top:48px}a{color:#78b5ff}pre{white-space:pre-wrap;background:#1a2535;padding:24px;border-radius:12px}</style><h1>UnityMapper · Bedroom demonstration</h1><p>Run '+run+' · '+html.escape(str(action['state']))+' · Quality: '+html.escape(str(checkpoint.get('quality_state')))+' </p><p>Original native renders and actual SAM mask overlays. Montages show discrete views; live segments contain sampled native camera frames. The evolution montage and SAM highlights follow accepted construction stages. The full gallery retains intermediate and rejected candidates; these are not final results.</p><p><a href="manifest.json">Evidence manifest</a> · <a href="events.json">Agent decisions and progress</a> · <a href="prompt.txt">Exact prompt</a></p><pre>'+html.escape(request['parameters']['brief'])+'</pre><div class="grid">'+videos+'</div>'+''.join(cards))
     print(json.dumps(dict(output=str(output),stages=len(stages),recordings=len(recordings),state=action['state'],quality=checkpoint.get('quality_state'))))
 
 

@@ -35,6 +35,8 @@ unity/HDRPValidation/Assets/AgentWorkspace/
 unity/HDRPValidation/Assets/AgentWorkspace.meta
 unity/HDRPValidation/Assets/AtmosphericHouse/
 unity/HDRPValidation/Assets/AtmosphericHouse.meta
+unity/HDRPValidation/Assets/HouseProps/
+unity/HDRPValidation/Assets/HouseProps.meta
 unity/HDRPValidation/.hdrp-agent/
 # Temporary native launchers used for local verification
 unity/HDRPValidation/Assets/Editor/*Launch.cs*

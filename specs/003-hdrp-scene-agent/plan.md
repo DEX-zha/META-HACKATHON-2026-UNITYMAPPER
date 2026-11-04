@@ -363,3 +363,13 @@ Budget-accounted live visual verification after T325 (`call-1e48842c777f40e099d8
 ### Presentation run and partial segmentation availability
 
 A transport-unknown SAM concept must remain an explicitly unavailable observation with its original budget reservation. Other independent masks and original native images can still inform Muse review; no unavailable concept counts as an empty detection or verified coverage. Stop, budget and invalid-output errors remain fatal. The presentation export retains the exact brief, original renders, actual mask overlays and chronological progress. Derived montage clips are labelled separately from continuous native camera recordings. Whole-room artistic qualification still requires inspection of the completed result.
+
+### Durable correction and comparison recovery (presentation attempt 15)
+
+Freeze the furnishing plan before construction. Recover a selected whole-room candidate from its succeeded native receipt and exact saved scene checksum instead of replaying already accepted zones. If an interrupted enrichment was already captured, reuse it only when the added IDs and every existing instance match the recorded proposal and baseline. Verify run ownership, source epoch/version, terminal native outcomes and absence of in-flight provider calls before an explicit resume. Unknown provider outcomes keep their reservations and are never retransmitted automatically.
+
+Enrichment requirements use deterministic proposal-specific identities, including rejected or unplaced accessories. Visual defect identities bind scene, evidence and observation content, rather than list positions. This preserves historical findings across reinspection without ID collisions.
+
+A new missing/composition finding on an unchanged existing furnishing target may describe an old absence. Before calling it a regression, inspect the actual baseline and require the same defect and severity there. Retain that confirmed defect as unresolved; do not waive physical or lighting regressions, moved objects, or severity increases absent from baseline. This separates progress in supported furnishing from unresolved artistic quality.
+
+Attempt 15 (`b2252079f9094fd0b6e337d659ecbf6f`) required operator-assisted service fixes and resumes; it is a development demonstration, not an uninterrupted autonomous benchmark. Its 26-instance enrichment was accepted with the original source preserved; subsequent candidates remain under review. Final media, quality verdict and remaining defects belong in `.hdrp-agent/reports/bedroom-demo-attempt-15/`. Full Python suite after recovery/comparison changes: 463 passed. T284/T327 artistic acceptance remains open.
