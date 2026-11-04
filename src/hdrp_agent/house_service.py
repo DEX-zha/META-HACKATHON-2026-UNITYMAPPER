@@ -20,7 +20,7 @@ from PIL import Image
 from .domain import AgentError, canonical, fingerprint, payload
 from .store import utc_now
 from .house_store import HouseStore
-from .house_planning import building_from_outline, place_groups, namespace_addition
+from .house_planning import building_from_outline, place_groups, namespace_addition, namespace_enrichment
 from .house_briefing import room_prompt, RENDER_REFERENCE_POLICY
 from .house_lighting_reference import load_reference, candidate_evidence
 from .house_zones import assemble as assemble_zones, inspection_scope, scoped_observations, ZONE_REVIEW_POLICY
@@ -321,7 +321,8 @@ class HouseService:
             row=c.execute('SELECT * FROM house_actions WHERE id=?',(action,)).fetchone()
             if not row:raise AgentError('NOT_FOUND','House action not found',404)
             cp=json.loads(row['checkpoint'])
-            if row['state']!='failed' or cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} or not cp.get('planned_run_hash'):
+            enrichment_conflict=cp.get('error_code')=='IDEMPOTENCY_CONFLICT' and cp.get('message')=='Enrichment changed requirement identity'
+            if row['state']!='failed' or (cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} and not enrichment_conflict) or not cp.get('planned_run_hash'):
                 raise AgentError('RECOVERY_REQUIRED','Provider-interrupted frozen plan required')
             if c.execute("SELECT 1 FROM sessions WHERE id!=? AND state NOT IN ('completed','interrupted','limit_reached')",(row['session_id'],)).fetchone():raise AgentError('SESSION_ACTIVE','Another run owns Unity')
             project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()
@@ -535,6 +536,7 @@ class HouseService:
             offset=max([int(i['id'].rsplit('-',1)[1]) for i in manifest['instances'] if i['room_id']==room['id'] and '-detail-' in i['id'] and i['id'].rsplit('-',1)[1].isdigit()]+[-1])+1
             access=next((a['points'] for a in manifest['access'] if a['room_id']==room['id']),[])
             placed=place_groups(manifest['building'],addition,assets,existing=manifest['instances'],access_points=access,detail_offset=offset)
+            placed=namespace_enrichment(placed,'enrich-'+fingerprint(key))
             self.houses.extend_requirements(row['run_id'],placed['requirements'])
             if addition['unresolved'] or placed['missing']:
                 cp=json.loads(row['checkpoint']);self.save(row,'correcting','Additions evaluated; some requirements remain unavailable',unresolved=cp.get('unresolved',[])+addition['unresolved']+placed['missing'])

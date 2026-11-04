@@ -35,7 +35,7 @@ def export(root,run,output):
     events=[dict(r) for r in c.execute('select id,kind,body,created_at from events where subject=? order by id',(action['id'],))]
     for event in events:event['body']=json.loads(event['body'])
     (output/'events.json').write_text(json.dumps(events,indent=2))
-    stages=[];evolution=[];sam=[]
+    stages=[];evolution=[];sam=[];sam_highlights=[]
     for command in c.execute('select id,status,result from commands where session_id=? order by rowid',(action['session_id'],)):
         result=json.loads(command['result'] or '{}');digest=result.get('details_artifact_hash')
         if not digest:continue
@@ -51,12 +51,27 @@ def export(root,run,output):
             if overlay.is_file():
                 target=folder/('sam-'+cap['key']+'.png');shutil.copyfile(overlay,target);stage['sam'].append(str(target.relative_to(output)));sam.append(target)
         if stage['images']:evolution.append(output/stage['images'][0])
+        segmentation_hash=checkpoint.get('segmentation_receipts',{}).get(proof['scene_version'])
+        if segmentation_hash and stage['sam']:
+            scores={}
+            for segmentation in json.loads(artifact(segmentation_hash).read_text()):
+                for region in segmentation['regions']:
+                    x0,y0,x1,y1=region['bbox_xyxy'];key=segmentation['capture_hash'];scores[key]=scores.get(key,0)+(x1-x0)*(y1-y0)
+            ranked=sorted(proof['captures'],key=lambda cap:scores.get(cap['artifact_hash'],0),reverse=True)
+            for cap in ranked:
+                image=folder/('sam-'+cap['key']+'.png')
+                if image.exists() and scores.get(cap['artifact_hash'],0)>0:
+                    sam_highlights.append(image);break
         stages.append(stage)
     # These clips are explicitly still-image montages, not continuous camera footage.
     encode(evolution,output/'01-evolution-montage.mp4',.5)
     encode(sam,output/'02-sam-views-montage.mp4',1)
     selected=next((s for s in reversed(stages) if s['selected']),None)
-    if selected:encode([output/i for i in selected['images']],output/'03-selected-room-views.mp4',.5)
+    if selected:
+        overview=selected['images'][:4];details=selected['images'][4:]
+        highlights=overview+[details[round(n*(len(details)-1)/max(1,min(4,len(details))-1))] for n in range(min(4,len(details)))] if details else overview
+        encode([output/i for i in dict.fromkeys(highlights)],output/'03-selected-room-views.mp4',.5)
+    encode(sam_highlights[-6:],output/'04-sam-highlights.mp4',.5)
     live=output/'live-frames.json';recordings=[]
     if live.exists():
         frames=json.loads(live.read_text())['frames'];groups=[]

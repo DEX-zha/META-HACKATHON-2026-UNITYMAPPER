@@ -2,7 +2,7 @@
 from collections import deque
 from copy import deepcopy
 from math import ceil, cos, sin, radians
-from .domain import AgentError
+from .domain import AgentError, fingerprint
 from .house_domain import BuildingIR
 from .house_supports import footprint_supported
 from .house_floor_details import floor_detail, place_floor_details
@@ -259,6 +259,20 @@ def place_groups(building,design,assets,*,existing=(),access_points=(),detail_of
         if not isinstance(name,str) or not name.startswith(('Carpet_','Decal_papers_')):place_details(room['id'],[name],assets,instances,requirements,missing,offset=detail_offset+i)
     place_floor_details(room,floors+deferred,assets,instances,requirements,missing,reservations,detail_offset,requests=floor_requests)
     return dict(instances=instances[initial:],requirements=requirements,missing=missing,access_points=uses,door_reservations=reservations)
+
+
+def namespace_enrichment(placed, namespace):
+    """Keep rejected and unplaced needs distinct across enrichment requests."""
+    result=deepcopy(placed)
+    identities={r['id']:'enrich-'+fingerprint([namespace,r['id']]) for r in result['requirements']}
+    for collection in ('requirements','instances','missing'):
+        for item in result[collection]:
+            item['id']=identities.get(item['id'],item['id'])
+            if item.get('support_id') in identities:
+                item['support_id']=identities[item['support_id']]
+            if 'fulfilled_by' in item:
+                item['fulfilled_by']=[identities.get(i,i) for i in item['fulfilled_by']]
+    return result
 
 
 def detail_asset(entry):

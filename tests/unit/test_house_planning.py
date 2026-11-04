@@ -215,3 +215,17 @@ def test_explicit_slot_names_do_not_send_library_books_to_bedside_or_another_roo
     only_foreign=instances[:1];missing=[]
     place_details('bedroom',['Book_set_A'],assets,only_foreign,[],missing)
     assert len(only_foreign)==1 and len(missing)==1
+
+
+def test_enrichment_identity_survives_rejected_and_unplaced_details():
+    from hdrp_agent.house_planning import namespace_enrichment
+    placed=dict(requirements=[dict(id='room-detail-0',role='book'),dict(id='room-detail-1',role='lamp')],instances=[dict(id='room-detail-0',support_id='existing-shelf',position=[1,2,3])],missing=[dict(id='room-detail-1',reason='No support')])
+    first=namespace_enrichment(placed,'request-a')
+    other=namespace_enrichment(placed,'request-b')
+    assert first==namespace_enrichment(placed,'request-a')
+    assert {r['id'] for r in first['requirements']}.isdisjoint(r['id'] for r in other['requirements'])
+    assert first['instances'][0]['id']==first['requirements'][0]['id']
+    assert first['missing'][0]['id']==first['requirements'][1]['id']
+    assert first['instances'][0]['support_id']=='existing-shelf'
+    assert first['instances'][0]['position']==[1,2,3]
+    assert placed['requirements'][0]['id']=='room-detail-0'

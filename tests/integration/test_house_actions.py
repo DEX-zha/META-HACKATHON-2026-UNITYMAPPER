@@ -355,3 +355,17 @@ def test_resume_rejects_missing_plan_or_changed_editor(tmp_path):
     cp.update(planned_run_hash='f'*64,epoch='different')
     with h.store.tx() as c:c.execute('UPDATE house_actions SET checkpoint=? WHERE id=?',(canonical(cp),r['action_id']))
     with pytest.raises(AgentError,match='epoch changed'):h.resume(r['action_id'],dict(reason='Resume'))
+
+
+@pytest.mark.parametrize('message,allowed', [('Enrichment changed requirement identity',True),('House run already has a different program',False)])
+def test_resume_only_known_enrichment_identity_conflict(tmp_path,message,allowed):
+    import json
+    h,r=house_setup(tmp_path);action=h.admit(r)
+    with h.store.tx() as c:
+        cp=json.loads(c.execute('SELECT checkpoint FROM house_actions WHERE id=?',(r['action_id'],)).fetchone()[0])
+        cp.update(planned_run_hash='a'*64,error_code='IDEMPOTENCY_CONFLICT',message=message)
+        c.execute("UPDATE house_actions SET state='failed',checkpoint=? WHERE id=?",(canonical(cp),r['action_id']))
+        h.store.update_session(c,action['session_id'],state='interrupted')
+    if allowed:assert h.resume(r['action_id'],dict(reason='Continue after identity fix'))['state']=='queued'
+    else:
+        with pytest.raises(AgentError):h.resume(r['action_id'],dict(reason='Resume'))
