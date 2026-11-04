@@ -883,3 +883,5 @@ Presentation qualification evidence: attempt 15 (`b2252079f9094fd0b6e337d659ecbf
 - [x] T332 Namespace every enrichment requirement and new instance by its exact proposal key, including unplaced and rejected details; preserve external supports and stable replay identities. Attempt 15 exposed reuse of a detail index for a different role after a rejected candidate. Keep identity conflicts fail-closed and allow explicit recovery only for this verified conflict with frozen-plan/native/provider guards unchanged.
 
 - [x] T333 Resume whole-room correction from its last selected native receipt, rather than replaying accepted zones against changed inspection context. Verify the saved scene checksum, run-owned path and succeeded native result; retain source/epoch and unknown-call guards. Preserve earlier partial/rejected candidates as history.
+
+- [x] T334 Bind visual defect IDs to scene, evidence and observation content instead of batch/list position; repeated inspections may change defect category without corrupting earlier identities. Verify changed-category and identical-replay inspections.

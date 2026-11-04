@@ -50,6 +50,14 @@ def test_inspection_batches_every_capture_and_persists_sam(tmp_path,monkeypatch)
     assert calls==[12,12,1]
     assert len(observations)==3
     assert len(h.progress(r['action_id'])['segmentations'])==25
+    previous={o['id'] for o in observations}
+    monkeypatch.setattr(h,'ask',lambda *a:dict(room_id='office',observations=[dict(severity='warning',kind='lighting',message='needs daylight')]))
+    proof=dict(scene_version='v1',captures=[dict(room_id='office',key='0',usable=True,artifact_hash=artifact)])
+    h.inspect(row,dict(rooms=[dict(id='office')]),[],proof)
+    assert observations[-1]['id'] not in previous
+    identity=observations[-1]['id']
+    h.inspect(row,dict(rooms=[dict(id='office')]),[],proof)
+    assert observations[-1]['id']==identity
 
 
 def test_stopped_queued_house_releases_editor_without_starting(tmp_path):

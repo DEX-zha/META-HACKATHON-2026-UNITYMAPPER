@@ -322,7 +322,7 @@ class HouseService:
             row=c.execute('SELECT * FROM house_actions WHERE id=?',(action,)).fetchone()
             if not row:raise AgentError('NOT_FOUND','House action not found',404)
             cp=json.loads(row['checkpoint'])
-            enrichment_conflict=cp.get('error_code')=='IDEMPOTENCY_CONFLICT' and cp.get('message')=='Enrichment changed requirement identity'
+            enrichment_conflict=cp.get('error_code')=='IDEMPOTENCY_CONFLICT' and cp.get('message') in {'Enrichment changed requirement identity','Defect identity changed'}
             stopped_correction=cp.get('error_code')=='STOP_REQUESTED' and bool(cp.get('iterations'))
             if row['state']!='failed' or (cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} and not enrichment_conflict and not stopped_correction) or not cp.get('planned_run_hash'):
                 raise AgentError('RECOVERY_REQUIRED','Provider-interrupted frozen plan required')
@@ -533,7 +533,7 @@ class HouseService:
                 if review['room_id']!=room['id']:raise AgentError('INVALID_MODEL_OUTPUT','Inspection room identity differs')
                 for index,defect in enumerate(scoped_observations(review['observations'],stage_scope)):
                     observations.append(dict(defect,room_id=room['id'],evidence_ids=hashes))
-                    if persist:self.houses.defect(run,dict(id='vision-'+room['id']+'-'+str(batch_index)+'-'+str(index),scope_id=room['id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=hashes))
+                    if persist:self.houses.defect(run,dict(id='vision-'+fingerprint(dict(scene=proof['scene_version'],room=room['id'],defect=defect,evidence=hashes)),scope_id=room['id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=hashes))
         saved=json.loads(row['checkpoint']).get('segmentation_receipts',{})
         saved[proof['scene_version']]=self.artifacts.put(canonical(segments).encode(),'application/json')
         self.save(row,'inspection','Visual inspection saved',segmentation_receipts=saved,inspection_targets=list(dict.fromkeys(o.get('instance_id') for o in observations if o.get('instance_id') in {i['id'] for i in instances})))
@@ -594,7 +594,7 @@ class HouseService:
         with self.store.tx() as c:
             c.execute("UPDATE house_defects SET status='resolved' WHERE run_id=? AND id LIKE 'vision-%'",(run,))
         for index,defect in enumerate(observations):
-            self.houses.defect(run,dict(id='vision-selected-'+str(index),scope_id=defect['room_id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=defect['evidence_ids']))
+            self.houses.defect(run,dict(id='vision-selected-'+fingerprint(dict(scene=proof['scene_version'],defect=defect)),scope_id=defect['room_id'],severity=defect['severity'],gate=defect['kind'],message=defect['message'],evidence_ids=defect['evidence_ids']))
 
     def close_reloaded_build(self, row, reason):
         """Release an old isolated build's lease, without replay or a success claim."""
