@@ -324,7 +324,7 @@ class HouseService:
             cp=json.loads(row['checkpoint'])
             enrichment_conflict=cp.get('error_code')=='IDEMPOTENCY_CONFLICT' and cp.get('message') in {'Enrichment changed requirement identity','Defect identity changed'}
             stopped_correction=cp.get('error_code')=='STOP_REQUESTED' and bool(cp.get('iterations'))
-            if row['state']!='failed' or (cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','INVALID_MODEL_OUTPUT'} and not enrichment_conflict and not stopped_correction) or not cp.get('planned_run_hash'):
+            if row['state']!='failed' or (cp.get('error_code') not in {'PROVIDER_OUTCOME_UNKNOWN','PROVIDER_USAGE_UNKNOWN','INVALID_MODEL_OUTPUT'} and not enrichment_conflict and not stopped_correction) or not cp.get('planned_run_hash'):
                 raise AgentError('RECOVERY_REQUIRED','Provider-interrupted frozen plan required')
             if c.execute("SELECT 1 FROM sessions WHERE id!=? AND state NOT IN ('completed','interrupted','limit_reached')",(row['session_id'],)).fetchone():raise AgentError('SESSION_ACTIVE','Another run owns Unity')
             project=c.execute('SELECT * FROM projects WHERE id=?',(row['project_id'],)).fetchone()

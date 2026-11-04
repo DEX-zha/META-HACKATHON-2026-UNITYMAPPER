@@ -335,12 +335,13 @@ def test_exact_response_reuse_requires_settlement_and_validated_house_value(tmp_
         assert c.execute('SELECT status,reserved FROM calls WHERE id=?',('old-call',)).fetchone()[:]==(status,10)
 
 
-def test_provider_resume_preserves_run_and_unknown_billing(tmp_path):
+@pytest.mark.parametrize('code',['PROVIDER_OUTCOME_UNKNOWN','PROVIDER_USAGE_UNKNOWN'])
+def test_provider_resume_preserves_run_and_unknown_billing(tmp_path,code):
     import json
     h,r=house_setup(tmp_path);action=h.admit(r);run=action['run_id']
     frozen=h.artifacts.put(canonical(dict(manifest=dict(run_id=run),outline={},requirements=[],missing=[])).encode(),'application/json')
     with h.store.tx() as c:
-        cp=json.loads(c.execute('SELECT checkpoint FROM house_actions WHERE id=?',(r['action_id'],)).fetchone()[0]);cp.update(planned_run_hash=frozen,error_code='PROVIDER_OUTCOME_UNKNOWN')
+        cp=json.loads(c.execute('SELECT checkpoint FROM house_actions WHERE id=?',(r['action_id'],)).fetchone()[0]);cp.update(planned_run_hash=frozen,error_code=code)
         c.execute("UPDATE house_actions SET state='failed',checkpoint=? WHERE id=?",(canonical(cp),r['action_id']))
         h.store.update_session(c,action['session_id'],state='interrupted')
         c.execute('INSERT INTO calls VALUES(?,?,?,?,?,?,?,?)',('unknown-call','sam-3.1','x','unknown',2500,None,'{}','2026-01-01'))

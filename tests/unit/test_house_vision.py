@@ -1,4 +1,5 @@
 import io
+import pytest
 from PIL import Image
 from hdrp_agent.house_vision import overlay,concepts
 
@@ -20,13 +21,14 @@ def test_queries_include_small_props_not_just_furniture():
     assert concepts([dict(prefab_guid=n) for n in assets],assets)==['bed','books','rug','curtain']
 
 
-def test_unknown_sam_call_preserves_other_concepts_without_retry():
+@pytest.mark.parametrize('code',['PROVIDER_OUTCOME_UNKNOWN','PROVIDER_USAGE_UNKNOWN'])
+def test_unknown_sam_call_preserves_other_concepts_without_retry(code):
     from hdrp_agent.house_vision import observe_concepts
     from hdrp_agent.domain import AgentError
     calls=[]
     def observe(concept):
         calls.append(concept)
-        if concept=='lamp':raise AgentError('PROVIDER_OUTCOME_UNKNOWN','Unknown')
+        if concept=='lamp':raise AgentError(code,'Unknown')
         return 'mask-'+concept
     result=observe_concepts(['bed','lamp','books'],observe)
     assert sorted(calls)==['bed','books','lamp']

@@ -11,7 +11,7 @@ def observe_concepts(concepts, observe):
         try:
             return dict(concept=concept, status='observed', value=observe(concept))
         except AgentError as error:
-            if error.code != 'PROVIDER_OUTCOME_UNKNOWN':
+            if error.code not in {'PROVIDER_OUTCOME_UNKNOWN','PROVIDER_USAGE_UNKNOWN'}:
                 raise
             return dict(concept=concept, status='unavailable', error_code=error.code)
     # Context manager joins all admitted calls, including on a fatal error.
